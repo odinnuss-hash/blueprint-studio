@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blueprint Studio – ヘルプ</title>
+<style>
+:root { --bg: #14161a; --panel: #1a1c21; --field: #121418; --line: #2c3038; --line2: #3a3f48; --text: #e7e4dd; --text2: #c9ccd1; --muted: #a7acb4;
+  --accent: #f59a23; --accent-bg: #2a2116; --accent-text: #f5b45a; --ok: #8fd18f; --err: #ff7b72;
+  --font: 'Segoe UI', system-ui, sans-serif; --font-title: Bahnschrift, 'Arial Narrow', sans-serif; --font-mono: 'Cascadia Mono', Consolas, monospace; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 var(--font); display: flex; min-height: 100vh; }
+nav { width: 270px; flex: none; position: sticky; top: 0; height: 100vh; overflow: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 18px 14px; }
+nav h2 { font: 700 13px var(--font-title); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 18px 0 6px; }
+nav h2:first-child { margin-top: 0; }
+nav a { display: block; color: var(--text2); text-decoration: none; padding: 3px 8px; border-radius: 5px; font-size: 14px; }
+nav a:hover { background: var(--accent-bg); color: var(--accent-text); }
+main { flex: 1; min-width: 0; padding: 26px 40px 80px; max-width: 980px; }
+h1 { font: 700 30px var(--font-title); letter-spacing: .03em; text-transform: uppercase; margin: 0 0 4px; }
+h2.sec { font: 700 22px var(--font-title); letter-spacing: .03em; color: var(--accent); margin: 48px 0 8px; padding-top: 10px; border-top: 1px solid var(--line); text-transform: uppercase; }
+h3 { font: 700 17px var(--font-title); margin: 26px 0 6px; letter-spacing: .02em; }
+p, li { color: var(--text2); }
+a { color: var(--accent); }
+code, kbd { font: 13px var(--font-mono); background: var(--field); border: 1px solid var(--line); padding: 1px 5px; border-radius: 4px; color: var(--text); }
+kbd { border-bottom-width: 2px; }
+pre { font: 13px/1.5 var(--font-mono); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow: auto; color: var(--text); white-space: pre-wrap; word-break: break-all; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+tr.hg th { color: var(--accent-text); font-size: 14px; text-transform: none; letter-spacing: 0; background: var(--accent-bg); }
+td.bsp { font: 12px var(--font-mono); color: var(--muted); }
+.box { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box.warn { border-left-color: var(--err); }
+.box p { margin: 4px 0; }
+ol.steps { counter-reset: s; list-style: none; padding: 0; }
+ol.steps > li { counter-increment: s; position: relative; padding: 6px 0 10px 44px; border-bottom: 1px dashed var(--line); }
+ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #1a1206; font: 700 15px var(--font-title); display: flex; align-items: center; justify-content: center; }
+.lead { font-size: 16px; color: var(--text2); }
+.tip { border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+.muted { color: var(--muted); }
+@media (max-width: 800px) { body { display: block; } nav { position: static; width: auto; height: auto; } main { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+<nav aria-label="Inhalt">
+  <h2>アプリについて</h2>
+  <a href="#zur-app">作者、著作権と利用</a>
+  <h2>マニュアル</h2>
+  <a href="#start">起動と概要</a>
+  <a href="#bibliothek">設計図を開く</a>
+  <a href="#ansichten">2D ビューと 3D ビュー</a>
+  <a href="#bearbeiten">編集とキー操作</a>
+  <a href="#tauschen">素材 / Mk 段階の交換</a>
+  <a href="#formen">形状ジェネレーター</a>
+  <a href="#speichern">保存</a>
+  <a href="#katalog">建物カタログ</a>
+  <a href="#ordnen">整理(名前の変更)</a>
+  <a href="#ablage">保管庫と名前の提案</a>
+  <a href="#karte">マップ(セーブデータ)</a>
+  <a href="#megaprints">Megaprint</a>
+  <a href="#papierkorb">重複とごみ箱</a>
+  <a href="#einrichtung">セットアップ(アシスタント)</a>
+  <a href="#einstellungen">設定</a>
+  <a href="#grenzen">制限と注意事項</a>
+  <h2>命名規則</h2>
+  <a href="#schema">構成</a>
+  <a href="#gruppen">グループ一覧</a>
+  <a href="#bibliothek-struktur">ライブラリ構成</a>
+  <a href="#regeln">ルールと例</a>
+  <h2>ゲームのアップデート</h2>
+  <a href="#update">バージョン変更時のチェックリスト</a>
+  <a href="#orte">どこに何がある?</a>
+  <h2>FModel</h2>
+  <a href="#fmodel">ダウンロードとセットアップ</a>
+  <a href="#fm-icons">アイコンのエクスポート</a>
+  <a href="#fm-modelle">3D モデルのエクスポート</a>
+  <a href="#fm-props">パーツデータのエクスポート</a>
+  <a href="#fm-probleme">問題と解決策</a>
+</nav>
+<main>
+<h1>Blueprint Studio – マニュアル</h1>
+<p class="lead">Satisfactory の設計図をゲーム外で表示(実際のゲームモデルによる 2D/3D)、編集し、新しい形状を作成し、すべての設計図に統一した名前を付けられます。すべてこの PC 上でローカルに動作します。</p>
+
+<!-- ============================================================ ZUR APP -->
+<h2 class="sec" id="zur-app">アプリについて</h2>
+<table>
+  <tr><th style="width:200px">プログラム</th><td><b>Blueprint Studio</b> – Satisfactory 用の設計図ツール</td></tr>
+  <tr><th>バージョン</th><td id="za-version">0.9.0</td></tr>
+  <tr><th>作者</th><td><b>ODINnuss</b>– アイデア、コンセプト、デザイン</td></tr>
+  <tr><th>著作権</th><td>© 2026 ODINnuss. 無断複製・転載を禁じます。</td></tr>
+  <tr><th>実装</th><td>作者の依頼により AI の支援(Claude、Anthropic)を受けてプログラミングされました。</td></tr>
+</table>
+<h3>利用規約</h3>
+<ol>
+  <li><b>利用:</b> 誰でも本プログラムを私的かつ非営利の目的で無料で利用できます。</li>
+  <li><b>再配布と改変:</b> 販売、貸与、商用利用、ならびに改変版やプログラムの一部を公式リポジトリ以外で公開することは、作者の事前の明示的な同意がある場合にのみ許可されます。GitHub 利用規約の範囲内での GitHub 上の閲覧とフォーク、および改善提案(Issue、Pull Request)は大歓迎です。作者およびこの著作権に関する表示を削除してはなりません。基準となるのはファイル <code>LICENSE</code> です。</li>
+  <li><b>保証と責任:</b> 本プログラムは無保証で提供されます。利用は自己責任で行ってください。設計図やセーブデータを編集、名前変更、上書きする前にバックアップを作成してください。アプリは上書き時に自動でバックアップを作成し、名前の変更を記録します。データの消失、セーブデータの破損、その他の損害について、法律で認められる範囲において一切の責任を負いません。</li>
+  <li><b>第三者のコンテンツ:</b> <i>Satisfactory</i>、ゲームデータ(<code>CommunityResources</code>)、アイコン、3D モデル、ゲームのグラフィックは Coffee Stain Studios の所有物です。これらは正規に入手した自分のゲームインストールから私的利用のためにのみ読み込みまたはエクスポートされ、再配布してはなりません。Blueprint Studio は非公式のファン製ツールであり、Coffee Stain Studios とは一切関係ありません。他のプレイヤーの設計図は、それぞれの作成者の著作物です。</li>
+  <li><b>外部プログラム:</b> FModel と「Satisfactory 3D Map」は、それぞれの開発者による独立したオープンソースプログラムであり、各自のライセンスに従います。Blueprint Studio にはそれらのプログラムコードは含まれておらず、インストールされている場合に起動するだけです。この翻訳は便宜上のものであり、ドイツ語版が正本です。</li>
+</ol>
+<h3>構成要素と第三者のライセンス</h3>
+<table>
+  <tr><th style="width:200px">ゲームコンテンツ</th><td><i>Satisfactory</i>、ゲームデータ、アイコン、3D モデル、マップ画像(タイル <code>Map_0-0 … Map_1-1</code>): Copyright © Coffee Stain Studios AB. 自分のゲームインストールからのみ、または私的利用のみ。再配布禁止。</td></tr>
+  <tr><th>アイコン</th><td>Fonticons, Inc. の <a href="https://fontawesome.com" target="_blank" rel="noopener">Font Awesome Free</a> 6.7.2 – アイコンは <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> に基づきます(ライセンス: fontawesome.com/license/free)。アプリのアイコン(建物入りの六角形)はオリジナルデザインです。</td></tr>
+  <tr><th>3D エディター(任意)</th><td>moritz-h(GitHub)による <a href="https://github.com/moritz-h/satisfactory-3d-map" target="_blank" rel="noopener">Satisfactory 3D Map</a> – GPL-3.0。独立したプログラムとして起動するだけです。</td></tr>
+  <tr><th>FModel(任意)</th><td>4sval による <a href="https://github.com/4sval/FModel" target="_blank" rel="noopener">FModel</a> – GPL-3.0。必要に応じてアシスタントが公式の GitHub リリースからダウンロードし、独立したプログラムとして起動するだけです。</td></tr>
+  <tr><th>CUE4Parse(抽出ツール)</th><td>FabianFG による <a href="https://github.com/FabianFG/CUE4Parse" target="_blank" rel="noopener">CUE4Parse</a> – Apache-2.0。同梱されず、「モデルを自動で取得」の際に GitHub からソースコードとしてダウンロードされ、自分の PC で補助プログラム <code>werkzeuge\extraktor</code> としてビルドされます。補助ライブラリ Oodle(OodleUE)と zlib-ng は自身でダウンロードします。</td></tr>
+  <tr><th>.NET 10 SDK</th><td>Microsoft による <a href="https://dotnet.microsoft.com" target="_blank" rel="noopener">.NET</a> – MIT ライセンス。同梱されず、必要に応じて winget でインストールされます。</td></tr>
+  <tr><th>Node.js</th><td><a href="https://nodejs.org" target="_blank" rel="noopener">Node.js</a> – MIT ライセンス。同梱されておらず、必要に応じて winget でインストールされます。</td></tr>
+</table>
+
+<!-- ============================================================ HANDBUCH -->
+<h2 class="sec" id="start">起動と概要</h2>
+<ul>
+  <li><b>起動:</b> <code>start.bat</code> またはデスクトップのショートカットをダブルクリックします。アプリは専用のウィンドウで開きます。ウィンドウを閉じると、約 25 秒後にプログラムが自動で終了します。</li>
+  <li><b>上部</b>で領域を選びます: <b>設計図</b>(表示/編集)、<b>建物カタログ</b>(全パーツとそのデータ)、<b>整理</b>(名前の統一)、<b>ヘルプ</b>(このページ)。</li>
+  <li><b>フォルダー</b>は現在の設計図フォルダーをエクスプローラーで開き、<b>設定</b>はパスを設定し、<b>保存</b>は変更を保存します。</li>
+</ul>
+<div class="box"><p><b>重要:</b> ゲームは設計図をセーブデータのロード時に読み込みます。保存や名前変更の後はセーブデータを再ロードしてください。編集はゲームを閉じているか、メインメニューにいるときに行うのが最適です。</p></div>
+
+<h2 class="sec" id="bibliothek">設計図を開く</h2>
+<p>左のフォルダー選択には、<code>SaveGames\blueprints</code> 以下のすべてのフォルダーが<b>サブフォルダーも含めて</b>(インデント表示、例: <code>Sortieren › Chaos › Kreativ</code>)表示され、その下にライブラリフォルダーが並びます。フォルダー <code>_Ablage</code>、<code>_Duplikate</code>、<code>_Archiv</code>、<code>_Pakete</code> はそこには表示されません。数千の設計図を含むフォルダーもすばやく開けます: リストはスクロールに合わせて読み込まれ、検索と選択(<kbd>Shift</kbd> でリスト全体にわたる範囲選択も可)はすべての項目に適用されます。</p>
+<p>左の<b>設計図</b>で<b>セーブデータ(セッション)</b>を選びます – これは <code>…\SaveGames\blueprints\</code> 内のサブフォルダーで、ゲームがあなたのワールド用に使うものです(例:「MeineWelt」– セーブデータ内のセッション名と同じ名前です)。その下に、色、サイズ、日付、説明付きですべての設計図が表示されます。検索欄は名前と説明で絞り込みます。クリックすると設計図が開きます。</p>
+<p><b>パーツ</b>タブには、開いている設計図に含まれるすべてのパーツの種類が数とともに表示されます。クリックするとその種類のオブジェクトがすべて選択されます(<kbd>Shift</kbd> で選択に追加)。</p>
+
+<h2 class="sec" id="ansichten">2D ビューと 3D ビュー</h2>
+<h3>2D 上面図</h3>
+<ul>
+  <li>クリックで選択、<kbd>Shift</kbd>+クリックで追加、空いている場所をドラッグ = 範囲選択。</li>
+  <li>選択したものをドラッグ = 移動(設定したグリッド単位)。右/中マウスボタン = ビューを移動、マウスホイール = ズーム。</li>
+</ul>
+<h3>3D ビュー</h3>
+<ul>
+  <li>左マウスボタンでドラッグ = 回転、右マウスボタン = 移動、マウスホイール = ズーム、クリック = 選択。</li>
+  <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> を押し続ける = 前 / 左 / 後ろ / 右へ移動(視線方向に水平移動、高さは変わりません)。<kbd>Shift</kbd> で 3 倍速。速度はズームに合わせて変わります。</li>
+  <li><b>モデル</b>(上部のスイッチ): 実際のゲームモデルを表示します – 機械、基礎、壁、屋根、梁、ガラス(半透明)。オフ: シンプルな箱(非常に大きな設計図で高速)。</li>
+  <li>モデル表示ではコンベアベルトはスプラインに沿った側縁付きの平らなベルトとして、コンベアリフトは枠付きの開いた縦穴として描画されます。パイプとハイパーチューブはチューブとして、線路はセグメントとして描画されます。(「モデル」なし: シンプルなブロック。)</li>
+  <li><b>ペン</b>(上部のボタンまたは <kbd>P</kbd> キー): 左マウスボタンを押したまま範囲を自由に囲むと、その中のものがすべて選択されます。開始時に <kbd>Shift</kbd> = 追加、<kbd>Ctrl</kbd> = 除外。ペンモードでの回転は右マウスボタンで行います。通常は見えているオブジェクトのみが対象です。「隠れたオブジェクトも」を使うと、中心点が範囲内にあるものすべて(背後や下にあるものも)が対象になります。階層を選択している場合はその階層のみが対象です。その後 <kbd>Del</kbd> または「<i>n</i> 件を削除」。「完了」または <kbd>Esc</kbd> でペンを終了します。</li>
+  <li>モデルはゲームから取り出したもの(FModel エクスポート、<a href="#fm-modelle">FModel</a> 参照)で、変換済みのものが <code>app\public\modelle</code> にあります。</li>
+</ul>
+<h3>階層</h3>
+<p>複数階建ての設計図では、アプリが基礎の階層を認識します。「階層 2」は階層 2 を表示し、下の階層は薄く表示され、上の階層は非表示になります。</p>
+
+<h2 class="sec" id="bearbeiten">編集とキー操作</h2>
+<table>
+  <tr><th>キー</th><th>効果</th></tr>
+  <tr><td><kbd>矢印キー</kbd></td><td>選択範囲をグリッド幅だけ移動(<kbd>Shift</kbd> 併用: 8 m = 基礎 1 枚分)</td></tr>
+  <tr><td><kbd>Page Up</kbd> / <kbd>Page Down</kbd></td><td>1 m 上げる / 下げる</td></tr>
+  <tr><td><kbd>Q</kbd> / <kbd>E</kbd></td><td>90° 回転(選択範囲の中心を軸に)</td></tr>
+  <tr><td><kbd>Del</kbd></td><td>選択範囲を削除します。構造物は地面に接したままです: 削除したパーツが最下部だった場合、残りすべてが一緒に下へずれ、新たな最下部のパーツが再び地面に接します(互いの間隔は維持されます)。<kbd>Ctrl</kbd>+<kbd>Z</kbd> で削除と下降をまとめて元に戻せます。設定でオフにできます。</td></tr>
+  <tr><td><kbd>P</kbd></td><td>3D ビュー: ペンのオン/オフ(範囲を自由に囲む = 選択)</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>元に戻す / やり直し</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Esc</kbd></td><td>すべて選択、選択解除</td></tr>
+  <tr><td><kbd>F</kbd>, <kbd>2</kbd>, <kbd>3</kbd></td><td>合わせる、2D、3D</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>保存</td></tr>
+  <tr><td><kbd>H</kbd> / <kbd>I</kbd> / <kbd>Shift</kbd>+<kbd>H</kbd></td><td>選択を非表示 / 選択のみ表示 / すべて再表示</td></tr>
+</table>
+<h3>X、Y、Z 軸での回転 / 傾斜</h3>
+<p>ツール<b>回転 / 傾斜</b>(ツールバーの座標軸アイコン): 軸を選びます – <b>X</b> は前後に傾け、<b>Y</b> は横に傾け、<b>Z</b> は <kbd>Q</kbd>/<kbd>E</kbd> と同様に回転します – そして角度(−90°、+90°、180° または独自の値)を選びます。選択範囲に、何も選択していない場合は設計図全体に適用されます。「その後再び地面に置く」は下端を維持します。例: 縦向きに作った交差点を、路面が上に来るまで X または Y で 90° 傾け、新しい設計図として保存します。3D ビューでは下から見ることもできるようになりました。</p>
+<h3>オブジェクトを非表示にする</h3>
+<p>隠れたパーツや背後のパーツに手が届くように: 選択して<b>非表示</b>(斜線の入った目、<kbd>H</kbd>)– または<b>選択のみ表示</b>(<kbd>I</kbd>)を使うと、それ以外がすべて消えます。非表示のオブジェクトはクリックできず、2D でも 3D でも描画されません。ボタン「… 個を非表示 · すべて表示」(または <kbd>Shift</kbd>+<kbd>H</kbd>)ですべて元に戻ります。非表示は設計図を変更せず、保存もされません。</p>
+<h3>多数の階層</h3>
+<p>階層が 11 以上になると、バーはコンパクトに表示されます: 最初の階層 · 選択中の階層の上下 5 階層ずつ · 最後の階層、さらに矢印 ‹ › と、全階層とその高さの一覧。</p>
+<p>右の<b>インスペクター</b>には、選択したオブジェクトの名前、位置、回転、寸法、電力、レシピ(毎分の量付き)、カラーパターン、ティア、建設コストが表示されます。何も選択していないときは、設計図全体のデータと建設コストが表示されます。</p>
+
+<h2 class="sec" id="tauschen">素材 / バリエーション / Mk 段階の交換</h2>
+<p>オブジェクトを選択し(例: 「パーツ」タブ → すべての基礎)→ 右の<b>素材 / バリエーションを交換 …</b>。同じ寸法のバリエーションが提示されます(コンクリート → アスファルト、グリップメタル、ガラス、標準の壁 → 窓付きの壁 …)。建設コストとレシピリストは保存時に再計算されます。<code>*</code> 付きのパーツは関連パーツから派生したものです。機械(接続口/インベントリ付き)は交換できません。</p>
+<h3>Mk 段階の変更(コンベアベルト、コンベアリフト、パイプ、ポンプ)</h3>
+<p>ベルト/リフトを選択し(「パーツ」タブ → 例:「コンベアベルト Mk.5」をクリック)→ <b>素材 / バリエーション / Mk 段階 …</b> → 希望の段階を選びます(Mk.1–Mk.6、パイプは Mk.1 ↔ Mk.2、流量表示なしのものも可、ポンプは Mk.1 ↔ Mk.2)。経路、接続口、接続はすべてそのまま維持され、種類と建設レシピだけが置き換えられます。設計図のレシピリストは追加されます。ただし<b>設計図ヘッダーに表示される建設コストはベルトについては再計算されません</b>(ゲームが配置時に自ら計算します)。その段階がセーブデータで解放されている必要があり、そうでないと設計図を建設できません。</p>
+
+<h2 class="sec" id="formen">形状ジェネレーター</h2>
+<p>左の<b>形状</b>タブ: 円形プレート(ゲーム内と同じリング)、グリッド上の円、リング / 円軌道、長方形の範囲、建物(壁、窓の列、屋根付きの多層)、円形タワー。サイズ、階数、パーツ(コンクリート、アスファルト、ガラス …)を選べます。</p>
+<ul>
+  <li><b>新しい設計図として開く</b> – プレビュー。値の変更はすぐに反映されます。その後いつも通り編集して保存します。</li>
+  <li><b>開いている設計図に挿入</b> – 形状を開いている設計図の上に配置します(選択状態、矢印キーで移動)。</li>
+</ul>
+
+<h2 class="sec" id="speichern">保存</h2>
+<ul>
+  <li><b>新しい設計図として保存</b>(推奨): 同じセーブデータフォルダーに新しい名前でコピーを作成します。説明とアイコンを含む <code>.sbpcfg</code> も一緒に作成されます。</li>
+  <li><b>元を上書き</b>: 事前に元のファイルが <code>userdata\sicherungen\</code> にバックアップされます。</li>
+  <li>編集していないデータ(レシピ、色、接続 …)はすべてバイト単位でそのまま維持されます。</li>
+  <li>ライブラリやサブフォルダーにある設計図(「整理」から 👁 で開いたもの)も編集できます。コピーは元と同じフォルダーに作成されます。</li>
+</ul>
+
+<h2 class="sec" id="katalog">建物カタログ</h2>
+<p>ゲームデータ(<code>CommunityResources\Docs\de.json</code>)にあるすべての建物: カテゴリ、解放済みティア、建設素材、寸法、電力、建設コスト、そして毎分の量付きのすべてのレシピ。左でカテゴリ、ティア、素材による絞り込みができます。「建築バリエーションを表示」は、基礎や壁などの全素材バリエーションも表示します。アイコンは FModel エクスポート(<code>app\public\icons</code>)から取得されます。</p>
+
+<h2 class="sec" id="ordnen">整理 – すべての設計図に統一した名前を付ける</h2>
+<p><b>整理</b>領域は<b>すべての</b>設計図を読み込みます: <code>SaveGames\blueprints</code> 以下のすべてのセーブデータフォルダー(サブフォルダーを含む)と、<a href="#einstellungen">設定</a>のライブラリフォルダー(例: <code data-pfad="bibliothek">…\Meine Blaupausen</code>)です。<code>_Archiv</code>、<code>_Pakete</code>、<code>_Duplikate</code> という名前のフォルダーはスキップされます。</p>
+<ol class="steps">
+  <li><b>読み込み:</b> 初回は数に応じて 20–60 秒かかりますが、2 回目以降は高速です(キャッシュ)。</li>
+  <li><b>提案の確認:</b> 各設計図に<b>新しい名前</b>が表示されます(<a href="#schema">命名規則</a>に準拠)。理由「名前から」= 古い名前から導出。「内容から」= 古い名前に意味がなかった(例: <code>2025_10_10 13_40_24</code>)ため、内容(製品、機械、パーツ、寸法)から提案したもの – これらは特によく確認してください。フィルター「内容からの名前(要確認!)」でこれらだけを表示できます。</li>
+  <li><b>表示:</b> 目のアイコン 👁 で設計図を 2D/3D で開きます(閲覧のみ)。「整理」領域から戻れます – 入力内容は保持されます。</li>
+  <li><b>調整:</b> 新しい名前を行の中で直接変更します。赤枠 = 命名規則に合っていません(長すぎる、使用禁止の文字、グループコードなし)。自分で行った変更はアプリを閉じてもすぐに記憶されます。</li>
+  <li><b>重複と類似:</b> アプリは名前だけでなく内容も比較します: どのパーツがどの位置にあるか(1 m グリッド、設計図の位置には依存しません)。
+    <ul>
+      <li><b>同一</b>(≥ 99 % 一致)で<b>同じフォルダー内</b>: 名前の付け方が劣る方が「重複」として提案され、適用時に <code>_Duplikate</code> へ移動されます – 削除はされません。ゲームはサブフォルダーを認識しません。</li>
+      <li><b>非常に類似</b>(90–98 %): ヒントのみ(「… と 93 % 類似」)。例: 看板がいくつか多いバリエーション。判断はあなた次第です(アクションを「重複」にするか、名前を変更)。</li>
+      <li>異なるフォルダー(ゲームとライブラリ)にある同じ設計図には、同じ名前が付けられます。</li>
+    </ul>
+    フィルター<b>「重複と類似(プレビュー付き)」</b>は、各項目の横に 2 つの小さな上面図を表示します: 左がこの設計図、右が同一/類似の設計図 – 本当に重複しているかすぐに分かります。</li>
+  <li><b>適用:</b> チェックを入れ(初期選択: 未処理のものすべて)→ <b>選択項目を適用</b>。<code>.sbp</code> と <code>.sbpcfg</code> が一緒に名前変更されます。</li>
+  <li><b>元に戻す:</b> <b>履歴 / 元に戻す</b>に各操作が表示されます。クリック 1 回で古い名前と場所がすべて復元されます。</li>
+</ol>
+<div class="box warn"><p>適用する前にゲームを閉じるか、メインメニューにしておいてください。ヒント: 段階的に作業しましょう – 例えばまずフィルター「場所: ライブラリ」、次にグループを 1 つずつ。</p></div>
+
+<h2 class="sec" id="ablage">保管庫 – 設計図の振り分けとオン/オフ</h2>
+<p><b>設計図</b>領域の下部に<b>保管庫</b>があります(矢印で開閉)。左には命名規則に沿ったフォルダー(1 建設 … 9 特殊 とそのサブグループ)と、あなたの独自フォルダー(◆)が並びます。</p>
+<ul>
+  <li><b>保管:</b> 左のリストから設計図をフォルダーへドラッグします。設計図はセーブデータフォルダーから取り出され、<code>…\SaveGames\blueprints\_Ablage\&lt;フォルダー&gt;</code> に移動されます。その後ゲームからは見えなくなります。フォルダーは中に何かが入ったときに初めて作成されます。</li>
+  <li><b>ゲームに入れる:</b> 設計図の横のスイッチをクリックします(緑 = ゲーム内)。設計図は元のセーブデータフォルダーに戻ります。フォルダーのチェックボックス(左)や「すべてゲームへ / すべて保管」を使うと、フォルダー全体(サブフォルダーを含む)に対して行えます。</li>
+  <li><b>ゲームに入れる – どのセーブデータへ?</b> ゲームは <code>blueprints\&lt;セーブデータ&gt;</code> 内の設計図だけを表示します(フォルダー名はセーブデータ内のセッション名と同じです。例: <code>MeineWelt</code>)。アプリはセーブデータからセッション名を読み取ります。<b>設定 → 「ゲームに入れる」先のセーブデータ</b>で 1 つを固定できます。「毎回確認」にすると、有効化するたびに全セーブデータの選択肢が表示されます(「標準として記憶」付き)。<code>Bauen</code> や <code>Deko</code> のようなまとめ用フォルダーはセーブデータではありません – 有効化した設計図がそこにある場合、保管庫に「⚠ ゲーム外」と表示されます。スイッチをオフにしてから再びオンにすると、正しいセーブデータに移されます。左のフォルダー選択では、セーブデータが独自のグループにまとめて表示されます。</li>
+  <li><b>位置とサイズ:</b> <b>設定 → 保管庫フォルダー</b>で、保管庫を<i>下</i>に置くか、<i>設計図の左側</i>にアプリの全高で置くか(上にフォルダー、その下に内容)を選べます。幅(左配置)と高さ(下配置)はスライダーで調整できます – または保管庫の端をマウスで直接ドラッグします。端をダブルクリックすると既定値に戻ります。</li>
+  <li><b>すべて開く / すべて閉じる</b>(保管庫の上部): すべてのフォルダーを一度に開閉します。</li>
+  <li><b>複数を一度に:</b> 左の設計図リストで <kbd>Ctrl</kbd>+クリックで個別に追加選択、<kbd>Shift</kbd>+クリックで範囲を選択します。リストの下に「<i>n</i> 件選択」と表示されます。選択した設計図の 1 つを保管庫フォルダーにドラッグすると、選択したものすべてが一緒に移動します。<b>右クリック</b>、<kbd>Del</kbd> または<b>削除</b>ボタンで、確認の後に選択したものすべてを削除します(ごみ箱へ)。<kbd>Esc</kbd> または<b>解除</b>で選択を解除します。</li>
+  <li><b>ライブラリから振り分け:</b> フォルダー選択の上部、<b>ライブラリ</b>の下に、設計図ライブラリのすべてのサブフォルダー(例: <code data-pfad="bibliothek">…\Meine Blaupausen</code>)が個別に表示されます。そこから設計図を保管庫フォルダーにドラッグすると、<code>…\SaveGames\blueprints\_Ablage\&lt;フォルダー&gt;</code> に<b>コピー</b>されます – 元のファイルはライブラリに残ります。有効化すると、最後に選んだゲームセッションに移されます。</li>
+  <li><b>並べ替え:</b> 保管庫の設計図を別のフォルダーへドラッグします。左のリストへドラッグすると有効化されます。</li>
+  <li><b>独自フォルダー:</b> 「+ 独自フォルダー」または「+ サブフォルダー」。空の独自フォルダーは削除できます。</li>
+  <li><b>表示:</b> ダブルクリックまたは「表示」。保管中の設計図は表示のみです。編集するには、まずゲームに入れてください。</li>
+</ul>
+<p>何も削除されることはなく、移動されるだけです(<code>.sbp</code> と <code>.sbpcfg</code> を一緒に)。どの有効な設計図がどのフォルダーに振り分けられているかは、アプリが <code>userdata\ablage.json</code> に記憶します。ゲームの実行中は、セーブデータを再ロードするまで変更は反映されません。</p>
+<h3>設計図の削除</h3>
+<p><b>名前と保管庫</b>の右上にあるごみ箱ボタン、保管庫内の設計図のごみ箱、または左のリストで設計図を<b>右クリック</b>します。確認の後、設計図は(<code>.sbpcfg</code> と一緒に)<b>Windows のごみ箱</b>に移り、そこから復元できます。それができない場合は <code>userdata\papierkorb</code> に移されます。</p>
+<h3>名前の提案</h3>
+<p>設計図を開くと、右上の<b>名前と保管庫</b>に命名規則に沿った提案が表示されます – 3 つの欄に分かれています: <b>カテゴリ</b> _ <b>サブカテゴリ</b> _ <b>名前</b>。アンダースコアはアプリが自動で入れます(名前内のスペースもアンダースコアになります)。「カテゴリ」をクリックするとすべてのカテゴリ(1 建設 … 9 特殊)が、「サブカテゴリ」をクリックすると選んだカテゴリのサブグループが表示されます – クリックで反映、または自分で入力することもできます(入力でリストを絞り込み、矢印キー + Enter で選択)。その下に、文字数カウンター付きの完成した名前が表示されます(最大 32 文字)。「保管」は選んだカテゴリに従います。<b>名前を変更すると同時に振り分けも行われます</b>: 設計図はすぐに対応する保管庫フォルダーに入ります(ゲームから: 保管、ライブラリから: コピー、保管庫から: 移動)– 設定でオフにできます。「保管」は名前を変更しない設計図のために残されています。番号付きの独自フォルダー(例: 2 生産 の下の <code>2_7 Wasseraufbereitung</code>)は、選択肢と保管庫の中で順序どおりの正しい位置に表示されます(末尾に「独自」マーク)。<b>名前を変更</b>はファイル名を変更し、<b>保管</b>はそれを対応するフォルダーにすぐ置きます。提案はあなた自身の名前から学習します:</p>
+<ol>
+  <li>設計図が、すでに適切に名前が付いた設計図と ≥ 90 % 同じ場合、そのグループが採用されます(100 % の場合は「重複の可能性」というヒントが出ます)。</li>
+  <li>名前の中の、あなたが特定のグループでよく使っている単語(例:「案内標識」→ 4_7)がグループを決めます。</li>
+  <li>意味のない名前(日付、「新規」…)の場合は、あなたの設計図との内容の類似性が考慮されます。</li>
+  <li>それ以外の場合は、「整理」領域の固定ルールが適用されます。</li>
+</ol>
+<p>ここや「整理」で行ったすべての名前変更は、次回以降の提案に反映されます(<code>userdata\namen-gelernt.json</code>)。</p>
+
+<h2 class="sec" id="karte">マップ – セーブデータを見る</h2>
+<p><b>マップ</b>領域は、<code>…\FactoryGame\Saved\SaveGames\&lt;番号&gt;</code> にあるセーブデータ(<code>.sav</code>、ゲームバージョン 1.0 以降)を読み込み、建設したものすべてを上面図で表示します: 建物、基礎、壁、柱(ゲームがまとめて保存する「軽量」パーツも含む)、コンベアベルト、パイプ、線路、ハイパーチューブは線として、さらに電線とあなたのキャラクター(赤い十字)。</p>
+<ul>
+  <li>左でセーブデータを選びます。初回は読み込みに数秒かかります。その後はファイルが変わらない限りキャッシュ(<code>userdata\karten</code>)から読み込まれます。</li>
+  <li>ドラッグ = 移動、マウスホイール = ズーム、クリック = パーツを表示(名前、位置、高さ、セーブデータ内の数)。「合わせる」はあなたの建築物を、「ワールド全体」はマップ全体を表示します(グリッド = 500 m)。</li>
+  <li>左で<b>階層</b>のオン/オフを切り替えます(例: 基礎をオフにして機械を見る)。資源ノードは最初はオフです。</li>
+  <li><b>パーツを強調:</b> 検索欄に名前を入力します(例:「製作機」)– 一致するパーツは色付きのまま、床は暗く表示されます。右の「よく使われるパーツ」はクリックできます。</li>
+</ul>
+<ul>
+  <li><b>マップ</b>(上部のチェック): ゲームワールドを背景に表示します。4 枚のタイルは <code>userdata\kartenbild</code> にあります(<code>Map_0-0 … Map_1-1</code>、各 3.75 × 3.75 km)。</li>
+  <li><b>高さ 下限 – 上限</b>(メートル): この範囲内のパーツだけを表示します。例: 大きな工場の 1 フロアだけ。</li>
+  <li>右の<b>種類別の建物</b>: すべての機械、発電機、保管、鉄道などとその数。<b>チェックを入れる</b>とそれらが強調され、それ以外は暗くなります(複数チェック可。グループのチェックでグループ全体、例: すべてのパイプ)。上部の<b>「すべて通常」</b>または <kbd>Esc</kbd> で元に戻ります。</li>
+  <li><b>3D で開く</b>: セーブデータを 3D エディター「Satisfactory 3D Map」で開きます(下記参照)。</li>
+</ul>
+<p>マップ自体はセーブデータを変更しません。</p>
+<h3>範囲を設計図として切り出す</h3>
+<ol>
+  <li>セーブデータを開き、階層と<b>高さ 下限 – 上限</b>で含めるものを設定します(例: 基礎を非表示にする、または 1 フロアだけ)。</li>
+  <li>ツールを選びます: <b>長方形</b>(ドラッグで描く。いつでも <kbd>Shift</kbd> + ドラッグでも可)または<b>ペン</b>(マウスボタンを押したまま範囲を自由に囲む – 離すと形が閉じます)。</li>
+  <li>右にサイズとパーツ数が表示されます。<b>3D で表示</b>は切り出した範囲をすぐにアプリの 3D ビューで表示します(ゲームモデル付き、何も保存されません)。<b>設計図として保存</b>は選んだフォルダーに保存します。「設計図で開く」で結果を表示します。</li>
+</ol>
+<ul>
+  <li><b>建物</b>(機械、ベルト、パイプ、保管、看板 …)は 1:1 でそのまま取り込まれます – レシピ、設定、接続口、範囲内の接続も含みます。</li>
+  <li><b>基礎、壁、柱、梁</b>はゲームがまとめて保存します(「軽量」)。これらはあなたの設計図テンプレートから再構築されます。梁の長さは維持されますが、<b>色/パターンは維持されません</b>。テンプレートのないパーツはスキップされ、報告されます。</li>
+  <li><b>電線</b>は両端が範囲内にある場合のみ取り込まれます。範囲外のパーツへの接続は失われます。</li>
+  <li>設計図は範囲の中心(8 m グリッド)と下端 0 に揃えられます。大きな範囲には、ゲーム側で Blueprint Designer Plus などの Mod が必要です。</li>
+  <li>Megaprint からは(まだ)できません – その場合はセーブデータを使ってください。</li>
+</ul>
+<h3>自分のゲームのマップ画像(FModel)</h3>
+<ol>
+  <li>FModel(<a href="#fmodel">FModel</a> 参照)で <code>FactoryGame/Content/FactoryGame/Interface/UI/Assets/MapTest/SlicedMap</code> に移動します。</li>
+  <li>4 つのテクスチャ <code>Map_0-0</code>、<code>Map_0-1</code>、<code>Map_1-0</code>、<code>Map_1-1</code> を選択 → 右クリック → <i>Save Texture</i>(PNG)。</li>
+  <li><code>werkzeuge\kartenbild-uebernehmen.bat</code> を実行します。FModel のエクスポートから画像を探し、<code>userdata\kartenbild</code> に配置します(古い画像は <code>.alt</code> として残ります)。</li>
+</ol>
+<h3>3D エディター「Satisfactory 3D Map」</h3>
+<p>moritz-h による独立したオープンソースプログラム(GPL-3.0)で、セーブデータのすべてのオブジェクトを 3D で表示し、そのプロパティを編集できます。Blueprint Studio は選んだセーブデータでこれを起動するだけです。</p>
+<ol>
+  <li><a href="https://github.com/moritz-h/satisfactory-3d-map/releases" target="_blank" rel="noopener">github.com/moritz-h/satisfactory-3d-map/releases</a> から最新の Windows 版をダウンロードします(1.2 のセーブデータには v0.10 以降)。</li>
+  <li>展開します。例: <code>werkzeuge\Satisfactory3DMap</code> へ – そこならアプリが自動で見つけます。別の場所にある場合: <b>設定 → 3D エディター</b>にフォルダーまたは <code>.exe</code> を入力します。</li>
+  <li>マップでセーブデータを選択 → <b>3D で開く</b>。</li>
+</ol>
+<p>Blueprint Studio は起動時に 3D エディターを、あなたのゲームファイルから<b>実際のゲームモデル</b>を読み込むように設定します(設定でオフにできます)。そのためにはファイル <code>oodle-data-shared.dll</code> が必要です。アプリはこれを FModel フォルダーから自動でコピーします(FModel は初回起動時に自分でダウンロードします)。ファイルがない場合、エディターはゲームモデルなしで起動します。3D エディターは独自のウィンドウを持つ別のプログラムです – ウィンドウを切り替えずにすばやく見たい場合は、マップの「3D で表示」を使ってください。</p>
+<p><b>注意:</b> そこでの変更は自分で保存します。事前にセーブデータをバックアップし、同じセーブデータをゲームで同時に開かないでください。</p>
+
+<h2 class="sec" id="megaprints">Megaprint (.cbp)</h2>
+<p>Megaprint は <i>satisfactory-calculator.com</i> からのエクスポートです(拡張子 <code>.cbp</code>、すべてのオブジェクトを位置とプロパティ付きで含む圧縮 JSON)。マップはこれらをセーブデータの下に一覧表示し(フォルダーは設定で指定。例: <code data-pfad="megaprints">…\Megaprints</code>、<code>_Archiv</code> を除く)、ワールドマップ上の元の位置に表示します – 階層、強調、「種類別の建物」も使えます。非常に大きな Megaprint(400 MB の JSON、300,000 パーツ)も約 2 秒で読み込めます。ただし、ベルトとパイプは今のところ線ではなく点として表示されます。</p>
+
+<h2 class="sec" id="papierkorb">重複とごみ箱</h2>
+<p><b>整理 → 「重複とごみ箱」</b>領域では:</p>
+<ul>
+  <li><b>重複</b>: 整理の際に <code>_Duplikate</code> へ移動されたすべての設計図(ゲームフォルダーとライブラリ)。<b>戻す</b>で元のフォルダーに戻します。その名前がすでに使われている場合、アプリが新しい名前を尋ねます。</li>
+  <li><b>削除済み</b>: アプリで削除したすべての設計図(元の場所と日時付き)。Windows のごみ箱にあるものはそこで復元します(「Windows のごみ箱を開く」)。代わりに <code>userdata\papierkorb</code> にあるものは、ここで直接復元できます。</li>
+  <li>アプリ内で完全に削除されるものはありません – 必要に応じて自分で行ってください(ごみ箱を空にする、またはエクスプローラーで <code>_Duplikate</code> フォルダーを削除)。</li>
+  <li>整理の実行全体は、引き続き<b>履歴 / 元に戻す</b>で取り消せます。</li>
+</ul>
+
+<h2 class="sec" id="einrichtung">セットアップ(アシスタント)と配布</h2>
+<p><b>初回起動時</b>には<b>セットアップアシスタント</b>が開きます(いつでも再起動可: <b>設定 → セットアップアシスタント</b>)。数ステップで必要なことをすべて案内します:</p>
+<ol class="steps">
+  <li><b>言語</b> – Deutsch(標準)、English、Français または 日本語。建物やアイテムの名前も、あなたのゲームからその言語で取得されます。後から 設定 → 言語 で変更できます。</li>
+  <li><b>フォルダー</b> – セーブデータフォルダー(標準: <code>%LOCALAPPDATA%\FactoryGame\Saved\SaveGames</code>)と Satisfactory のインストール先。アプリは Steam ライブラリ、Epic、全ドライブを自動で探します。「選択 …」で Windows のフォルダーダイアログが開きます。緑のチェック = 検出済み。任意: 独自の設計図コレクションと Megaprint フォルダー。</li>
+  <li><b>セーブデータ</b> – 「ゲームに入れる」で設計図をどのセーブデータに置くか(または毎回確認)。</li>
+  <li><b>3D 表示</b> – <i>シンプルな箱</i>(すぐに完了)または<i>実際のゲームモデル</i>。</li>
+  <li><b>ゲームモデル</b>(「実際のゲームモデル」を選んだ場合のみ)– 「モデルを自動で取得」をクリックするだけで<b>自動</b>: 初回はアプリが Microsoft の無料の <b>.NET 10 SDK</b> をインストールし(Windows が許可を求めることがあります)、無料ライブラリ <i>CUE4Parse</i>(FModel と同じもの)をダウンロードして小さな補助プログラム(<code>werkzeuge\extraktor</code>)をビルドし、それを使ってパーツデータ・3D モデル・アイコンをゲームのインストールから直接取り出します。進行状況と出力はウィンドウに表示されます。初回は約 5〜15 分、以降はずっと速くなります。うまくいかない場合は、その下に FModel を使う<b>手動</b>の手順も残っています(.NET デスクトップランタイム 10 をインストール、FModel をダウンロード、値を入力 – それぞれ<b>コピー</b>ボタン付き –、3 つのエクスポートをクリック、「取り込み」)。</li>
+  <li><b>その他</b> – マップ画像、3D エディター「Satisfactory 3D Map」、デスクトップのショートカット。</li>
+</ol>
+<p>さらに<b>設定 → 前提条件とショートカット</b>で、いつでも次を確認できます: Node.js、ゲームのインストール、セーブデータフォルダー、アプリのウィンドウ(Edge/Chrome)、3D モデル、アイコン、マップ画像、3D エディター、デスクトップのショートカット – ワンクリックで追加インストールできるもの:</p>
+<ul>
+  <li><b>3D エディター</b>「Satisfactory 3D Map」– GitHub から最新の Windows 版を <code>werkzeuge\Satisfactory3DMap</code> へ。</li>
+  <li><b>マップ画像</b> – satisfactory-3d-map プロジェクトの 4 枚のタイル(0.6 時点。最新の状態にするには FModel で置き換えてください)。</li>
+  <li><b>デスクトップのショートカット</b> – デスクトップとスタートメニューに、アイコン付きで。</li>
+</ul>
+<p>Node.js は初回起動時に <code>start.bat</code> が自動でインストールします(winget)。<b>3D モデルとアイコン</b>は Coffee Stain Studios のゲームコンテンツです: 一緒に公開してはならず、各ユーザーが自分のゲームインストールから一度取り出します – アシスタントで自動、または FModel で手動(<a href="#fmodel">FModel の手順</a>)。</p>
+<h3 id="updates">アップデート</h3>
+<p>Blueprint Studio は起動時(最大 6 時間ごと)に GitHub で新しいバージョンを探します。見つかると上部に <b>⬆ アップデート</b> ボタンが表示されます: 新機能を表示し、<b>今すぐアップデート</b>でインストールします。その後アプリは再読み込みされ、サーバーも自動で再起動します。手動の場合: <b>設定 → アップデート → 今すぐアップデートを確認</b>。</p>
+<ul>
+  <li><b>保持されるもの:</b> 設定と <code>userdata</code> 内のすべて、設計図、3D モデル、アイコン、FModel、3D エディター、抽出ツールのファイル。</li>
+  <li><b>バックアップ:</b> 置き換えられるプログラムファイルは事前に <code>userdata\update-sicherung\&lt;旧バージョン&gt;</code> にコピーされます – 元に戻すには、これらのファイルをプログラムフォルダーにコピーし直すだけです。</li>
+  <li><b>取得元:</b> GitHub プロジェクトのリリース(<code>app\update.json</code> に設定)。設定で別の取得元を指定できます。自動確認もそこでオフにできます。</li>
+</ul>
+<h3>公開(例: GitHub)</h3>
+<p>プログラムフォルダー内のファイル <code>.gitignore</code> は、公開してはならないものや個人的なものをすべて除外します: <code>userdata</code>、モデル、アイコン、マップ画像、FModel、3D エディター、設計図/セーブデータ。ヘルプには固定のパスは含まれておらず、常にあなた自身の設定にあるフォルダーを表示します。</p>
+<p><b>アップデートの公開:</b> <code>app\server.mjs</code>(<code>VERSION</code>)と <code>app\public\js\main.js</code>(<code>APP_VERSION</code>)のバージョン番号を上げてアップロードし(GitHub Desktop: <i>Commit</i> → <i>Push</i>)、GitHub の <i>Releases → Draft a new release</i> でタグ <code>v</code> + バージョン番号(例: <code>v0.9.1</code>)と新機能の短い説明を付けてリリースを公開します。インストール済みのすべてのアプリが次回起動時にアップデートを提案します。</p>
+
+<h2 class="sec" id="einstellungen">設定</h2>
+<ul>
+  <li><b>セーブデータフォルダー</b>(<code>blueprints</code> を含む): 標準 <code>%LOCALAPPDATA%\FactoryGame\Saved\SaveGames</code>。</li>
+  <li><b>Satisfactory のインストールフォルダー</b>(<code>CommunityResources</code> を含む): あなたの場合: <code data-pfad="gameDir">…\steamapps\common\Satisfactory</code>(初回起動時に検索されます)。</li>
+  <li><b>追加の設計図フォルダー(ライブラリ)</b>: 1 行に 1 つ。例: <code data-pfad="bibliothek">…\Meine Blaupausen</code>。「整理」の対象に含まれます。</li>
+  <li><b>言語</b>: Deutsch、English、Français、日本語 – 変更後、アプリが再読み込みされます。</li>
+  <li><b>保管庫のフォルダー構成</b>(「構成を編集 …」): すべてのメイングループ(<code>7</code>)とサブグループ(<code>7_3</code>)の一覧 – 初期状態は同梱の構成とあなたの番号付き独自フォルダーです。名前の変更、項目の追加(「+ メイングループ」、「+ サブ」)や削除ができます。「既定値に戻す」でリセットします。保存すると、保管庫の既存フォルダーが対応して名前変更されます(中身はそのまま)。削除した項目のフォルダーは消えません。番号は設計図名の先頭に付きます。</li>
+  <li><b>プレフィックス</b>: プレイヤー名やワールド名のように、名前の提案で先頭から省く単語(カンマ区切り)。</li>
+  <li><b>アップデート</b>: 起動時に自動確認(オン/オフ)、GitHub 上のアップデート取得元(<code>所有者/リポジトリ</code>、空欄 = アプリの既定)、「今すぐアップデートを確認」 – <a href="#updates">アップデート</a>を参照。</li>
+  <li><b>設計図を開くときのビュー</b>: <i>最後に使ったビュー</i>(標準 – 最後に 2D と 3D のどちらを使ったかをアプリが記憶)、<i>常に 2D</i> または <i>常に 3D</i>。2D/3D ボタンや <kbd>2</kbd>/<kbd>3</kbd> キーでの切り替えは引き続きいつでも可能です。</li>
+</ul>
+
+<h2 class="sec" id="grenzen">制限と注意事項</h2>
+<ul>
+  <li>機械を移動しても、コンベアベルト/パイプは元の場所に残ります – つながったグループはまとめて移動してください(範囲選択)。</li>
+  <li>機械は交換や新規作成ができません。できるのは建築パーツのみです。</li>
+  <li>古いゲームバージョン(Update 7/8)の設計図も読み込めます。Mod のパーツは灰色の箱として表示されます。</li>
+  <li>ゲーム内の名前は 32 文字までに制限されています – そのため「整理」は自動で短縮します。</li>
+</ul>
+
+<!-- ============================================================ SCHEMA -->
+<h2 class="sec" id="schema">命名規則</h2>
+<p class="lead">すべての名前は 2 桁のグループコードで始まります。ゲームはアルファベット順に並べるため、同じグループの設計図はゲーム内でもエクスプローラーでも自動的にまとまって並びます。この規則はあなたの既存のコードに基づいています(<code>1_1</code> 建物、<code>1_2</code> 壁、<code>1_3</code> 床、<code>5_9</code> 踏切、<code>8_3</code> 彫像 …)。</p>
+<pre>メイングループ_サブグループ_テーマ_詳細
+     2     _     1     _Kabel_12xKonstruktor
+     5     _     4     _UBahn_Kurve_90Grad
+     1     _     1     _Leergebäude_12</pre>
+<table>
+  <tr><th>部分</th><th>意味</th><th>例</th></tr>
+  <tr><td>メイングループ</td><td>1–9、ライブラリのフォルダーと同じ</td><td><code>1</code> 建設、<code>2</code> 生産、<code>5</code> 鉄道</td></tr>
+  <tr><td>サブグループ</td><td>メイングループ内の 1–9、<code>9</code> = その他</td><td><code>2_1</code> 生産(機械ライン)、<code>2_3</code> バランサー</td></tr>
+  <tr><td>テーマ</td><td>それは何か? 製品、建造物、セット名</td><td><code>Kabel</code>、<code>Hauptbahnhof</code>、<code>COC_Kran</code></td></tr>
+  <tr><td>詳細</td><td>数量、サイズ、レート、バリエーション、パーツ、側</td><td><code>10x</code>、<code>22x22</code>、<code>120pm</code>、<code>V2</code>、<code>Teil2</code>、<code>Links</code></td></tr>
+</table>
+
+<h3 id="gruppen">グループ一覧</h3>
+<table>
+  <tr><th>コード</th><th>グループ</th><th>例</th></tr>
+  <tbody><tr class="hg"><th>1</th><th colspan="2">建設</th></tr>
+  <tr><td><code>1_1</code></td><td>建物とホール</td><td class="bsp">1_1_Leergebäude_12, 1_1_Rundhaus</td></tr>
+  <tr><td><code>1_2</code></td><td>壁、ゲートとファサード</td><td class="bsp">1_2_Wandelement27_Breit, 1_2_JapTor</td></tr>
+  <tr><td><code>1_3</code></td><td>床、基礎と屋根</td><td class="bsp">1_3_Rundplatte22x22, 1_3_Dachelement2</td></tr>
+  <tr><td><code>1_4</code></td><td>トンネル、通路と階段</td><td class="bsp">1_4_Tunneleingang, 1_4_Glastunnel</td></tr>
+  <tr><td><code>1_5</code></td><td>支柱、橋脚と下部構造</td><td class="bsp">1_5_Stütze6_Fahrstuhl</td></tr>
+  <tr><td><code>1_6</code></td><td>形状と建築補助</td><td class="bsp">1_6_Kreis_12teilig, 1_6_Ruler</td></tr>
+  <tr><td><code>1_8</code></td><td>フェンスと手すり</td><td class="bsp">1_8_Zaunteil2_Tor</td></tr>
+  <tr><td><code>1_9</code></td><td>建築モジュールと単体パーツ</td><td class="bsp">柱、梁、床、壁の小さなパーツ(日付の名前が多い)</td></tr></tbody>
+  <tbody><tr class="hg"><th>2</th><th colspan="2">生産</th></tr>
+  <tr><td><code>2_1</code></td><td>生産(機械ライン)</td><td class="bsp">2_1_Kabel_12xKonstruktor</td></tr>
+  <tr><td><code>2_2</code></td><td>ベルトとパイプ(ルート)</td><td class="bsp">2_2_Band_10x, 2_2_Rohr_Treibstoff_5x</td></tr>
+  <tr><td><code>2_3</code></td><td>バランサー、分配器と振り分け</td><td class="bsp">2_3_Balancer_4zu4</td></tr>
+  <tr><td><code>2_4</code></td><td>採掘と搬送</td><td class="bsp">2_4_Miner_Aufsatz</td></tr>
+  <tr><td><code>2_5</code></td><td>機械スキン</td><td class="bsp">2_5_Matrix_Konverter</td></tr>
+  <tr><td><code>2_6</code></td><td>工場(完成品)</td><td class="bsp">2_6_Turbofuelfabrik</td></tr>
+  <tr><td><code>2_9</code></td><td>その他 生産</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>3</th><th colspan="2">エネルギー</th></tr>
+  <tr><td><code>3_1</code></td><td>発電所</td><td class="bsp">3_1_Kohlekraftwerk</td></tr>
+  <tr><td><code>3_2</code></td><td>蓄電</td><td class="bsp"></td></tr>
+  <tr><td><code>3_3</code></td><td>電柱と配電</td><td class="bsp">3_3_Strommast1(以前は 1_6)</td></tr>
+  <tr><td><code>3_6</code> / <code>3_7</code></td><td>風力(装飾) / ソーラー(装飾)</td><td class="bsp">3_6_Windrad1</td></tr>
+  <tr><td><code>3_9</code></td><td>その他 エネルギー</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>4</th><th colspan="2">交通 – 道路</th></tr>
+  <tr><td><code>4_1</code></td><td>道路</td><td class="bsp"></td></tr>
+  <tr><td><code>4_2</code></td><td>交差点とロータリー</td><td class="bsp">4_2_Rondel1(以前は 5_6)</td></tr>
+  <tr><td><code>4_3</code></td><td>駐車場とステーション</td><td class="bsp">4_3_Truck_Station</td></tr>
+  <tr><td><code>4_5</code></td><td>給油所</td><td class="bsp">4_5_Tankstelle2</td></tr>
+  <tr><td><code>4_6</code></td><td>橋と地下道</td><td class="bsp">4_6_Straße_Unterführung</td></tr>
+  <tr><td><code>4_7</code></td><td>交通標識</td><td class="bsp"></td></tr>
+  <tr><td><code>4_8</code></td><td>歩道</td><td class="bsp">4_8_Gehweg_Kurve</td></tr></tbody>
+  <tbody><tr class="hg"><th>5</th><th colspan="2">交通 – 鉄道</th></tr>
+  <tr><td><code>5_1</code></td><td>線路とルート</td><td class="bsp">5_1_Trasse_Gerade_1</td></tr>
+  <tr><td><code>5_2</code></td><td>駅</td><td class="bsp">5_2_Hauptbahnhof_Doppelstock</td></tr>
+  <tr><td><code>5_3</code></td><td>分岐器、交差点とロータリー</td><td class="bsp">5_3_4_Clover_Rail_Interchange</td></tr>
+  <tr><td><code>5_4</code></td><td>地下鉄とメトロ</td><td class="bsp">5_4_UBahn_Kurve_90Grad</td></tr>
+  <tr><td><code>5_5</code></td><td>ハイパーチューブとモノレール</td><td class="bsp"></td></tr>
+  <tr><td><code>5_6</code></td><td>鉄道橋</td><td class="bsp">5_6_Bahnbrücke_Gerade</td></tr>
+  <tr><td><code>5_9</code></td><td>その他 鉄道</td><td class="bsp">5_9_Bahnübergang</td></tr></tbody>
+  <tbody><tr class="hg"><th>6</th><th colspan="2">物流と保管</th></tr>
+  <tr><td><code>6_1</code></td><td>保管</td><td class="bsp">6_1_Lager_10x</td></tr>
+  <tr><td><code>6_2</code></td><td>貯蔵庫とアップローダー</td><td class="bsp"></td></tr>
+  <tr><td><code>6_3</code></td><td>ドローンとトラック</td><td class="bsp">6_3_Drohnenport</td></tr>
+  <tr><td><code>6_9</code></td><td>その他 物流</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>7</th><th colspan="2">照明と表示</th></tr>
+  <tr><td><code>7_1</code></td><td>照明</td><td class="bsp">7_1_Notstrom_Licht_Rot_1</td></tr>
+  <tr><td><code>7_2</code></td><td>表示装置とディスプレイ</td><td class="bsp">7_2_Anzeige_Muster_01</td></tr>
+  <tr><td><code>7_3</code></td><td>看板と案内標識</td><td class="bsp">7_3_Warnschild(以前は 1_7)</td></tr>
+  <tr><td><code>7_4</code></td><td>広告とロゴ</td><td class="bsp">7_4_FICSIT_Logo</td></tr></tbody>
+  <tbody><tr class="hg"><th>8</th><th colspan="2">装飾</th></tr>
+  <tr><td><code>8_1</code></td><td>家具と内装</td><td class="bsp"></td></tr>
+  <tr><td><code>8_2</code></td><td>屋外と公園</td><td class="bsp">8_2_Parkbank</td></tr>
+  <tr><td><code>8_3</code></td><td>彫像と彫刻</td><td class="bsp">8_3_Statue, 8_3_Tooritor</td></tr>
+  <tr><td><code>8_4</code></td><td>テクノ装飾</td><td class="bsp">8_4_Ventilator</td></tr>
+  <tr><td><code>8_5</code></td><td>ピクセルアート</td><td class="bsp"></td></tr>
+  <tr><td><code>8_6</code></td><td>クレーンと乗り物</td><td class="bsp">8_6_Kran_Klein</td></tr>
+  <tr><td><code>8_7</code></td><td>コンテナと箱</td><td class="bsp"></td></tr>
+  <tr><td><code>8_9</code></td><td>その他 装飾</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>9</th><th colspan="2">特殊</th></tr>
+  <tr><td><code>9_1</code></td><td>建設現場</td><td class="bsp">9_1_Bauzaun_Absperrung_Gerade</td></tr>
+  <tr><td><code>9_2</code></td><td>テーマとファン建築</td><td class="bsp">9_2_Kaffebar</td></tr>
+  <tr><td><code>9_8</code></td><td>チートとクリエイティブ</td><td class="bsp">9_8_2000_OC_Constructor</td></tr>
+  <tr><td><code>9_9</code></td><td>テストと不明</td><td class="bsp"></td></tr></tbody>
+</table>
+
+<h3 id="bibliothek-struktur">ライブラリ構成(フォルダー)</h3>
+<p>保管庫は命名規則をフォルダーとして反映します: <code>&lt;メイングループ&gt;\&lt;サブグループ&gt;\&lt;テーマ&gt;</code>、例: <code>2 生産\2_1 生産(機械ライン)\鉄と鋼</code>。テーマフォルダーは、1 つのフォルダーが見づらくならないよう大きなグループにのみあります。これらは約 3,000 個の設計図の分析から導き出されました:</p>
+<table>
+<thead><tr><th>グループ</th><th>テーマフォルダー</th></tr></thead><tbody>
+<tr><td><code>1_1</code></td><td>ホールと作業場 · タワー · 住宅 · 空の建物 · 部屋とモジュール</td></tr>
+<tr><td><code>1_2</code></td><td>ドアとゲート · 窓とファサード · 外壁とダム · 壁モジュール</td></tr>
+<tr><td><code>1_5</code></td><td>柱 · 梁 · 下部構造</td></tr>
+<tr><td><code>1_9</code></td><td>柱と梁 · 床と基礎 · 壁とフレーム</td></tr>
+<tr><td><code>2_1</code></td><td>コンパクトレイアウト · 鉄と鋼 · 銅とカテリウム · 石油、プラスチックと燃料 · アルミニウム · コンクリート、石英とガラス · ハイテクとエンドゲーム</td></tr>
+<tr><td><code>2_2</code></td><td>コンベアベルト · パイプ · コンベアリフト</td></tr>
+<tr><td><code>3_1</code></td><td>原子力 · 石炭 · 燃料</td></tr>
+<tr><td><code>4_6</code></td><td>吊り橋 · 橋モジュール</td></tr>
+<tr><td><code>5_1</code></td><td>ランプと分岐 · ルートと支柱</td></tr>
+<tr><td><code>7_2</code></td><td>パターン · コントロールパネル · ディスプレイと看板</td></tr>
+<tr><td><code>8_6</code></td><td>クレーン · 乗り物と掘削機</td></tr>
+<tr><td><code>8_7</code></td><td>コンテナ · 箱</td></tr>
+</tbody></table>
+<p>テーマは名前から認識されます(例:「Eisenplatten(鉄板)」→ 鉄と鋼)。どのテーマにも当てはまらない場合、設計図はグループフォルダーに残ります。ファイル <code>_Ablage\_Struktur.txt</code> には、フォルダーと想定される割り当てが記載されています。</p>
+
+<h3 id="regeln">ルールと例</h3>
+<ul>
+  <li><b>最大 32 文字</b>(ゲーム内の入力上限)。文字 <code>\ / : * ? " &lt; &gt; |</code> は使えません。ウムラウトなどの特殊文字は使えます。</li>
+  <li><b>アンダースコア</b>で各部分を区切ります。単語は大文字で始め(<code>Leergebäude_Japanisch12</code>)、小さな接続語は小文字のままにします(<code>Beton_für_Stahlbeton</code>)。</li>
+  <li><b>数量は末尾に:</b> <code>10x Band</code> → <code>2_2_Band_10x</code>。比率はコンパクトに: <code>Balancer 4 zu 4</code> → <code>2_3_Balancer_4zu4</code>。</li>
+  <li><b>生産:</b> 製品を先に、次に機械/レート: <code>2_1_Eisenbarren_10xSchmelze</code>、<code>2_1_Platine_5x_150pm</code>(pm = 毎分)。</li>
+  <li><b>複数パーツのセット</b>はセット名を維持します: <code>8_6_COC_Kran_2_Teil2</code>、<code>1_1_HouseBeckenbauer_2Teil_Turm_Links</code>。</li>
+  <li><b>個人用プレフィックス</b>(例: <code>プレイヤー名_</code>、<code>ワールド名_</code> – 設定の「プレフィックス」に入力。ほかに <code>270_</code>)は省かれます – グループの方が多くを語ります。コミュニティの名前は元の言語のまま、整理だけされます(「[1.2 Vanilla]」、「v1.1」、「by …」を除去)。</li>
+  <li><b>重複</b>には独自の名前は付けられず、<code>_Duplikate</code> へ移動されます。</li>
+</ul>
+
+<!-- ============================================================ UPDATE -->
+<h2 class="sec" id="update">ゲームのアップデート時(バージョン変更)のチェックリスト</h2>
+<p class="lead">Satisfactory の大きなアップデート(例: 1.2 → 1.3)の後は、次の手順を順番に行ってください。小さなパッチなら通常は手順 1–3 だけで十分です。</p>
+<ol class="steps">
+  <li><b>アプリを起動してカタログを確認する。</b> Blueprint Studio は、<code>CommunityResources\Docs\de.json</code> が変更されていれば起動時に再読み込みします。「建物カタログ」領域の左下に、建物/アイテム/レシピの数が表示されます。エラーが表示された場合: <a href="#einstellungen">設定</a> → インストールフォルダーを確認してください。</li>
+  <li><b>新しいゲームで保存した設計図を開く。</b> 新しいゲームバージョンではファイル形式が変わることがあります。開ければ問題ありません。開けない場合: メッセージを控えてください – リーダー(<code>app\lib\sbp.mjs</code>)の修正が必要です。</li>
+  <li><b>テンプレートを再構築する。</b> ファイル <code>userdata\vorlagen-cache.json</code> を削除し、アプリを再起動します。これによりアプリは、現在の設計図/セーブデータから新しいパーツを学習します(形状ジェネレーターと交換用)。</li>
+  <li><b>形状/交換をテストする。</b> 小さな形状を作成して保存し、ゲーム内で配置します。うまくいけば、すべて互換性があります。</li>
+  <li><b>FModel を更新する。</b> 最新版を <a href="https://fmodel.app/" target="_blank" rel="noopener">fmodel.app</a>(または GitHub リリース)から <code data-pfad="fmodel">…\werkzeuge\FModel</code> に展開します – またはセットアップアシスタントの「FModel をダウンロード」を使います。Settings で <b>UE バージョン</b>を確認し(Satisfactory 1.2: <code>GAME_UE5_6</code> – 新しいエンジンなら対応するものを選択)、新しいマッピングファイル <code>CommunityResources\FactoryGame.usmap</code> へのパスを設定します。</li>
+  <li><b>アイコンを再エクスポートする</b>(新しいアイテム/建物がある場合のみ必要): <a href="#fm-icons">FModel → アイコン</a>、その後 <code>werkzeuge\icons-uebernehmen.bat</code>。</li>
+  <li><b>3D モデルを再変換する</b>(新しい/変更された建物がある場合のみ): <a href="#fm-props">パーツデータ</a>と<a href="#fm-modelle">モデル</a>をエクスポートし、<code>werkzeuge\modelle-aufbereiten.bat</code> を実行します。不足しているメッシュが報告されるので、それを個別に追加エクスポートします。</li>
+  <li><b>整理を再読み込みする。</b> キャッシュ <code>userdata\ordnen-cache.json</code> は自動で更新されます。問題がある場合は削除してください。</li>
+</ol>
+
+<h3 id="orte">どこに何がある?</h3>
+<table>
+  <tr><th>内容</th><th>場所</th></tr>
+  <tr><td>Blueprint Studio</td><td><code data-pfad="appDir">…\BlueprintStudio</code>(起動: <code>start.bat</code>)</td></tr>
+  <tr><td>ゲームの設計図</td><td><code data-pfad="blueprintDir">%LOCALAPPDATA%\FactoryGame\Saved\SaveGames\blueprints</code><code>\&lt;セーブデータ&gt;</code></td></tr>
+  <tr><td>設計図ライブラリ</td><td><code data-pfad="bibliothek">(設定で入力してください)</code></td></tr>
+  <tr><td>Satisfactory</td><td><code data-pfad="gameDir">…\steamapps\common\Satisfactory</code></td></tr>
+  <tr><td>ゲームデータ(カタログ)</td><td><code>…\Satisfactory\CommunityResources\Docs\de.json</code></td></tr>
+  <tr><td>FModel 用マッピング</td><td><code>…\Satisfactory\CommunityResources\FactoryGame.usmap</code></td></tr>
+  <tr><td>FModel + エクスポート</td><td><code data-pfad="fmodel">…\werkzeuge\FModel</code>、エクスポート: <code data-pfad="fmodelExport">…\werkzeuge\FModel\Output\Exports</code></td></tr>
+  <tr><td>アプリのアイコン</td><td><code>app\public\icons\*.png</code></td></tr>
+  <tr><td>アプリの 3D モデル</td><td><code>app\public\modelle\index.json</code> + <code>meshes.bin</code></td></tr>
+  <tr><td>設定、バックアップ、履歴</td><td><code>userdata\</code>(<code>einstellungen.json</code>、<code>sicherungen\</code>、<code>ordnen-protokoll.json</code>)</td></tr>
+  <tr><td>ツール</td><td><code>werkzeuge\icons-uebernehmen.bat</code>、<code>werkzeuge\modelle-aufbereiten.bat</code></td></tr>
+</table>
+
+<!-- ============================================================ FMODEL -->
+<h2 class="sec" id="fmodel">FModel – ダウンロードとセットアップ</h2>
+<p class="lead">FModel は Unreal Engine のゲームファイル用の無料ビューアーです。これを使って Satisfactory からアイコン、3D モデル、パーツデータを取り出します。</p>
+<p class="tip"><b>もっと簡単に:</b> セットアップアシスタント(手順「ゲームモデル」)の<b>モデルを自動で取得</b>で、FModel なしで同じデータを取得できます。以下の手順は、自動の方法がうまくいかない場合にのみ必要です。</p>
+<ul>
+  <li><b>ダウンロード:</b> <a href="https://fmodel.app/" target="_blank" rel="noopener">https://fmodel.app/</a> – または GitHub のリリース: <a href="https://github.com/4sval/FModel/releases" target="_blank" rel="noopener">github.com/4sval/FModel/releases</a>。手順/Wiki: <a href="https://github.com/4sval/FModel/wiki" target="_blank" rel="noopener">github.com/4sval/FModel/wiki</a>。</li>
+  <li>Mod コミュニティによる <b>Satisfactory 向けの手順</b>: <a href="https://docs.ficsit.app/satisfactory-modding/latest/Development/ExtractGameFiles.html" target="_blank" rel="noopener">docs.ficsit.app → Extract Game Files</a>。</li>
+  <li>.NET デスクトップランタイム <b>10</b> が必要です(FModel が初回起動時に求めます。アシスタントならワンクリックでインストールできます)。</li>
+</ul>
+<ol class="steps">
+  <li><b>展開</b>先は <code data-pfad="fmodel">…\werkzeuge\FModel</code>(セットアップアシスタントが自動で行います)。その後 <code>FModel.exe</code> を起動します。</li>
+  <li><b>ゲームを追加:</b> 「Directory Selector」ウィンドウで <i>Undetected Game</i> を作成します: 名前 <code>Satisfactory</code>、フォルダー <code data-pfad="gameDir">…\steamapps\common\Satisfactory</code>、青いプラス、OK。</li>
+  <li><b>UE バージョン:</b> <code>GAME_UE5_6</code>(Satisfactory 1.2)。表示されない場合: 「Enable custom UE versions」をオフにします。</li>
+  <li><b>Settings → General:</b>
+    <ul>
+      <li><i>Output Directory</i>: <code data-pfad="fmodelOutput">…\werkzeuge\FModel\Output</code></li>
+      <li><i>Keep Directory Structure</i>: オン</li>
+      <li><i>Local Mapping File</i>: オン、パス <code data-pfad="usmap">…\Satisfactory\CommunityResources\FactoryGame.usmap</code></li>
+      <li>任意: <i>Custom Versions</i> – <code>CommunityResources\CustomVersions.json</code> の内容を貼り付けます(ファイルは UTF-16)。</li>
+    </ul></li>
+  <li><b>Settings → Export (Models):</b> <i>Mesh Format</i> = <code>glTF 2.0 (binary)</code>、<i>Texture Format</i> = <code>PNG</code>、<i>Auto-Export Attached Materials</i> = オフ(容量の節約)。OK。</li>
+  <li><b>読み込み:</b> <i>Archives</i> タブ → <b>Load</b>。その後 <i>Folders</i> タブと <i>Packages</i> タブに内容が表示されます。</li>
+</ol>
+<div class="box"><p><b>新しい FModel バージョンでのエクスポート:</b> エクスポートはまず<b>キュー</b>に入ります(ステータスバー右下の黄色い欄)。それをクリック →「Export Session」ウィンドウ → <b>Export</b>。カウンターに進行状況が表示されます。</p></div>
+
+<h2 class="sec" id="fm-icons">アイコンのエクスポート</h2>
+<ol class="steps">
+  <li><b>検索を開く:</b> メニュー <i>Packages → Search</i>(<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd>)。</li>
+  <li><b>検索:</b> <code>IconDesc</code> と入力して <kbd>Enter</kbd>。(約 1,500 件ヒット。)</li>
+  <li><b>すべて選択:</b> 最初の結果をクリックし、<kbd>Ctrl</kbd>+<kbd>A</kbd>。</li>
+  <li><b>エクスポート:</b> 右クリック → <i>Export → Texture</i>。その後、右下のキュー → <b>Export</b>。</li>
+  <li><b>アプリに取り込む:</b> <code>werkzeuge\icons-uebernehmen.bat</code> をダブルクリックします。カタログに必要なアイコンだけをコピーし、不足しているものを報告します。</li>
+  <li><b>不足分を追加:</b> ツールが <code>/(Hub_512|Track_512|…)\.uasset$</code> のような行を出力します。FModel の検索で <b>Regex</b> アイコン(検索欄右側の 2 番目のアイコン)をオンにし、その行を貼り付けて <kbd>Enter</kbd>、上と同様にテクスチャとしてエクスポートし、ツールを再度実行します。</li>
+</ol>
+
+<h2 class="sec" id="fm-props">パーツデータのエクスポート(3D の対応付け用)</h2>
+<p>アプリは、どのモデルがどのパーツに属し、どのように配置されるかを知る必要があります。その情報はゲームの <code>Build_*</code> ブループリントにあります。</p>
+<ol class="steps">
+  <li>検索を開き、<b>Regex をオン</b>にして次を入力: <pre>Buildable/.*/Build_[^/]*\.uasset$</pre></li>
+  <li>すべて選択 → 右クリック → <i>Export → Properties (json)</i>。これらのエクスポートはすぐに保存されます(約 590 ファイル)。</li>
+</ol>
+
+<h2 class="sec" id="fm-modelle">3D モデルのエクスポート</h2>
+<ol class="steps">
+  <li>検索、Regex オン: <pre>Buildable/(Factory|Building)/.*/SM_[^/]*\.uasset$</pre></li>
+  <li>すべて選択 → 右クリック → <i>Export → Model</i>。キュー → <b>Export</b>(約 500 モデル、数分)。</li>
+  <li><code>werkzeuge\modelle-aufbereiten.bat</code> をダブルクリックします。パーツデータとモデルを読み込み、ゲーム座標に変換して <code>app\public\modelle\</code> に書き出します(約 40 MB)。</li>
+  <li>ツールが<b>不足しているメッシュ</b>(例: <code>ConstructorMk1_static</code>)を報告した場合、その名前を Regex で検索し、同様に Model としてエクスポートします: <pre>Buildable/.*/(ConstructorMk1_static|SmelterMk1_static)\.uasset$</pre> その後、ツールを再度実行します。</li>
+  <li>Blueprint Studio を再読み込みし、3D ビューで<b>モデル</b>スイッチを使います。</li>
+</ol>
+
+<h2 class="sec" id="fm-probleme">問題と解決策</h2>
+<table>
+  <tr><th>問題</th><th>解決策</th></tr>
+  <tr><td>FModel が読み込み/解析中にクラッシュする</td><td>最新の FModel バージョンを使ってください(古いバージョンは新しいマッピングファイルを読めません)。</td></tr>
+  <tr><td>Settings で OK を押した後に「Fatal Error … Index was out of range」と表示される</td><td>無害です – OK で閉じてください。設定は保存されています。</td></tr>
+  <tr><td>エクスポートがフォルダーに出力されない</td><td>右下のキューを開いて <b>Export</b> をクリックしてください。Settings の Output フォルダーを確認してください。</td></tr>
+  <tr><td>Regex 検索で何も見つからない</td><td>検索欄の Regex アイコンはオンになっていますか? オンにした後、検索欄をクリックして <kbd>Enter</kbd> を押してください。</td></tr>
+  <tr><td>アプリ内でモデルが回転/ずれている</td><td>FModel の Mesh Format は <code>glTF 2.0 (binary)</code> である必要があります。ツールを再度実行してください。</td></tr>
+  <tr><td>モデルの代わりに灰色の箱が表示される</td><td>このパーツのモデルがありません(ツールのメッセージ参照)– またはベルト/パイプ/線路/リフトです(意図的にモデルなし)。</td></tr>
+</table>
+<p class="muted">Blueprint Studio 0.9.0 · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
+</main>
+<script>
+// Anker aus der App (#schema usw.) anspringen
+if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView(), 50);
+</script>
+<script>
+// Pfade in der Hilfe aus den eigenen Einstellungen einsetzen (keine festen Pfade im Text)
+fetch('/api/config').then((r) => r.json()).then((c) => {
+  const j = (...t) => t.filter(Boolean).join('\\');
+  const w = { appDir: c.appDir, blueprintDir: c.blueprintDir, saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0], megaprints: (c.megaprints || [])[0],
+    fmodel: c.fmodelDir, fmodelOutput: c.fmodelDir && j(c.fmodelDir, 'Output'), fmodelExport: c.fmodelExport, usmap: c.gameDir && j(c.gameDir, 'CommunityResources', 'FactoryGame.usmap') };
+  document.querySelectorAll('[data-pfad]').forEach((e) => { const v = w[e.dataset.pfad]; if (v) { e.textContent = v; e.title = '設定から'; } });
+}).catch(() => {});
+</script>
+</body>
+</html>

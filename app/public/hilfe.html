@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blueprint Studio – Hilfe</title>
+<style>
+:root { --bg: #14161a; --panel: #1a1c21; --field: #121418; --line: #2c3038; --line2: #3a3f48; --text: #e7e4dd; --text2: #c9ccd1; --muted: #a7acb4;
+  --accent: #f59a23; --accent-bg: #2a2116; --accent-text: #f5b45a; --ok: #8fd18f; --err: #ff7b72;
+  --font: 'Segoe UI', system-ui, sans-serif; --font-title: Bahnschrift, 'Arial Narrow', sans-serif; --font-mono: 'Cascadia Mono', Consolas, monospace; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 var(--font); display: flex; min-height: 100vh; }
+nav { width: 270px; flex: none; position: sticky; top: 0; height: 100vh; overflow: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 18px 14px; }
+nav h2 { font: 700 13px var(--font-title); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 18px 0 6px; }
+nav h2:first-child { margin-top: 0; }
+nav a { display: block; color: var(--text2); text-decoration: none; padding: 3px 8px; border-radius: 5px; font-size: 14px; }
+nav a:hover { background: var(--accent-bg); color: var(--accent-text); }
+main { flex: 1; min-width: 0; padding: 26px 40px 80px; max-width: 980px; }
+h1 { font: 700 30px var(--font-title); letter-spacing: .03em; text-transform: uppercase; margin: 0 0 4px; }
+h2.sec { font: 700 22px var(--font-title); letter-spacing: .03em; color: var(--accent); margin: 48px 0 8px; padding-top: 10px; border-top: 1px solid var(--line); text-transform: uppercase; }
+h3 { font: 700 17px var(--font-title); margin: 26px 0 6px; letter-spacing: .02em; }
+p, li { color: var(--text2); }
+a { color: var(--accent); }
+code, kbd { font: 13px var(--font-mono); background: var(--field); border: 1px solid var(--line); padding: 1px 5px; border-radius: 4px; color: var(--text); }
+kbd { border-bottom-width: 2px; }
+pre { font: 13px/1.5 var(--font-mono); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow: auto; color: var(--text); white-space: pre-wrap; word-break: break-all; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+tr.hg th { color: var(--accent-text); font-size: 14px; text-transform: none; letter-spacing: 0; background: var(--accent-bg); }
+td.bsp { font: 12px var(--font-mono); color: var(--muted); }
+.box { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box.warn { border-left-color: var(--err); }
+.box p { margin: 4px 0; }
+ol.steps { counter-reset: s; list-style: none; padding: 0; }
+ol.steps > li { counter-increment: s; position: relative; padding: 6px 0 10px 44px; border-bottom: 1px dashed var(--line); }
+ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #1a1206; font: 700 15px var(--font-title); display: flex; align-items: center; justify-content: center; }
+.lead { font-size: 16px; color: var(--text2); }
+.tip { border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+.muted { color: var(--muted); }
+@media (max-width: 800px) { body { display: block; } nav { position: static; width: auto; height: auto; } main { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+<nav aria-label="Inhalt">
+  <h2>Zur App</h2>
+  <a href="#zur-app">Urheber, Copyright &amp; Nutzung</a>
+  <h2>Handbuch</h2>
+  <a href="#start">Start &amp; Überblick</a>
+  <a href="#bibliothek">Blaupausen öffnen</a>
+  <a href="#ansichten">2D- und 3D-Ansicht</a>
+  <a href="#bearbeiten">Bearbeiten &amp; Tasten</a>
+  <a href="#tauschen">Material / Mk-Stufe tauschen</a>
+  <a href="#formen">Formen-Generator</a>
+  <a href="#speichern">Speichern</a>
+  <a href="#katalog">Gebäude-Katalog</a>
+  <a href="#ordnen">Ordnen (Umbenennen)</a>
+  <a href="#ablage">Ablage &amp; Namensvorschlag</a>
+  <a href="#karte">Karte (Spielstände)</a>
+  <a href="#megaprints">Megaprints</a>
+  <a href="#papierkorb">Duplikate &amp; Papierkorb</a>
+  <a href="#einrichtung">Einrichtung (Assistent)</a>
+  <a href="#einstellungen">Einstellungen</a>
+  <a href="#grenzen">Grenzen &amp; Hinweise</a>
+  <h2>Namensschema</h2>
+  <a href="#schema">Aufbau</a>
+  <a href="#gruppen">Gruppen-Übersicht</a>
+  <a href="#bibliothek-struktur">Bibliotheks-Struktur</a>
+  <a href="#regeln">Regeln &amp; Beispiele</a>
+  <h2>Spiel-Update</h2>
+  <a href="#update">Checkliste Versionswechsel</a>
+  <a href="#orte">Wo liegt was?</a>
+  <h2>FModel</h2>
+  <a href="#fmodel">Download &amp; Einrichtung</a>
+  <a href="#fm-icons">Icons exportieren</a>
+  <a href="#fm-modelle">3D-Modelle exportieren</a>
+  <a href="#fm-props">Bauteil-Daten exportieren</a>
+  <a href="#fm-probleme">Probleme &amp; Lösungen</a>
+</nav>
+<main>
+<h1>Blueprint Studio – Handbuch</h1>
+<p class="lead">Satisfactory-Blaupausen außerhalb des Spiels ansehen (2D/3D mit echten Spielmodellen), bearbeiten, neue Formen erzeugen und alle Blaupausen einheitlich benennen. Alles läuft lokal auf diesem PC.</p>
+
+<!-- ============================================================ ZUR APP -->
+<h2 class="sec" id="zur-app">Zur App</h2>
+<table>
+  <tr><th style="width:200px">Programm</th><td><b>Blueprint Studio</b> – Blaupausen-Werkzeug für Satisfactory</td></tr>
+  <tr><th>Version</th><td id="za-version">0.9.0</td></tr>
+  <tr><th>Urheber</th><td><b>ODINnuss</b> – Idee, Konzept und Gestaltung</td></tr>
+  <tr><th>Copyright</th><td>© 2026 ODINnuss. Alle Rechte vorbehalten.</td></tr>
+  <tr><th>Umsetzung</th><td>Programmiert im Auftrag des Urhebers mit KI-Unterstützung (Claude, Anthropic).</td></tr>
+</table>
+<h3>Nutzungsbedingungen</h3>
+<ol>
+  <li><b>Nutzung:</b> Jede Person darf das Programm kostenlos für private, nicht-kommerzielle Zwecke nutzen.</li>
+  <li><b>Weitergabe und Veränderung:</b> Verkauf, Vermietung, kommerzielle Nutzung sowie das Veröffentlichen veränderter Fassungen oder von Programmteilen außerhalb des offiziellen Repositorys sind nur mit vorheriger ausdrücklicher Zustimmung des Urhebers erlaubt. Ansehen und Forken auf GitHub im Rahmen der GitHub-Nutzungsbedingungen sowie Verbesserungsvorschläge (Issues, Pull Requests) sind ausdrücklich willkommen. Hinweise auf den Urheber und dieses Copyright dürfen nicht entfernt werden. Maßgeblich ist die Datei <code>LICENSE</code>.</li>
+  <li><b>Gewährleistung und Haftung:</b> Das Programm wird ohne Gewähr bereitgestellt. Die Nutzung erfolgt auf eigene Verantwortung. Vor dem Bearbeiten, Umbenennen oder Überschreiben von Blaupausen und Spielständen sollten Sicherungen angelegt werden; die App legt beim Überschreiben selbst eine Sicherung an und protokolliert Umbenennungen. Für Datenverlust, beschädigte Spielstände oder sonstige Schäden wird – soweit gesetzlich zulässig – keine Haftung übernommen.</li>
+  <li><b>Inhalte Dritter:</b> <i>Satisfactory</i>, die Spieldaten (<code>CommunityResources</code>), Icons, 3D-Modelle und Spielgrafiken sind Eigentum von Coffee Stain Studios. Sie werden ausschließlich aus der eigenen, rechtmäßig erworbenen Spielinstallation für den privaten Gebrauch gelesen bzw. exportiert und dürfen nicht weitergegeben werden. Blueprint Studio ist ein inoffizielles Fan-Werkzeug und steht in keiner Verbindung zu Coffee Stain Studios. Blaupausen anderer Spieler bleiben Werk ihrer jeweiligen Ersteller.</li>
+  <li><b>Fremdprogramme:</b> FModel und „Satisfactory 3D Map“ sind eigenständige Open-Source-Programme ihrer Entwickler und unterliegen deren Lizenzen. Blueprint Studio enthält keinen Programmcode daraus, sondern startet sie nur, wenn sie installiert sind.</li>
+</ol>
+<h3>Bestandteile und Lizenzen Dritter</h3>
+<table>
+  <tr><th style="width:200px">Spielinhalte</th><td><i>Satisfactory</i>, Spieldaten, Icons, 3D-Modelle und das Kartenbild (Kacheln <code>Map_0-0 … Map_1-1</code>): Copyright © Coffee Stain Studios AB. Nur aus der eigenen Spielinstallation bzw. für den privaten Gebrauch; nicht weitergeben.</td></tr>
+  <tr><th>Symbole</th><td><a href="https://fontawesome.com" target="_blank" rel="noopener">Font Awesome Free</a> 6.7.2 von Fonticons, Inc. – Icons unter <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (Lizenz: fontawesome.com/license/free). Das App-Symbol (Sechseck mit Gebäude) ist eine eigene Gestaltung.</td></tr>
+  <tr><th>3D-Editor (optional)</th><td><a href="https://github.com/moritz-h/satisfactory-3d-map" target="_blank" rel="noopener">Satisfactory 3D Map</a> von moritz-h (GitHub) – GPL-3.0. Wird nur als eigenständiges Programm gestartet.</td></tr>
+  <tr><th>FModel (optional)</th><td><a href="https://github.com/4sval/FModel" target="_blank" rel="noopener">FModel</a> von 4sval – GPL-3.0. Wird bei Bedarf vom Assistenten aus den offiziellen GitHub-Releases geladen und nur als eigenständiges Programm gestartet.</td></tr>
+  <tr><th>CUE4Parse (Extraktor)</th><td><a href="https://github.com/FabianFG/CUE4Parse" target="_blank" rel="noopener">CUE4Parse</a> von FabianFG – Apache-2.0. Wird nicht mitgeliefert, sondern bei „Modelle automatisch holen“ als Quelltext von GitHub geladen und auf dem eigenen PC zum Hilfsprogramm <code>werkzeuge\extraktor</code> gebaut. Dabei lädt es selbst die Hilfsbibliotheken Oodle (OodleUE) und zlib-ng.</td></tr>
+  <tr><th>.NET 10 SDK</th><td><a href="https://dotnet.microsoft.com" target="_blank" rel="noopener">.NET</a> von Microsoft – MIT-Lizenz. Wird nicht mitgeliefert, sondern bei Bedarf über winget installiert.</td></tr>
+  <tr><th>Node.js</th><td><a href="https://nodejs.org" target="_blank" rel="noopener">Node.js</a> – MIT-Lizenz. Wird nicht mitgeliefert, sondern bei Bedarf über winget installiert.</td></tr>
+</table>
+
+<!-- ============================================================ HANDBUCH -->
+<h2 class="sec" id="start">Start &amp; Überblick</h2>
+<ul>
+  <li><b>Starten:</b> Doppelklick auf <code>start.bat</code> oder die Desktop-Verknüpfung. Die App öffnet sich in einem eigenen Fenster. Schließt du das Fenster, beendet sich das Programm nach ca. 25 Sekunden von selbst.</li>
+  <li><b>Oben</b> wählst du den Bereich: <b>Blaupause</b> (ansehen/bearbeiten), <b>Gebäude-Katalog</b> (alle Bauteile mit Daten), <b>Ordnen</b> (Namen vereinheitlichen) und <b>Hilfe</b> (diese Seite).</li>
+  <li><b>Ordner</b> öffnet den aktuellen Blaupausen-Ordner im Explorer, <b>Einstellungen</b> die Pfade, <b>Speichern</b> sichert Änderungen.</li>
+</ul>
+<div class="box"><p><b>Wichtig:</b> Das Spiel liest Blaupausen beim Laden des Spielstands. Nach dem Speichern oder Umbenennen also den Spielstand neu laden. Am besten bearbeiten, während das Spiel geschlossen ist oder im Hauptmenü steht.</p></div>
+
+<h2 class="sec" id="bibliothek">Blaupausen öffnen</h2>
+<p>Die Ordner-Auswahl links zeigt alle Ordner unter <code>SaveGames\blueprints</code> <b>mit ihren Unterordnern</b> (eingerückt, z. B. <code>Sortieren › Chaos › Kreativ</code>) und darunter die Bibliotheks-Ordner. Ordner <code>_Ablage</code>, <code>_Duplikate</code>, <code>_Archiv</code> und <code>_Pakete</code> erscheinen dort nicht. Auch Ordner mit tausenden Blaupausen öffnen schnell: die Liste lädt beim Scrollen nach, Suche und Markieren (auch mit <kbd>Umschalt</kbd> über die ganze Liste) gelten für alle Einträge.</p>
+<p>Links unter <b>Blaupausen</b> wählst du den <b>Spielstand (Session)</b> – das ist der Unterordner in <code>…\SaveGames\blueprints\</code>, den das Spiel für deine Welt nutzt (z. B. „MeineWelt“ – so heißt die Sitzung im Spielstand). Darunter siehst du alle Blaupausen mit Farbe, Größe, Datum und Beschreibung; das Suchfeld filtert nach Name und Beschreibung. Ein Klick öffnet die Blaupause.</p>
+<p>Der Reiter <b>Bauteile</b> listet alle Bauteil-Typen der offenen Blaupause mit Anzahl. Klick wählt alle Objekte dieses Typs aus (mit <kbd>Umschalt</kbd> zur Auswahl hinzufügen).</p>
+
+<h2 class="sec" id="ansichten">2D- und 3D-Ansicht</h2>
+<h3>2D Draufsicht</h3>
+<ul>
+  <li>Klick wählt aus, <kbd>Umschalt</kbd>+Klick fügt hinzu, Ziehen auf leerer Fläche = Rahmenauswahl.</li>
+  <li>Ausgewähltes ziehen = verschieben (im eingestellten Raster). Rechte/mittlere Maustaste = Ansicht verschieben, Mausrad = Zoom.</li>
+</ul>
+<h3>3D-Ansicht</h3>
+<ul>
+  <li>Linke Maustaste ziehen = drehen, rechte Maustaste = verschieben, Mausrad = Zoom, Klick = auswählen.</li>
+  <li><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> gedrückt halten = vor / links / zurück / rechts fahren (waagerecht in Blickrichtung, Höhe bleibt). Mit <kbd>Umschalt</kbd> dreimal so schnell; das Tempo passt sich dem Zoom an.</li>
+  <li><b>Modelle</b> (Schalter oben): zeigt die echten Spielmodelle – Maschinen, Fundamente, Wände, Dächer, Träger, Glas (halbtransparent). Ausgeschaltet: einfache Kästen (schneller bei sehr großen Blaupausen).</li>
+  <li>Förderbänder werden mit Modellen als flaches Band mit Seitenkanten entlang ihrer Spline gezeichnet, Förderlifte als offener Schacht mit Rahmen; Rohre und Hypertubes als Röhren, Schienen als Segmente. (Ohne „Modelle“: einfache Blöcke.)</li>
+  <li><b>Stift</b> (Knopf oben oder Taste <kbd>P</kbd>): mit gedrückter linker Maustaste einen Bereich frei umranden – alles darin wird ausgewählt. <kbd>Umschalt</kbd> beim Beginnen = dazu, <kbd>Strg</kbd> = abziehen. Gedreht wird im Stift-Modus mit der rechten Maustaste. Normal werden nur sichtbare Objekte erfasst; mit „auch verdeckte Objekte“ alles, dessen Mittelpunkt im Bereich liegt (auch dahinter/darunter). Ist eine Ebene gewählt, zählt nur diese. Danach <kbd>Entf</kbd> oder „<i>n</i> löschen“; „Fertig“ oder <kbd>Esc</kbd> beendet den Stift.</li>
+  <li>Die Modelle stammen aus dem Spiel (FModel-Export, siehe <a href="#fm-modelle">FModel</a>) und liegen aufbereitet in <code>app\public\modelle</code>.</li>
+</ul>
+<h3>Ebenen</h3>
+<p>Bei mehrstöckigen Blaupausen erkennt die App die Fundament-Ebenen. „Ebene 2“ zeigt Ebene 2; darunterliegende Ebenen werden blass dargestellt, darüberliegende ausgeblendet.</p>
+
+<h2 class="sec" id="bearbeiten">Bearbeiten &amp; Tasten</h2>
+<table>
+  <tr><th>Taste</th><th>Wirkung</th></tr>
+  <tr><td><kbd>Pfeiltasten</kbd></td><td>Auswahl um die Rasterweite verschieben (mit <kbd>Umschalt</kbd>: 8 m = ein Fundament)</td></tr>
+  <tr><td><kbd>Bild ↑</kbd> / <kbd>Bild ↓</kbd></td><td>1 m anheben / absenken</td></tr>
+  <tr><td><kbd>Q</kbd> / <kbd>E</kbd></td><td>90° drehen (um die Mitte der Auswahl)</td></tr>
+  <tr><td><kbd>Entf</kbd></td><td>Auswahl entfernen. Die Konstruktion bleibt am Boden: war ein gelöschtes Teil das unterste, rutscht alles Übrige zusammen nach unten, bis das neue unterste Teil wieder am Boden steht (Abstände untereinander bleiben gleich). <kbd>Strg</kbd>+<kbd>Z</kbd> macht Löschen und Absenken zusammen rückgängig; abschaltbar in den Einstellungen.</td></tr>
+  <tr><td><kbd>P</kbd></td><td>3D-Ansicht: Stift ein/aus (Bereich frei umranden = auswählen)</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>Z</kbd> / <kbd>Strg</kbd>+<kbd>Y</kbd></td><td>Rückgängig / Wiederholen</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>A</kbd>, <kbd>Esc</kbd></td><td>Alles auswählen, Auswahl aufheben</td></tr>
+  <tr><td><kbd>F</kbd>, <kbd>2</kbd>, <kbd>3</kbd></td><td>Einpassen, 2D, 3D</td></tr>
+  <tr><td><kbd>Strg</kbd>+<kbd>S</kbd></td><td>Speichern</td></tr>
+  <tr><td><kbd>H</kbd> / <kbd>I</kbd> / <kbd>Umschalt</kbd>+<kbd>H</kbd></td><td>Auswahl ausblenden / nur Auswahl zeigen / alle wieder einblenden</td></tr>
+</table>
+<h3>Drehen / Kippen um X, Y, Z</h3>
+<p>Werkzeug <b>Drehen / Kippen</b> (Symbol mit Achsenkreuz in der Werkzeugleiste): Achse wählen – <b>X</b> kippt nach vorn/hinten, <b>Y</b> zur Seite, <b>Z</b> dreht wie <kbd>Q</kbd>/<kbd>E</kbd> – und den Winkel (−90°, +90°, 180° oder eigener Wert). Gilt für die Auswahl oder, wenn nichts ausgewählt ist, für die ganze Blaupause. „Auf den Boden setzen“ hält die Unterkante gleich. Beispiel: eine hochkant gebaute Kreuzung mit X oder Y um 90° kippen, bis die Fahrbahn oben ist, dann als neue Blaupause speichern. In der 3D-Ansicht kann man jetzt auch von unten schauen.</p>
+<h3>Objekte ausblenden</h3>
+<p>Um an verdeckte oder dahinterliegende Teile heranzukommen: Auswahl treffen und <b>Ausblenden</b> (durchgestrichenes Auge, <kbd>H</kbd>) – oder <b>Nur Auswahl zeigen</b> (<kbd>I</kbd>), dann ist alles andere weg. Ausgeblendete Objekte lassen sich nicht anklicken und werden weder in 2D noch in 3D gezeichnet. Der Knopf „… ausgeblendet · alle zeigen“ (bzw. <kbd>Umschalt</kbd>+<kbd>H</kbd>) holt alles zurück. Ausblenden ändert die Blaupause nicht und wird nicht gespeichert.</p>
+<h3>Viele Ebenen</h3>
+<p>Ab elf Ebenen zeigt die Leiste kompakt: erste Ebene · fünf Ebenen unter und über der gewählten · letzte Ebene, dazu Pfeile ‹ › und eine Liste mit allen Ebenen und ihrer Höhe.</p>
+<p>Rechts im <b>Inspektor</b> stehen Name, Position, Drehung, Maße, Strom, Rezept (mit Mengen pro Minute), Farbmuster, Stufe und Baukosten des gewählten Objekts; ohne Auswahl die Daten der ganzen Blaupause und ihre Baukosten.</p>
+
+<h2 class="sec" id="tauschen">Material / Variante / Mk-Stufe tauschen</h2>
+<p>Objekte auswählen (z. B. Reiter „Bauteile“ → alle Fundamente) → rechts <b>Material / Variante tauschen …</b>. Angeboten werden Varianten mit gleichen Maßen (Beton → Asphalt, Riffelblech, Glas; Standardwand → Fensterwand …). Baukosten und Rezeptliste werden beim Speichern neu berechnet. Bauteile mit <code>*</code> sind aus verwandten Teilen abgeleitet. Maschinen (mit Anschlüssen/Lager) lassen sich nicht tauschen.</p>
+<h3>Mk-Stufe ändern (Förderbänder, Förderlifte, Rohre, Pumpen)</h3>
+<p>Bänder/Lifte auswählen (Reiter „Bauteile“ → z. B. „Förderband Mk.5“ anklicken) → <b>Material / Variante / Mk-Stufe …</b> → gewünschte Stufe wählen (Mk.1–Mk.6; Rohre Mk.1 ↔ Mk.2, auch ohne Durchflussanzeige; Pumpe Mk.1 ↔ Mk.2). Dabei bleiben Verlauf, Anschlüsse und Verbindungen vollständig erhalten – nur Typ und Bau-Rezept werden ersetzt. Die Rezeptliste der Blaupause wird ergänzt; die angezeigten <b>Baukosten im Blaupausen-Kopf werden für Bänder nicht neu berechnet</b> (das Spiel rechnet beim Platzieren selbst). Die Stufe muss im Spielstand freigeschaltet sein, sonst lässt sich die Blaupause nicht bauen.</p>
+
+<h2 class="sec" id="formen">Formen-Generator</h2>
+<p>Reiter <b>Formen</b> links: Rundplatte (Ringe wie im Spiel), Kreis im Raster, Ring/Kreisbahn, rechteckige Fläche, Gebäude (mehrstöckig mit Wänden, Fensterreihe, Dach) und Rundturm. Größe, Etagen und Bauteile (Beton, Asphalt, Glas …) sind wählbar.</p>
+<ul>
+  <li><b>Als neue Blaupause öffnen</b> – Vorschau; Änderungen der Werte sieht man sofort. Danach wie gewohnt bearbeiten und speichern.</li>
+  <li><b>In geöffnete Blaupause einfügen</b> – setzt die Form oben auf die offene Blaupause (ausgewählt, mit Pfeiltasten verschieben).</li>
+</ul>
+
+<h2 class="sec" id="speichern">Speichern</h2>
+<ul>
+  <li><b>Als neue Blaupause speichern</b> (empfohlen): Kopie mit neuem Namen im selben Spielstand-Ordner, inklusive <code>.sbpcfg</code> mit Beschreibung und Symbol.</li>
+  <li><b>Original überschreiben</b>: vorher wird das Original nach <code>userdata\sicherungen\</code> gesichert.</li>
+  <li>Unverändert bleiben alle Daten, die nicht bearbeitet wurden (Rezepte, Farben, Verbindungen …) – Byte für Byte.</li>
+  <li>Blaupausen aus der Bibliothek oder aus Unterordnern (über „Ordnen“ mit 👁 geöffnet) lassen sich ebenfalls bearbeiten; die Kopie landet im selben Ordner wie das Original.</li>
+</ul>
+
+<h2 class="sec" id="katalog">Gebäude-Katalog</h2>
+<p>Alle Gebäude aus den Spieldaten (<code>CommunityResources\Docs\de.json</code>): Kategorie, „freigeschaltet bis Stufe“, Baumaterial, Maße, Strom, Baukosten und alle Rezepte mit Mengen pro Minute. Filter links nach Kategorie, Stufe und Material; „Architektur-Varianten einblenden“ zeigt auch alle Material-Varianten von Fundamenten, Wänden usw. Die Icons kommen aus dem FModel-Export (<code>app\public\icons</code>).</p>
+
+<h2 class="sec" id="ordnen">Ordnen – alle Blaupausen einheitlich benennen</h2>
+<p>Der Bereich <b>Ordnen</b> liest <b>alle</b> Blaupausen ein: alle Spielstand-Ordner unter <code>SaveGames\blueprints</code> (mit Unterordnern) und die Bibliotheks-Ordner aus den <a href="#einstellungen">Einstellungen</a> (z. B. <code data-pfad="bibliothek">…\Meine Blaupausen</code>). Ordner, die mit <code>_Archiv</code>, <code>_Pakete</code> oder <code>_Duplikate</code> heißen, werden übersprungen.</p>
+<ol class="steps">
+  <li><b>Einlesen:</b> Beim ersten Mal dauert es je nach Anzahl 20–60 Sekunden, danach geht es schnell (Zwischenspeicher).</li>
+  <li><b>Vorschläge prüfen:</b> Für jede Blaupause steht ein <b>neuer Name</b> nach dem <a href="#schema">Schema</a>. Grund „aus Name“ = aus dem alten Namen abgeleitet; „aus Inhalt“ = der alte Name war nichtssagend (z. B. <code>2025_10_10 13_40_24</code>), der Vorschlag kommt aus dem Inhalt (Produkt, Maschinen, Bauteile, Maße) – diese bitte besonders ansehen. Filter „Name aus Inhalt (prüfen!)“ zeigt nur diese.</li>
+  <li><b>Ansehen:</b> Das Auge 👁 öffnet die Blaupause in 2D/3D (nur ansehen). Zurück über den Bereich „Ordnen“ – deine Eingaben bleiben erhalten.</li>
+  <li><b>Anpassen:</b> Neuen Namen direkt in der Zeile ändern. Rote Umrandung = passt nicht ins Schema (zu lang, verbotene Zeichen, ohne Gruppen-Code). Eigene Änderungen werden sofort gemerkt, auch wenn du die App schließt.</li>
+  <li><b>Duplikate &amp; Ähnliche:</b> Die App vergleicht nicht nur die Namen, sondern den Inhalt: welche Bauteile an welcher Stelle stehen (Raster 1 m, unabhängig davon, wo die Blaupause liegt).
+    <ul>
+      <li><b>Identisch</b> (≥ 99 % gleich) <b>im selben Ordner</b>: die schlechter benannte wird als „Duplikat“ vorgeschlagen und beim Anwenden nach <code>_Duplikate</code> verschoben – nicht gelöscht; das Spiel sieht Unterordner nicht.</li>
+      <li><b>Sehr ähnlich</b> (90–98 %): nur ein Hinweis („93 % ähnlich wie …“), z. B. eine Variante mit ein paar Schildern mehr. Du entscheidest selbst (Aktion auf „Duplikat“ stellen oder umbenennen).</li>
+      <li>Gleiche Blaupausen in verschiedenen Ordnern (Spiel und Bibliothek) bekommen denselben Namen.</li>
+    </ul>
+    Filter <b>„Duplikate &amp; Ähnliche (mit Vorschau)“</b> zeigt neben jedem Eintrag zwei kleine Draufsichten: links diese Blaupause, rechts die gleiche/ähnliche – so siehst du sofort, ob es wirklich doppelt ist.</li>
+  <li><b>Anwenden:</b> Häkchen setzen (Vorauswahl: alles Offene) → <b>Ausgewählte anwenden</b>. Umbenannt werden <code>.sbp</code> und <code>.sbpcfg</code> zusammen.</li>
+  <li><b>Rückgängig:</b> <b>Protokoll / Rückgängig</b> zeigt jeden Vorgang; ein Klick stellt alle alten Namen und Orte wieder her.</li>
+</ol>
+<div class="box warn"><p>Vor dem Anwenden das Spiel schließen oder im Hauptmenü lassen. Tipp: in Etappen arbeiten – z. B. erst Filter „Ort: Bibliothek“, dann eine Gruppe nach der anderen.</p></div>
+
+<h2 class="sec" id="ablage">Ablage – Blaupausen einsortieren und ein-/ausschalten</h2>
+<p>Unten im Bereich <b>Blaupause</b> liegt die <b>Ablage</b> (mit dem Pfeil auf- und zuklappen). Links stehen die Ordner nach dem Namensschema (1 Bauen … 9 Spezial mit ihren Untergruppen) und deine eigenen Ordner (◆).</p>
+<ul>
+  <li><b>Ablegen:</b> Eine Blaupause aus der Liste links auf einen Ordner ziehen. Sie wird aus dem Spielstand-Ordner genommen und in <code>…\SaveGames\blueprints\_Ablage\&lt;Ordner&gt;</code> verschoben. Das Spiel sieht sie dann nicht mehr. Der Ordner wird erst angelegt, wenn etwas hineinkommt.</li>
+  <li><b>Ins Spiel holen:</b> Schalter neben der Blaupause anklicken (grün = im Spiel). Sie wandert zurück in den Spielstand-Ordner, aus dem sie kam. Mit dem Kästchen am Ordner (links) bzw. „Alle ins Spiel / Alle ablegen“ geht das für den ganzen Ordner samt Unterordnern.</li>
+  <li><b>Ins Spiel holen – welcher Spielstand?</b> Das Spiel zeigt Blaupausen nur aus <code>blueprints\&lt;Spielstand&gt;</code> (der Ordner heißt wie die Sitzung im Spielstand, z. B. <code>MeineWelt</code>). Die App liest die Sitzungsnamen aus deinen Spielständen. Unter <b>Einstellungen → Spielstand für „Ins Spiel holen“</b> legst du einen fest; bei „Jedes Mal fragen“ erscheint beim Aktivieren eine Auswahl aller Spielstände (mit „Als Standard merken“). Sammelordner wie <code>Bauen</code> oder <code>Deko</code> sind keine Spielstände – liegt eine aktivierte Blaupause dort, zeigt die Ablage „⚠ nicht im Spiel“; Schalter aus und wieder an holt sie in den richtigen Spielstand. Links in der Ordner-Auswahl stehen die Spielstände in einer eigenen Gruppe.</li>
+  <li><b>Lage &amp; Größe:</b> Unter <b>Einstellungen → Ablage-Ordner</b> wählst du, ob die Ablage <i>unten</i> liegt oder <i>links neben den Blaupausen</i> über die volle Höhe der App (Ordner oben, Inhalt darunter). Breite (links) und Höhe (unten) sind per Schieberegler einstellbar – oder direkt mit der Maus am Rand der Ablage ziehen; Doppelklick auf den Rand setzt den Standard zurück.</li>
+  <li><b>Alle auf / Alle zu</b> (oben in der Ablage): klappt alle Ordner auf einmal auf oder zu.</li>
+  <li><b>Mehrere auf einmal:</b> In der Blaupausen-Liste links mit <kbd>Strg</kbd>+Klick einzelne dazu markieren, mit <kbd>Umschalt</kbd>+Klick einen ganzen Bereich. Unter der Liste erscheint „<i>n</i> markiert“. Zieht man eine der markierten Blaupausen auf einen Ablage-Ordner, wandern alle markierten mit. <b>Rechtsklick</b>, <kbd>Entf</kbd> oder der Knopf <b>Löschen</b> löscht alle markierten nach einer Rückfrage (in den Papierkorb). <kbd>Esc</kbd> oder <b>Aufheben</b> hebt die Markierung auf.</li>
+  <li><b>Aus der Bibliothek einsortieren:</b> Oben in der Ordner-Auswahl stehen unter <b>Bibliothek</b> alle Unterordner deiner Blaupausen-Bibliothek (z. B. <code data-pfad="bibliothek">…\Meine Blaupausen</code>) einzeln zur Auswahl. Ziehst du eine Blaupause von dort auf einen Ablage-Ordner, wird sie nach <code>…\SaveGames\blueprints\_Ablage\&lt;Ordner&gt;</code> <b>kopiert</b> – das Original bleibt in der Bibliothek. Zum Aktivieren wird sie in die zuletzt gewählte Spiel-Sitzung geholt.</li>
+  <li><b>Umsortieren:</b> Blaupause aus der Ablage auf einen anderen Ordner ziehen. Zieht man sie auf die Liste links, wird sie aktiviert.</li>
+  <li><b>Eigene Ordner:</b> „+ Eigener Ordner“ bzw. „+ Unterordner“. Leere eigene Ordner lassen sich wieder entfernen.</li>
+  <li><b>Ansehen:</b> Doppelklick oder „ansehen“. Abgelegte Blaupausen werden nur angezeigt; zum Bearbeiten erst ins Spiel holen.</li>
+</ul>
+<p>Es wird nie etwas gelöscht, nur verschoben (<code>.sbp</code> und <code>.sbpcfg</code> zusammen). Welche Blaupause aktiv in welchem Ordner einsortiert ist, merkt sich die App in <code>userdata\ablage.json</code>. Läuft das Spiel, sieht es Änderungen erst nach dem Neuladen des Spielstands.</p>
+<h3>Blaupausen löschen</h3>
+<p>Mülleimer-Knopf rechts oben bei <b>Name &amp; Ablage</b>, Mülleimer bei einer Blaupause in der Ablage oder <b>Rechtsklick</b> auf eine Blaupause in der Liste links. Nach einer Rückfrage wandert sie (samt <code>.sbpcfg</code>) in den <b>Windows-Papierkorb</b> und lässt sich dort wiederherstellen. Klappt das nicht, landet sie in <code>userdata\papierkorb</code>.</p>
+<h3>Namensvorschlag</h3>
+<p>Beim Öffnen einer Blaupause zeigt rechts oben <b>Name &amp; Ablage</b> einen Vorschlag nach dem Schema – aufgeteilt in drei Felder: <b>Kategorie</b> _ <b>Unterkategorie</b> _ <b>Name</b>. Die Unterstriche setzt die App selbst (Leerzeichen im Namen werden ebenfalls zu Unterstrichen). Klick in „Kategorie“ zeigt alle Kategorien (1 Bauen … 9 Spezial), Klick in „Unterkategorie“ die Untergruppen der gewählten Kategorie – anklicken übernimmt, oder einfach selbst etwas eintragen (Tippen filtert die Liste, Pfeiltasten + Enter wählen). Darunter steht der fertige Name mit Zeichenzähler (höchstens 32); „Ablegen“ richtet sich nach der gewählten Kategorie. <b>Umbenennen sortiert gleich mit ein</b>: die Blaupause landet sofort im passenden Ablage-Ordner (aus dem Spiel: ablegen, aus der Bibliothek: kopieren, aus der Ablage: verschieben) – abschaltbar in den Einstellungen; „Ablegen“ bleibt für Blaupausen, die nicht umbenannt werden. Eigene Ordner mit Nummer (z. B. <code>2_7 Wasseraufbereitung</code> unter 2 Produktion) erscheinen in der Auswahl und in der Ablage an der richtigen Stelle der Reihenfolge (Kennzeichen „eigen“ hinten). <b>Umbenennen</b> benennt die Datei um, <b>Ablegen</b> legt sie gleich in den passenden Ordner. Der Vorschlag lernt aus deinen eigenen Namen:</p>
+<ol>
+  <li>Ist die Blaupause zu ≥ 90 % gleich einer schon passend benannten, wird deren Gruppe übernommen (bei 100 % gibt es den Hinweis „vermutlich doppelt“).</li>
+  <li>Wörter im Namen, die du schon oft in einer bestimmten Gruppe verwendet hast (z. B. „Wegweiser“ → 4_7), entscheiden die Gruppe.</li>
+  <li>Bei nichtssagenden Namen (Datum, „Neu“ …) zählt ähnlicher Inhalt wie bei deinen Blaupausen.</li>
+  <li>Sonst gelten die festen Regeln aus dem Bereich „Ordnen“.</li>
+</ol>
+<p>Jede Umbenennung, die du hier oder in „Ordnen“ vornimmst, fließt in die nächsten Vorschläge ein (<code>userdata\namen-gelernt.json</code>).</p>
+
+<h2 class="sec" id="karte">Karte – Spielstände ansehen</h2>
+<p>Der Bereich <b>Karte</b> liest deine Spielstände (<code>.sav</code>, Spielversion 1.0 und neuer) aus <code>…\FactoryGame\Saved\SaveGames\&lt;Nummer&gt;</code> und zeigt alles Gebaute als Draufsicht: Gebäude, Fundamente, Wände und Säulen (auch die „Leichtbau“-Teile, die das Spiel gesammelt speichert), Förderbänder, Rohre, Schienen und Hypertubes als Linien, Stromleitungen und deine Spielfigur (rotes Kreuz).</p>
+<ul>
+  <li>Links den Spielstand wählen. Beim ersten Öffnen dauert das Lesen einige Sekunden; danach kommt er aus dem Zwischenspeicher (<code>userdata\karten</code>), solange sich die Datei nicht ändert.</li>
+  <li>Ziehen = verschieben, Mausrad = Zoom, Klick = Bauteil anzeigen (Name, Position, Höhe, Anzahl im Spielstand). „Einpassen“ zeigt deine Bauten, „Ganze Welt“ die ganze Karte (Raster = 500 m).</li>
+  <li><b>Ebenen</b> links ein-/ausschalten (z. B. Fundamente aus, um Maschinen zu sehen). Ressourcen-Knoten sind anfangs aus.</li>
+  <li><b>Bauteil hervorheben:</b> Name ins Suchfeld (z. B. „Konstruktor“) – passende Teile bleiben farbig, Böden werden abgedunkelt. Rechts „Häufigste Bauteile“ ist anklickbar.</li>
+</ul>
+<ul>
+  <li><b>Karte</b> (Haken oben): Spielwelt als Hintergrund. Die vier Kacheln liegen in <code>userdata\kartenbild</code> (<code>Map_0-0 … Map_1-1</code>, je 3,75 × 3,75 km).</li>
+  <li><b>Höhe von – bis</b> (Meter): zeigt nur Bauteile in diesem Bereich, z. B. eine einzelne Etage einer großen Fabrik.</li>
+  <li>Rechts <b>Gebäude nach Art</b>: alle Maschinen, Generatoren, Lager, Bahn usw. mit Anzahl. <b>Anhaken</b> hebt sie hervor, alles andere wird abgedunkelt (mehrere Häkchen möglich, das Häkchen an der Gruppe nimmt die ganze Gruppe, z. B. alle Rohre). <b>„Alle normal“</b> (oben) oder <kbd>Esc</kbd> hebt das wieder auf.</li>
+  <li><b>In 3D öffnen</b>: startet den Spielstand im 3D-Editor „Satisfactory 3D Map“ (siehe unten).</li>
+</ul>
+<p>Die Karte selbst verändert den Spielstand nicht.</p>
+<h3>Bereich als Blaupause herauskopieren</h3>
+<ol>
+  <li>Spielstand öffnen, mit Ebenen und <b>Höhe von – bis</b> einstellen, was mit soll (z. B. Fundamente ausblenden oder nur eine Etage).</li>
+  <li>Werkzeug wählen: <b>Rechteck</b> (aufziehen; geht auch jederzeit mit <kbd>Umschalt</kbd> + Ziehen) oder <b>Stift</b> (Bereich mit gedrückter Maustaste frei umranden – Loslassen schließt die Form).</li>
+  <li>Rechts stehen Größe und Anzahl der Teile. <b>In 3D ansehen</b> zeigt den Ausschnitt sofort in der 3D-Ansicht der App (mit Spielmodellen, nichts wird gespeichert). <b>Als Blaupause speichern</b> legt ihn im gewählten Ordner ab; „in Blaupause öffnen“ zeigt das Ergebnis.</li>
+</ol>
+<ul>
+  <li><b>Gebäude</b> (Maschinen, Bänder, Rohre, Lager, Schilder …) werden 1:1 übernommen – mit Rezept, Einstellungen, Anschlüssen und Verbindungen innerhalb des Bereichs.</li>
+  <li><b>Fundamente, Wände, Säulen, Träger</b> speichert das Spiel gesammelt („Leichtbau“); sie werden aus deinen Blaupausen-Vorlagen neu aufgebaut. Trägerlängen bleiben, <b>Farben/Muster nicht</b>. Teile ohne Vorlage werden übersprungen und gemeldet.</li>
+  <li><b>Stromleitungen</b> nur, wenn beide Enden im Bereich liegen. Verbindungen zu Teilen außerhalb entfallen.</li>
+  <li>Die Blaupause wird auf die Mitte des Bereichs (8-m-Raster) und die Unterkante 0 ausgerichtet. Große Bereiche brauchen im Spiel Mods wie Blueprint Designer Plus.</li>
+  <li>Aus Megaprints geht das (noch) nicht – dafür einen Spielstand verwenden.</li>
+</ul>
+<h3>Kartenbild aus dem eigenen Spiel (FModel)</h3>
+<ol>
+  <li>In FModel (siehe <a href="#fmodel">FModel</a>) zu <code>FactoryGame/Content/FactoryGame/Interface/UI/Assets/MapTest/SlicedMap</code> gehen.</li>
+  <li>Die vier Texturen <code>Map_0-0</code>, <code>Map_0-1</code>, <code>Map_1-0</code>, <code>Map_1-1</code> markieren → Rechtsklick → <i>Save Texture</i> (PNG).</li>
+  <li><code>werkzeuge\kartenbild-uebernehmen.bat</code> starten. Es sucht die Bilder im FModel-Export und legt sie in <code>userdata\kartenbild</code> ab (alte Bilder bleiben als <code>.alt</code> erhalten).</li>
+</ol>
+<h3>3D-Editor „Satisfactory 3D Map“</h3>
+<p>Ein eigenständiges Open-Source-Programm (GPL-3.0) von moritz-h, das alle Objekte eines Spielstands in 3D zeigt und ihre Eigenschaften bearbeiten lässt. Blueprint Studio startet es nur mit dem gewählten Spielstand.</p>
+<ol>
+  <li>Von <a href="https://github.com/moritz-h/satisfactory-3d-map/releases" target="_blank" rel="noopener">github.com/moritz-h/satisfactory-3d-map/releases</a> die neueste Windows-Version laden (ab v0.10 für Spielstände von 1.2).</li>
+  <li>Entpacken, z. B. nach <code>werkzeuge\Satisfactory3DMap</code> – dort findet die App es von selbst. Liegt es woanders: <b>Einstellungen → 3D-Editor</b> mit Ordner oder <code>.exe</code> ausfüllen.</li>
+  <li>In der Karte den Spielstand wählen → <b>In 3D öffnen</b>.</li>
+</ol>
+<p>Blueprint Studio stellt den 3D-Editor beim Start so ein, dass er die <b>echten Spielmodelle</b> aus deinen Spieldateien lädt (abschaltbar unter Einstellungen). Dafür braucht er die Datei <code>oodle-data-shared.dll</code>; die App kopiert sie automatisch aus deinem FModel-Ordner (FModel lädt sie beim ersten Start selbst herunter). Fehlt sie, startet der Editor ohne Spielmodelle. Der 3D-Editor ist ein eigenes Programm mit eigenem Fenster – für einen schnellen Blick ohne Fensterwechsel gibt es auf der Karte „In 3D ansehen“.</p>
+<p><b>Achtung:</b> Änderungen speicherst du dort selbst. Vorher den Spielstand sichern und im Spiel nicht gleichzeitig denselben Stand geöffnet haben.</p>
+
+<h2 class="sec" id="megaprints">Megaprints (.cbp)</h2>
+<p>Megaprints sind Exporte von <i>satisfactory-calculator.com</i> (Dateiendung <code>.cbp</code>, gepacktes JSON mit allen Objekten samt Lage und Eigenschaften). Die Karte listet sie unter den Spielständen (Ordner in den Einstellungen, z. B. <code data-pfad="megaprints">…\Megaprints</code>, ohne <code>_Archiv</code>) und zeigt sie an ihrer Original-Position auf der Weltkarte – mit Ebenen, Hervorheben und „Gebäude nach Art“. Auch sehr große Megaprints (400 MB JSON, 300.000 Teile) sind in rund 2 Sekunden gelesen. Bänder und Rohre erscheinen dabei vorerst als Punkte statt als Linien.</p>
+
+<h2 class="sec" id="papierkorb">Duplikate &amp; Papierkorb</h2>
+<p>Im Bereich <b>Ordnen → „Duplikate &amp; Papierkorb“</b>:</p>
+<ul>
+  <li><b>Duplikate</b>: alle Blaupausen, die beim Ordnen nach <code>_Duplikate</code> verschoben wurden (Spiel-Ordner und Bibliothek). <b>Zurücklegen</b> holt sie in ihren alten Ordner; ist der Name dort inzwischen belegt, fragt die App nach einem neuen.</li>
+  <li><b>Gelöscht</b>: alle in der App gelöschten Blaupausen mit Herkunft und Zeit. Was im Windows-Papierkorb liegt, stellst du dort wieder her („Windows-Papierkorb öffnen“); was ersatzweise in <code>userdata\papierkorb</code> liegt, direkt hier.</li>
+  <li>Endgültig gelöscht wird in der App nichts – das machst du bei Bedarf selbst (Papierkorb leeren bzw. <code>_Duplikate</code>-Ordner im Explorer löschen).</li>
+  <li>Ganze Ordnen-Durchläufe lassen sich weiterhin unter <b>Protokoll / Rückgängig</b> zurücknehmen.</li>
+</ul>
+
+<h2 class="sec" id="einrichtung">Einrichtung (Assistent) &amp; Weitergabe</h2>
+<p>Beim <b>ersten Start</b> öffnet sich der <b>Einrichtungs-Assistent</b> (jederzeit wieder: <b>Einstellungen → Einrichtungs-Assistent</b>). Er führt in wenigen Schritten durch alles Nötige:</p>
+<ol class="steps">
+  <li><b>Sprache</b> – Deutsch (Standard), English, Français oder 日本語. Auch die Namen der Gebäude und Gegenstände kommen dann in dieser Sprache aus deinem Spiel. Umstellen später unter Einstellungen → Sprache.</li>
+  <li><b>Ordner</b> – Spielstand-Ordner (Standard: <code>%LOCALAPPDATA%\FactoryGame\Saved\SaveGames</code>) und Satisfactory-Installation. Die App sucht selbst in den Steam-Bibliotheken, bei Epic und auf allen Laufwerken; mit „Wählen …“ öffnet sich der Windows-Ordnerdialog. Grüner Haken = gefunden. Optional: eigene Blaupausen-Sammlung und Megaprints-Ordner.</li>
+  <li><b>Spielstand</b> – in welchen Spielstand „Ins Spiel holen“ die Blaupausen legt (oder jedes Mal fragen).</li>
+  <li><b>3D-Darstellung</b> – <i>einfache Kästen</i> (sofort fertig) oder <i>echte Spielmodelle</i>.</li>
+  <li><b>Spielmodelle</b> (nur bei Wahl „echte Spielmodelle“) – <b>automatisch</b> mit einem Klick auf „Modelle automatisch holen“: Die App installiert beim ersten Mal das kostenlose <b>.NET 10 SDK</b> von Microsoft (Windows fragt evtl. nach Erlaubnis), lädt die freie Bibliothek <i>CUE4Parse</i> (dieselbe, die FModel verwendet), baut daraus ein kleines Hilfsprogramm (<code>werkzeuge\extraktor</code>) und holt damit Bauteil-Daten, 3D-Modelle und Icons direkt aus deiner Spielinstallation. Fortschritt und Ausgabe stehen im Fenster; beim ersten Mal ca. 5–15 Minuten, später deutlich schneller. Klappt das nicht, gibt es darunter weiterhin die <b>manuelle</b> Anleitung mit FModel (.NET-Desktop-Laufzeit 10 installieren, FModel herunterladen, Werte eintragen – jeder mit <b>Kopieren</b>-Knopf –, drei Exporte anklicken, „Übernehmen“).</li>
+  <li><b>Extras</b> – Kartenbild, 3D-Editor „Satisfactory 3D Map“, Desktop-Verknüpfung.</li>
+</ol>
+<p>Zusätzlich prüft <b>Einstellungen → Voraussetzungen &amp; Verknüpfung</b> jederzeit: Node.js, Spiel-Installation, Spielstand-Ordner, App-Fenster (Edge/Chrome), 3D-Modelle, Icons, Kartenbild, 3D-Editor und Desktop-Verknüpfung – mit einem Klick nachinstallieren lassen sich:</p>
+<ul>
+  <li><b>3D-Editor</b> „Satisfactory 3D Map“ – neueste Windows-Version von GitHub nach <code>werkzeuge\Satisfactory3DMap</code>.</li>
+  <li><b>Kartenbild</b> – die vier Kacheln aus dem satisfactory-3d-map-Projekt (Stand 0.6; für den aktuellen Stand per FModel ersetzen).</li>
+  <li><b>Desktop-Verknüpfung</b> – auf Desktop und im Startmenü, mit Symbol.</li>
+</ul>
+<p>Node.js installiert <code>start.bat</code> beim ersten Start selbst (winget). <b>3D-Modelle und Icons</b> sind Spielinhalte von Coffee Stain Studios: Sie dürfen nicht mit veröffentlicht werden und werden von jedem Nutzer einmal aus der eigenen Spielinstallation geholt – automatisch im Assistenten oder von Hand mit FModel (<a href="#fmodel">FModel-Anleitung</a>).</p>
+<h3 id="updates">Updates</h3>
+<p>Blueprint Studio sucht beim Start (höchstens alle 6 Stunden) auf GitHub nach einer neuen Version. Gibt es eine, erscheint oben der Knopf <b>⬆ Update</b>: Er zeigt, was neu ist, und installiert das Update mit <b>Jetzt aktualisieren</b>. Danach lädt die App neu und startet ihren Server selbst neu. Von Hand: <b>Einstellungen → Updates → Jetzt nach Updates suchen</b>.</p>
+<ul>
+  <li><b>Bleibt erhalten:</b> Einstellungen und alles in <code>userdata</code>, deine Blaupausen, 3D-Modelle, Icons, FModel, der 3D-Editor und die Dateien des Extraktors.</li>
+  <li><b>Sicherung:</b> Jede ersetzte Programmdatei wird vorher nach <code>userdata\update-sicherung\&lt;alte Version&gt;</code> kopiert – zum Zurückgehen diese Dateien einfach wieder in den Programmordner kopieren.</li>
+  <li><b>Quelle:</b> die Veröffentlichungen (Releases) des GitHub-Projekts, eingetragen in <code>app\update.json</code>; in den Einstellungen lässt sich eine andere Quelle angeben. Die automatische Suche lässt sich dort auch abschalten.</li>
+</ul>
+<h3>Veröffentlichen (z. B. GitHub)</h3>
+<p>Die Datei <code>.gitignore</code> im Programmordner schließt alles aus, was nicht veröffentlicht werden darf oder persönlich ist: <code>userdata</code>, Modelle, Icons, Kartenbild, FModel, den 3D-Editor und Blaupausen/Spielstände. Die Hilfe enthält keine festen Pfade – sie zeigt immer die Ordner aus deinen eigenen Einstellungen.</p>
+<p><b>Ein Update herausgeben:</b> Versionsnummer in <code>app\server.mjs</code> (<code>VERSION</code>) und <code>app\public\js\main.js</code> (<code>APP_VERSION</code>) erhöhen, hochladen (GitHub Desktop: <i>Commit</i> → <i>Push</i>) und auf GitHub unter <i>Releases → Draft a new release</i> ein Release mit dem Tag <code>v</code> + Versionsnummer (z. B. <code>v0.9.1</code>) und einer kurzen Beschreibung der Neuerungen veröffentlichen. Alle installierten Apps bieten das Update dann beim nächsten Start an.</p>
+
+<h2 class="sec" id="einstellungen">Einstellungen</h2>
+<ul>
+  <li><b>Spielstand-Ordner</b> (enthält <code>blueprints</code>): Standard <code>%LOCALAPPDATA%\FactoryGame\Saved\SaveGames</code>.</li>
+  <li><b>Satisfactory-Installationsordner</b> (enthält <code>CommunityResources</code>): bei dir: <code data-pfad="gameDir">…\steamapps\common\Satisfactory</code> (wird beim ersten Start gesucht).</li>
+  <li><b>Weitere Blaupausen-Ordner (Bibliothek)</b>: einer pro Zeile, z. B. <code data-pfad="bibliothek">…\Meine Blaupausen</code>. Werden in „Ordnen“ mit einbezogen.</li>
+  <li><b>Sprache</b>: Deutsch, English, Français, 日本語 – die App lädt danach neu.</li>
+  <li><b>Ablage-Ordnerstruktur</b> („Struktur bearbeiten …“): Liste aller Hauptgruppen (<code>7</code>) und Untergruppen (<code>7_3</code>) – vorgegeben ist die mitgelieferte Struktur plus deine eigenen nummerierten Ordner. Namen ändern, Einträge hinzufügen („+ Hauptgruppe“, „+ Unter“) oder entfernen; „Vorgabe wiederherstellen“ setzt zurück. Beim Speichern werden vorhandene Ordner in der Ablage passend umbenannt (Inhalt bleibt), entfernte Einträge löschen keine Ordner. Die Nummern stehen vorne im Blaupausen-Namen.</li>
+  <li><b>Präfixe</b>: Wörter wie dein Spieler- oder Weltname, die beim Namensvorschlag vorne entfallen sollen (mit Komma getrennt).</li>
+  <li><b>Updates</b>: beim Start automatisch suchen (an/aus), Update-Quelle auf GitHub (<code>Besitzer/Repository</code>, leer = Vorgabe der App) und „Jetzt nach Updates suchen“ – siehe <a href="#updates">Updates</a>.</li>
+  <li><b>Ansicht beim Öffnen einer Blaupause</b>: <i>Zuletzt benutzte Ansicht</i> (Standard – die App merkt sich, ob du zuletzt 2D oder 3D hattest), <i>Immer 2D</i> oder <i>Immer 3D</i>. Umschalten mit den Knöpfen 2D/3D oder den Tasten <kbd>2</kbd>/<kbd>3</kbd> geht weiterhin jederzeit.</li>
+</ul>
+
+<h2 class="sec" id="grenzen">Grenzen &amp; Hinweise</h2>
+<ul>
+  <li>Werden Maschinen verschoben, bleiben Förderbänder/Leitungen an ihrer alten Stelle – zusammenhängende Gruppen gemeinsam verschieben (Rahmenauswahl).</li>
+  <li>Maschinen können nicht getauscht oder neu erzeugt werden, nur Architektur-Teile.</li>
+  <li>Blaupausen aus älteren Spielversionen (Update 7/8) werden ebenfalls gelesen. Bauteile aus Mods erscheinen als graue Kästen.</li>
+  <li>Namen im Spiel sind auf 32 Zeichen begrenzt – deshalb kürzt „Ordnen“ automatisch.</li>
+</ul>
+
+<!-- ============================================================ SCHEMA -->
+<h2 class="sec" id="schema">Namensschema</h2>
+<p class="lead">Jeder Name beginnt mit einem zweistelligen Gruppen-Code. Das Spiel sortiert alphabetisch – so stehen alle Blaupausen einer Gruppe im Spiel und im Explorer automatisch beieinander. Das Schema baut auf deinen vorhandenen Codes auf (<code>1_1</code> Gebäude, <code>1_2</code> Wand, <code>1_3</code> Boden, <code>5_9</code> Bahnübergang, <code>8_3</code> Statue …).</p>
+<pre>Hauptgruppe_Untergruppe_Thema_Detail
+     2     _     1     _Kabel_12xKonstruktor
+     5     _     4     _UBahn_Kurve_90Grad
+     1     _     1     _Leergebäude_12</pre>
+<table>
+  <tr><th>Teil</th><th>Bedeutung</th><th>Beispiele</th></tr>
+  <tr><td>Hauptgruppe</td><td>1–9, wie die Ordner deiner Bibliothek</td><td><code>1</code> Bauen, <code>2</code> Produktion, <code>5</code> Bahn</td></tr>
+  <tr><td>Untergruppe</td><td>1–9 innerhalb der Hauptgruppe, <code>9</code> = Sonstiges</td><td><code>2_1</code> Fertigung, <code>2_3</code> Balancer</td></tr>
+  <tr><td>Thema</td><td>Was ist es? Produkt, Bauwerk, Set-Name</td><td><code>Kabel</code>, <code>Hauptbahnhof</code>, <code>COC_Kran</code></td></tr>
+  <tr><td>Detail</td><td>Menge, Größe, Rate, Variante, Teil, Seite</td><td><code>10x</code>, <code>22x22</code>, <code>120pm</code>, <code>V2</code>, <code>Teil2</code>, <code>Links</code></td></tr>
+</table>
+
+<h3 id="gruppen">Gruppen-Übersicht</h3>
+<table>
+  <tr><th>Code</th><th>Gruppe</th><th>Beispiel</th></tr>
+  <tbody><tr class="hg"><th>1</th><th colspan="2">Bauen</th></tr>
+  <tr><td><code>1_1</code></td><td>Gebäude &amp; Hallen</td><td class="bsp">1_1_Leergebäude_12, 1_1_Rundhaus</td></tr>
+  <tr><td><code>1_2</code></td><td>Wände, Tore &amp; Fassaden</td><td class="bsp">1_2_Wandelement27_Breit, 1_2_JapTor</td></tr>
+  <tr><td><code>1_3</code></td><td>Böden, Fundamente &amp; Dächer</td><td class="bsp">1_3_Rundplatte22x22, 1_3_Dachelement2</td></tr>
+  <tr><td><code>1_4</code></td><td>Tunnel, Gänge &amp; Treppen</td><td class="bsp">1_4_Tunneleingang, 1_4_Glastunnel</td></tr>
+  <tr><td><code>1_5</code></td><td>Stützen, Pfeiler &amp; Unterbau</td><td class="bsp">1_5_Stütze6_Fahrstuhl</td></tr>
+  <tr><td><code>1_6</code></td><td>Formen &amp; Bauhilfen</td><td class="bsp">1_6_Kreis_12teilig, 1_6_Ruler</td></tr>
+  <tr><td><code>1_8</code></td><td>Zäune &amp; Geländer</td><td class="bsp">1_8_Zaunteil2_Tor</td></tr>
+  <tr><td><code>1_9</code></td><td>Bau-Module &amp; Einzelteile</td><td class="bsp">kleine Stücke aus Säulen, Trägern, Böden, Wänden (oft Datums-Namen)</td></tr></tbody>
+  <tbody><tr class="hg"><th>2</th><th colspan="2">Produktion</th></tr>
+  <tr><td><code>2_1</code></td><td>Fertigung (Maschinenlinien)</td><td class="bsp">2_1_Kabel_12xKonstruktor</td></tr>
+  <tr><td><code>2_2</code></td><td>Bänder &amp; Rohre (Trassen)</td><td class="bsp">2_2_Band_10x, 2_2_Rohr_Treibstoff_5x</td></tr>
+  <tr><td><code>2_3</code></td><td>Balancer, Splitter &amp; Verteiler</td><td class="bsp">2_3_Balancer_4zu4</td></tr>
+  <tr><td><code>2_4</code></td><td>Abbau &amp; Förderung</td><td class="bsp">2_4_Miner_Aufsatz</td></tr>
+  <tr><td><code>2_5</code></td><td>Maschinen-Hüllen (Skins)</td><td class="bsp">2_5_Matrix_Konverter</td></tr>
+  <tr><td><code>2_6</code></td><td>Fabriken (komplett)</td><td class="bsp">2_6_Turbofuelfabrik</td></tr>
+  <tr><td><code>2_9</code></td><td>Sonstiges Produktion</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>3</th><th colspan="2">Energie</th></tr>
+  <tr><td><code>3_1</code></td><td>Kraftwerke</td><td class="bsp">3_1_Kohlekraftwerk</td></tr>
+  <tr><td><code>3_2</code></td><td>Stromspeicher</td><td class="bsp"></td></tr>
+  <tr><td><code>3_3</code></td><td>Strommasten &amp; Verteilung</td><td class="bsp">3_3_Strommast1 (vorher 1_6)</td></tr>
+  <tr><td><code>3_6</code> / <code>3_7</code></td><td>Windkraft / Solar (Deko)</td><td class="bsp">3_6_Windrad1</td></tr>
+  <tr><td><code>3_9</code></td><td>Sonstiges Energie</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>4</th><th colspan="2">Verkehr – Straße</th></tr>
+  <tr><td><code>4_1</code></td><td>Straßen</td><td class="bsp"></td></tr>
+  <tr><td><code>4_2</code></td><td>Kreuzungen &amp; Kreisel</td><td class="bsp">4_2_Rondel1 (vorher 5_6)</td></tr>
+  <tr><td><code>4_3</code></td><td>Parken &amp; Stationen</td><td class="bsp">4_3_Truck_Station</td></tr>
+  <tr><td><code>4_5</code></td><td>Tankstellen</td><td class="bsp">4_5_Tankstelle2</td></tr>
+  <tr><td><code>4_6</code></td><td>Brücken &amp; Unterführungen</td><td class="bsp">4_6_Straße_Unterführung</td></tr>
+  <tr><td><code>4_7</code></td><td>Verkehrsschilder</td><td class="bsp"></td></tr>
+  <tr><td><code>4_8</code></td><td>Gehwege</td><td class="bsp">4_8_Gehweg_Kurve</td></tr></tbody>
+  <tbody><tr class="hg"><th>5</th><th colspan="2">Verkehr – Bahn</th></tr>
+  <tr><td><code>5_1</code></td><td>Schienen &amp; Trassen</td><td class="bsp">5_1_Trasse_Gerade_1</td></tr>
+  <tr><td><code>5_2</code></td><td>Bahnhöfe</td><td class="bsp">5_2_Hauptbahnhof_Doppelstock</td></tr>
+  <tr><td><code>5_3</code></td><td>Weichen, Kreuzungen &amp; Kreisel</td><td class="bsp">5_3_4_Clover_Rail_Interchange</td></tr>
+  <tr><td><code>5_4</code></td><td>U-Bahn &amp; Metro</td><td class="bsp">5_4_UBahn_Kurve_90Grad</td></tr>
+  <tr><td><code>5_5</code></td><td>Hypertube &amp; Schwebebahn</td><td class="bsp"></td></tr>
+  <tr><td><code>5_6</code></td><td>Bahnbrücken</td><td class="bsp">5_6_Bahnbrücke_Gerade</td></tr>
+  <tr><td><code>5_9</code></td><td>Sonstiges Bahn</td><td class="bsp">5_9_Bahnübergang</td></tr></tbody>
+  <tbody><tr class="hg"><th>6</th><th colspan="2">Logistik &amp; Lager</th></tr>
+  <tr><td><code>6_1</code></td><td>Lager</td><td class="bsp">6_1_Lager_10x</td></tr>
+  <tr><td><code>6_2</code></td><td>Depots &amp; Uploader</td><td class="bsp"></td></tr>
+  <tr><td><code>6_3</code></td><td>Drohnen &amp; LKW</td><td class="bsp">6_3_Drohnenport</td></tr>
+  <tr><td><code>6_9</code></td><td>Sonstiges Logistik</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>7</th><th colspan="2">Licht &amp; Anzeigen</th></tr>
+  <tr><td><code>7_1</code></td><td>Licht</td><td class="bsp">7_1_Notstrom_Licht_Rot_1</td></tr>
+  <tr><td><code>7_2</code></td><td>Anzeigen &amp; Displays</td><td class="bsp">7_2_Anzeige_Muster_01</td></tr>
+  <tr><td><code>7_3</code></td><td>Schilder &amp; Wegweiser</td><td class="bsp">7_3_Warnschild (vorher 1_7)</td></tr>
+  <tr><td><code>7_4</code></td><td>Werbung &amp; Logos</td><td class="bsp">7_4_FICSIT_Logo</td></tr></tbody>
+  <tbody><tr class="hg"><th>8</th><th colspan="2">Deko</th></tr>
+  <tr><td><code>8_1</code></td><td>Möbel &amp; Innenausstattung</td><td class="bsp"></td></tr>
+  <tr><td><code>8_2</code></td><td>Außen &amp; Park</td><td class="bsp">8_2_Parkbank</td></tr>
+  <tr><td><code>8_3</code></td><td>Statuen &amp; Skulpturen</td><td class="bsp">8_3_Statue, 8_3_Tooritor</td></tr>
+  <tr><td><code>8_4</code></td><td>Technik-Deko</td><td class="bsp">8_4_Ventilator</td></tr>
+  <tr><td><code>8_5</code></td><td>Pixel-Art</td><td class="bsp"></td></tr>
+  <tr><td><code>8_6</code></td><td>Kräne &amp; Fahrzeuge</td><td class="bsp">8_6_Kran_Klein</td></tr>
+  <tr><td><code>8_7</code></td><td>Container &amp; Kisten</td><td class="bsp"></td></tr>
+  <tr><td><code>8_9</code></td><td>Sonstiges Deko</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>9</th><th colspan="2">Spezial</th></tr>
+  <tr><td><code>9_1</code></td><td>Baustelle</td><td class="bsp">9_1_Bauzaun_Absperrung_Gerade</td></tr>
+  <tr><td><code>9_2</code></td><td>Themen &amp; Fan-Bauten</td><td class="bsp">9_2_Kaffebar</td></tr>
+  <tr><td><code>9_8</code></td><td>Cheat &amp; Kreativ</td><td class="bsp">9_8_2000_OC_Constructor</td></tr>
+  <tr><td><code>9_9</code></td><td>Test &amp; Unklar</td><td class="bsp"></td></tr></tbody>
+</table>
+
+<h3 id="bibliothek-struktur">Bibliotheks-Struktur (Ordner)</h3>
+<p>Die Ablage spiegelt das Schema als Ordner: <code>&lt;Hauptgruppe&gt;\&lt;Untergruppe&gt;\&lt;Thema&gt;</code>, z. B. <code>2 Produktion\2_1 Fertigung (Maschinenlinien)\Eisen &amp; Stahl</code>. Themen-Ordner gibt es nur bei den großen Gruppen, damit kein Ordner unübersichtlich wird. Sie wurden aus der Auswertung von rund 3.000 Blaupausen abgeleitet:</p>
+<table>
+<thead><tr><th>Gruppe</th><th>Themen-Ordner</th></tr></thead><tbody>
+<tr><td><code>1_1</code></td><td>Hallen &amp; Werkstätten · Türme · Wohnhäuser · Leergebäude · Räume &amp; Module</td></tr>
+<tr><td><code>1_2</code></td><td>Türen &amp; Tore · Fenster &amp; Fassaden · Mauern &amp; Dämme · Wand-Module</td></tr>
+<tr><td><code>1_5</code></td><td>Säulen · Träger · Unterbau</td></tr>
+<tr><td><code>1_9</code></td><td>Säulen &amp; Träger · Böden &amp; Fundamente · Wände &amp; Rahmen</td></tr>
+<tr><td><code>2_1</code></td><td>Kompakt-Layouts · Eisen &amp; Stahl · Kupfer &amp; Caterium · Öl, Kunststoff &amp; Treibstoff · Aluminium · Beton, Quarz &amp; Glas · Hightech &amp; Endgame</td></tr>
+<tr><td><code>2_2</code></td><td>Förderbänder · Rohre · Förderlifte</td></tr>
+<tr><td><code>3_1</code></td><td>Atomkraft · Kohle · Treibstoff</td></tr>
+<tr><td><code>4_6</code></td><td>Hängebrücken · Brücken-Module</td></tr>
+<tr><td><code>5_1</code></td><td>Rampen &amp; Abzweige · Trassen &amp; Stützen</td></tr>
+<tr><td><code>7_2</code></td><td>Muster · Bedienpulte · Displays &amp; Tafeln</td></tr>
+<tr><td><code>8_6</code></td><td>Kräne · Fahrzeuge &amp; Bagger</td></tr>
+<tr><td><code>8_7</code></td><td>Container · Kisten</td></tr>
+</tbody></table>
+<p>Das Thema wird aus dem Namen erkannt (z. B. „Eisenplatten“ → Eisen &amp; Stahl). Passt kein Thema, bleibt die Blaupause im Gruppen-Ordner. Die Datei <code>_Ablage\_Struktur.txt</code> zeigt die Ordner mit der erwarteten Belegung.</p>
+
+<h3 id="regeln">Regeln &amp; Beispiele</h3>
+<ul>
+  <li><b>Höchstens 32 Zeichen</b> (Eingabegrenze im Spiel). Keine Zeichen <code>\ / : * ? " &lt; &gt; |</code>. Umlaute sind erlaubt.</li>
+  <li><b>Unterstriche</b> trennen die Teile; Wörter beginnen groß (<code>Leergebäude_Japanisch12</code>), kleine Bindewörter bleiben klein (<code>Beton_für_Stahlbeton</code>).</li>
+  <li><b>Anzahl ans Ende:</b> <code>10x Band</code> → <code>2_2_Band_10x</code>. Verhältnisse kompakt: <code>Balancer 4 zu 4</code> → <code>2_3_Balancer_4zu4</code>.</li>
+  <li><b>Produktion:</b> Produkt zuerst, dann Maschinen/Rate: <code>2_1_Eisenbarren_10xSchmelze</code>, <code>2_1_Platine_5x_150pm</code> (pm = pro Minute).</li>
+  <li><b>Mehrteilige Sets</b> behalten ihren Set-Namen: <code>8_6_COC_Kran_2_Teil2</code>, <code>1_1_HouseBeckenbauer_2Teil_Turm_Links</code>.</li>
+  <li><b>Persönliche Präfixe</b> (z. B. <code>Spielername_</code>, <code>Weltname_</code> – in den Einstellungen unter „Präfixe“ eintragen, außerdem <code>270_</code>) entfallen – die Gruppe sagt mehr. Community-Namen bleiben in ihrer Sprache, nur bereinigt (ohne „[1.2 Vanilla]“, „v1.1“, „by …“).</li>
+  <li><b>Doppelte</b> bekommen keinen eigenen Namen, sondern wandern nach <code>_Duplikate</code>.</li>
+</ul>
+
+<!-- ============================================================ UPDATE -->
+<h2 class="sec" id="update">Checkliste bei einem Spiel-Update (Versionswechsel)</h2>
+<p class="lead">Nach einem größeren Satisfactory-Update (z. B. 1.2 → 1.3) diese Schritte der Reihe nach. Kleine Patches brauchen meist nur Schritt 1–3.</p>
+<ol class="steps">
+  <li><b>App starten und Katalog prüfen.</b> Blueprint Studio liest <code>CommunityResources\Docs\de.json</code> beim Start neu ein, sobald sich die Datei geändert hat. Im Bereich „Gebäude-Katalog“ unten links steht die Anzahl Gebäude/Items/Rezepte. Erscheint ein Fehler: <a href="#einstellungen">Einstellungen</a> → Installationsordner prüfen.</li>
+  <li><b>Eine Blaupause öffnen, die im neuen Spiel gespeichert wurde.</b> Neue Spielversionen ändern manchmal das Dateiformat. Lässt sie sich öffnen, passt alles. Falls nicht: Meldung notieren – der Leser (<code>app\lib\sbp.mjs</code>) muss angepasst werden.</li>
+  <li><b>Vorlagen neu aufbauen.</b> Datei <code>userdata\vorlagen-cache.json</code> löschen und die App neu starten. Damit lernt die App neue Bauteile aus deinen aktuellen Blaupausen/Spielständen (für Formen-Generator und Tauschen).</li>
+  <li><b>Formen/Tauschen testen.</b> Eine kleine Form erzeugen, speichern, im Spiel platzieren. Klappt das, ist alles kompatibel.</li>
+  <li><b>FModel aktualisieren.</b> Neueste Version von <a href="https://fmodel.app/" target="_blank" rel="noopener">fmodel.app</a> (bzw. GitHub-Releases) nach <code data-pfad="fmodel">…\werkzeuge\FModel</code> entpacken – oder im Einrichtungs-Assistenten „FModel herunterladen“ nutzen. Unter Settings die <b>UE-Version</b> prüfen (Satisfactory 1.2: <code>GAME_UE5_6</code> – bei neuer Engine die passende wählen) und den Pfad zur neuen Mapping-Datei <code>CommunityResources\FactoryGame.usmap</code> setzen.</li>
+  <li><b>Icons neu exportieren</b> (nur nötig bei neuen Items/Gebäuden): <a href="#fm-icons">FModel → Icons</a>, danach <code>werkzeuge\icons-uebernehmen.bat</code>.</li>
+  <li><b>3D-Modelle neu aufbereiten</b> (nur bei neuen/geänderten Gebäuden): <a href="#fm-props">Bauteil-Daten</a> und <a href="#fm-modelle">Modelle</a> exportieren, dann <code>werkzeuge\modelle-aufbereiten.bat</code>. Es meldet fehlende Meshes, die du gezielt nachexportierst.</li>
+  <li><b>Ordnen erneut einlesen.</b> Der Zwischenspeicher <code>userdata\ordnen-cache.json</code> erneuert sich automatisch; bei Problemen löschen.</li>
+</ol>
+
+<h3 id="orte">Wo liegt was?</h3>
+<table>
+  <tr><th>Was</th><th>Ort</th></tr>
+  <tr><td>Blueprint Studio</td><td><code data-pfad="appDir">…\BlueprintStudio</code> (Start: <code>start.bat</code>)</td></tr>
+  <tr><td>Blaupausen des Spiels</td><td><code data-pfad="blueprintDir">%LOCALAPPDATA%\FactoryGame\Saved\SaveGames\blueprints</code><code>\&lt;Spielstand&gt;</code></td></tr>
+  <tr><td>Blaupausen-Bibliothek</td><td><code data-pfad="bibliothek">(in den Einstellungen eintragen)</code></td></tr>
+  <tr><td>Satisfactory</td><td><code data-pfad="gameDir">…\steamapps\common\Satisfactory</code></td></tr>
+  <tr><td>Spieldaten (Katalog)</td><td><code>…\Satisfactory\CommunityResources\Docs\de.json</code></td></tr>
+  <tr><td>Mapping für FModel</td><td><code>…\Satisfactory\CommunityResources\FactoryGame.usmap</code></td></tr>
+  <tr><td>FModel + Export</td><td><code data-pfad="fmodel">…\werkzeuge\FModel</code>, Export: <code data-pfad="fmodelExport">…\werkzeuge\FModel\Output\Exports</code></td></tr>
+  <tr><td>Icons der App</td><td><code>app\public\icons\*.png</code></td></tr>
+  <tr><td>3D-Modelle der App</td><td><code>app\public\modelle\index.json</code> + <code>meshes.bin</code></td></tr>
+  <tr><td>Einstellungen, Sicherungen, Protokolle</td><td><code>userdata\</code> (<code>einstellungen.json</code>, <code>sicherungen\</code>, <code>ordnen-protokoll.json</code>)</td></tr>
+  <tr><td>Werkzeuge</td><td><code>werkzeuge\icons-uebernehmen.bat</code>, <code>werkzeuge\modelle-aufbereiten.bat</code></td></tr>
+</table>
+
+<!-- ============================================================ FMODEL -->
+<h2 class="sec" id="fmodel">FModel – Download &amp; Einrichtung</h2>
+<p class="lead">FModel ist ein kostenloser Betrachter für Unreal-Engine-Spieldateien. Damit kommen Icons, 3D-Modelle und Bauteil-Daten aus Satisfactory heraus.</p>
+<p class="tip"><b>Einfacher:</b> Der Einrichtungs-Assistent (Schritt „Spielmodelle“) holt dieselben Daten mit <b>Modelle automatisch holen</b> ganz ohne FModel. Die folgende Anleitung brauchst du nur, wenn die Automatik bei dir nicht klappt.</p>
+<ul>
+  <li><b>Download:</b> <a href="https://fmodel.app/" target="_blank" rel="noopener">https://fmodel.app/</a> – oder die Releases auf GitHub: <a href="https://github.com/4sval/FModel/releases" target="_blank" rel="noopener">github.com/4sval/FModel/releases</a>. Anleitung/Wiki: <a href="https://github.com/4sval/FModel/wiki" target="_blank" rel="noopener">github.com/4sval/FModel/wiki</a>.</li>
+  <li><b>Satisfactory-spezifische Anleitung</b> der Modding-Community: <a href="https://docs.ficsit.app/satisfactory-modding/latest/Development/ExtractGameFiles.html" target="_blank" rel="noopener">docs.ficsit.app → Extract Game Files</a>.</li>
+  <li>Benötigt die .NET-Desktop-Laufzeit <b>10</b> (FModel fragt beim ersten Start danach; der Assistent installiert sie mit einem Klick).</li>
+</ul>
+<ol class="steps">
+  <li><b>Entpacken</b> nach <code data-pfad="fmodel">…\werkzeuge\FModel</code> (macht der Einrichtungs-Assistent automatisch) und <code>FModel.exe</code> starten.</li>
+  <li><b>Spiel hinzufügen:</b> Im Fenster „Directory Selector“ ein <i>Undetected Game</i> anlegen: Name <code>Satisfactory</code>, Ordner <code data-pfad="gameDir">…\steamapps\common\Satisfactory</code>, blaues Plus, OK.</li>
+  <li><b>UE-Version:</b> <code>GAME_UE5_6</code> (Satisfactory 1.2). Falls nicht angeboten: „Enable custom UE versions“ ausschalten.</li>
+  <li><b>Settings → General:</b>
+    <ul>
+      <li><i>Output Directory</i>: <code data-pfad="fmodelOutput">…\werkzeuge\FModel\Output</code></li>
+      <li><i>Keep Directory Structure</i>: an</li>
+      <li><i>Local Mapping File</i>: an, Pfad <code data-pfad="usmap">…\Satisfactory\CommunityResources\FactoryGame.usmap</code></li>
+      <li>Optional: <i>Custom Versions</i> – Inhalt von <code>CommunityResources\CustomVersions.json</code> einfügen (Datei ist UTF-16).</li>
+    </ul></li>
+  <li><b>Settings → Export (Models):</b> <i>Mesh Format</i> = <code>glTF 2.0 (binary)</code>, <i>Texture Format</i> = <code>PNG</code>, <i>Auto-Export Attached Materials</i> = aus (spart Platz). OK.</li>
+  <li><b>Laden:</b> Reiter <i>Archives</i> → <b>Load</b>. Danach sind die Reiter <i>Folders</i> und <i>Packages</i> gefüllt.</li>
+</ol>
+<div class="box"><p><b>Exportieren in neueren FModel-Versionen:</b> Exporte landen zuerst in einer <b>Warteschlange</b> (gelbes Feld unten rechts in der Statusleiste). Darauf klicken → Fenster „Export Session“ → <b>Export</b>. Der Zähler zeigt den Fortschritt.</p></div>
+
+<h2 class="sec" id="fm-icons">Icons exportieren</h2>
+<ol class="steps">
+  <li><b>Suche öffnen:</b> Menü <i>Packages → Search</i> (<kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>F</kbd>).</li>
+  <li><b>Suchen:</b> <code>IconDesc</code> eingeben, <kbd>Enter</kbd>. (Ca. 1.500 Treffer.)</li>
+  <li><b>Alle markieren:</b> ersten Treffer anklicken, <kbd>Strg</kbd>+<kbd>A</kbd>.</li>
+  <li><b>Exportieren:</b> Rechtsklick → <i>Export → Texture</i>. Dann Warteschlange unten rechts → <b>Export</b>.</li>
+  <li><b>In die App übernehmen:</b> Doppelklick auf <code>werkzeuge\icons-uebernehmen.bat</code>. Es kopiert genau die Icons, die der Katalog braucht, und meldet fehlende.</li>
+  <li><b>Fehlende nachholen:</b> Das Werkzeug gibt eine Zeile wie <code>/(Hub_512|Track_512|…)\.uasset$</code> aus. In der FModel-Suche das <b>Regex</b>-Symbol (zweites Symbol rechts im Suchfeld) einschalten, Zeile einfügen, <kbd>Enter</kbd>, wie oben als Textur exportieren und das Werkzeug erneut starten.</li>
+</ol>
+
+<h2 class="sec" id="fm-props">Bauteil-Daten exportieren (für die 3D-Zuordnung)</h2>
+<p>Die App muss wissen, welches Modell zu welchem Bauteil gehört und wie es sitzt. Das steht in den <code>Build_*</code>-Blueprints des Spiels.</p>
+<ol class="steps">
+  <li>Suche öffnen, <b>Regex an</b>, eingeben: <pre>Buildable/.*/Build_[^/]*\.uasset$</pre></li>
+  <li>Alle markieren → Rechtsklick → <i>Export → Properties (json)</i>. Diese Exporte werden sofort gespeichert (ca. 590 Dateien).</li>
+</ol>
+
+<h2 class="sec" id="fm-modelle">3D-Modelle exportieren</h2>
+<ol class="steps">
+  <li>Suche, Regex an: <pre>Buildable/(Factory|Building)/.*/SM_[^/]*\.uasset$</pre></li>
+  <li>Alle markieren → Rechtsklick → <i>Export → Model</i>. Warteschlange → <b>Export</b> (ca. 500 Modelle, wenige Minuten).</li>
+  <li>Doppelklick auf <code>werkzeuge\modelle-aufbereiten.bat</code>. Es liest Bauteil-Daten + Modelle, rechnet sie in Spiel-Koordinaten um und schreibt <code>app\public\modelle\</code> (~40 MB).</li>
+  <li>Meldet das Werkzeug <b>fehlende Meshes</b> (z. B. <code>ConstructorMk1_static</code>), diese Namen per Regex suchen und ebenso als Model exportieren: <pre>Buildable/.*/(ConstructorMk1_static|SmelterMk1_static)\.uasset$</pre> Danach das Werkzeug erneut starten.</li>
+  <li>Blueprint Studio neu laden – in der 3D-Ansicht den Schalter <b>Modelle</b> nutzen.</li>
+</ol>
+
+<h2 class="sec" id="fm-probleme">Probleme &amp; Lösungen</h2>
+<table>
+  <tr><th>Problem</th><th>Lösung</th></tr>
+  <tr><td>FModel stürzt beim Laden/Parsen ab</td><td>Neueste FModel-Version verwenden (ältere Versionen können neue Mapping-Dateien nicht lesen).</td></tr>
+  <tr><td>Meldung „Fatal Error … Index was out of range“ nach OK in Settings</td><td>Harmlos – mit OK schließen. Einstellungen sind gespeichert.</td></tr>
+  <tr><td>Exporte landen nicht im Ordner</td><td>Warteschlange unten rechts öffnen und <b>Export</b> klicken. Output-Ordner in Settings prüfen.</td></tr>
+  <tr><td>Regex-Suche findet nichts</td><td>Regex-Symbol im Suchfeld eingeschaltet? Nach dem Einschalten ins Suchfeld klicken und <kbd>Enter</kbd> drücken.</td></tr>
+  <tr><td>Modelle liegen in der App verdreht/versetzt</td><td>FModel-Mesh-Format muss <code>glTF 2.0 (binary)</code> sein; Werkzeug erneut laufen lassen.</td></tr>
+  <tr><td>Graue Kästen statt Modellen</td><td>Für dieses Bauteil fehlt ein Modell (siehe Meldung des Werkzeugs) – oder es ist ein Band/Rohr/Schiene/Lift (bewusst ohne Modell).</td></tr>
+</table>
+<p class="muted">Blueprint Studio 0.9.0 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
+</main>
+<script>
+// Anker aus der App (#schema usw.) anspringen
+if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView(), 50);
+</script>
+<script>
+// Pfade in der Hilfe aus den eigenen Einstellungen einsetzen (keine festen Pfade im Text)
+fetch('/api/config').then((r) => r.json()).then((c) => {
+  const j = (...t) => t.filter(Boolean).join('\\');
+  const w = { appDir: c.appDir, blueprintDir: c.blueprintDir, saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0], megaprints: (c.megaprints || [])[0],
+    fmodel: c.fmodelDir, fmodelOutput: c.fmodelDir && j(c.fmodelDir, 'Output'), fmodelExport: c.fmodelExport, usmap: c.gameDir && j(c.gameDir, 'CommunityResources', 'FactoryGame.usmap') };
+  document.querySelectorAll('[data-pfad]').forEach((e) => { const v = w[e.dataset.pfad]; if (v) { e.textContent = v; e.title = 'aus deinen Einstellungen'; } });
+}).catch(() => {});
+</script>
+</body>
+</html>

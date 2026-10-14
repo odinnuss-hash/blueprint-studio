@@ -1,0 +1,34 @@
+# Blueprint Studio – was NICHT veröffentlicht werden darf oder persönlich ist
+# Persönliche Daten, Zwischenspeicher, Sicherungen, Einstellungen
+userdata/
+# Spielinhalte von Coffee Stain Studios (aus der eigenen Spielinstallation per FModel exportiert)
+app/public/modelle/
+app/public/icons/*.png
+app/public/karte/
+# Fremdprogramme (lädt der Einrichtungs-Assistent herunter)
+werkzeuge/Satisfactory3DMap/
+werkzeuge/FModel/
+# Blaupausen, Spielstände, Megaprints, Archive
+*.sbp
+*.sbpcfg
+*.sav
+*.cbp
+*.zip
+# Entwickler-Testskript (persönliche Pfade) und Testdaten
+werkzeuge/test-generator.mjs
+testdata/
+test-ausgabe/
+# Symbol-Kopien der Verknüpfung, Systemdateien
+app/icon-*.ico
+desktop.ini
+Thumbs.db
+node_modules/
+# Notizen zur Veröffentlichung (nur lokal)
+VEROEFFENTLICHEN.md
+# Extraktor: Zwischendateien (werden auf jedem PC selbst erzeugt)
+werkzeuge/extraktor/quelle/
+werkzeuge/extraktor/bin/
+werkzeuge/extraktor/obj/
+werkzeuge/extraktor/Export/
+werkzeuge/extraktor/daten/
+# Update-Arbeitsordner liegen in userdata (schon ausgeschlossen)

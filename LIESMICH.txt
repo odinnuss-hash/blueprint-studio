@@ -1,0 +1,37 @@
+BLUEPRINT STUDIO – Satisfactory-Blaupausen ansehen, bearbeiten und ordnen
+==========================================================================
+(c) 2026 ODINnuss. Kostenlos fuer private, nicht-kommerzielle Nutzung – Details: LICENSE.
+Inoffizielles Fan-Werkzeug, keine Verbindung zu Coffee Stain Studios.
+
+STARTEN
+  Doppelklick auf  start.bat
+  - Beim ersten Start wird Node.js bei Bedarf automatisch installiert (winget).
+  - Danach oeffnet sich der EINRICHTUNGS-ASSISTENT: Sprache (Deutsch, English, Francais, Japanisch),
+    Ordner (werden automatisch gesucht), Spielstand, 3D-Darstellung (einfache Kaesten oder echte
+    Spielmodelle per FModel – Schritt fuer Schritt mit Kopier-Knoepfen), Extras.
+    Jederzeit wieder: Einstellungen -> Einrichtungs-Assistent.
+  - Die App oeffnet sich in einem eigenen Fenster (Edge/Chrome im App-Modus).
+  - Schliesst du das Fenster, beendet sich das Programm nach ca. 25 Sekunden selbst.
+  - Alles laeuft lokal auf deinem PC.
+
+ORDNER (im Assistenten bzw. unter "Einstellungen" aenderbar)
+  Blaupausen:  %LOCALAPPDATA%\FactoryGame\Saved\SaveGames\blueprints\<Spielstand>
+  Spieldaten:  <Satisfactory-Installation>\CommunityResources\Docs\*.json  (wird automatisch gesucht)
+
+HILFE
+  In der App oben auf "Hilfe": Handbuch, Namensschema, Checkliste bei Spiel-Updates,
+  FModel-Anleitung. Als Datei: app\public\hilfe.html (Englisch: hilfe.en.html usw.)
+
+WICHTIG ZU SPIELINHALTEN
+  3D-Modelle, Icons und das Kartenbild sind Inhalte von Coffee Stain Studios. Sie werden NICHT
+  mitgeliefert, sondern von jedem Nutzer einmalig aus der eigenen Spielinstallation geholt
+  (Assistent -> "Echte Spielmodelle"). Ohne sie zeigt die 3D-Ansicht einfache Kaesten.
+
+DATEIEN
+  start.bat                  Start
+  desktop-verknuepfung.bat   Verknuepfung erneut anlegen
+  app\server.mjs             lokaler Server (Node.js, ohne Fremdpakete)
+  app\lib\                   Blaupausen/Spielstaende lesen und schreiben, Katalog, Ordnen, Ablage
+  app\public\                Oberflaeche, Hilfe, Uebersetzungen (i18n\)
+  werkzeuge\                 icons-uebernehmen, modelle-aufbereiten, kartenbild-uebernehmen
+  userdata\                  Einstellungen, Zwischenspeicher, Sicherungen (persoenlich, nicht weitergeben)

@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blueprint Studio – Aide</title>
+<style>
+:root { --bg: #14161a; --panel: #1a1c21; --field: #121418; --line: #2c3038; --line2: #3a3f48; --text: #e7e4dd; --text2: #c9ccd1; --muted: #a7acb4;
+  --accent: #f59a23; --accent-bg: #2a2116; --accent-text: #f5b45a; --ok: #8fd18f; --err: #ff7b72;
+  --font: 'Segoe UI', system-ui, sans-serif; --font-title: Bahnschrift, 'Arial Narrow', sans-serif; --font-mono: 'Cascadia Mono', Consolas, monospace; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 var(--font); display: flex; min-height: 100vh; }
+nav { width: 270px; flex: none; position: sticky; top: 0; height: 100vh; overflow: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 18px 14px; }
+nav h2 { font: 700 13px var(--font-title); letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin: 18px 0 6px; }
+nav h2:first-child { margin-top: 0; }
+nav a { display: block; color: var(--text2); text-decoration: none; padding: 3px 8px; border-radius: 5px; font-size: 14px; }
+nav a:hover { background: var(--accent-bg); color: var(--accent-text); }
+main { flex: 1; min-width: 0; padding: 26px 40px 80px; max-width: 980px; }
+h1 { font: 700 30px var(--font-title); letter-spacing: .03em; text-transform: uppercase; margin: 0 0 4px; }
+h2.sec { font: 700 22px var(--font-title); letter-spacing: .03em; color: var(--accent); margin: 48px 0 8px; padding-top: 10px; border-top: 1px solid var(--line); text-transform: uppercase; }
+h3 { font: 700 17px var(--font-title); margin: 26px 0 6px; letter-spacing: .02em; }
+p, li { color: var(--text2); }
+a { color: var(--accent); }
+code, kbd { font: 13px var(--font-mono); background: var(--field); border: 1px solid var(--line); padding: 1px 5px; border-radius: 4px; color: var(--text); }
+kbd { border-bottom-width: 2px; }
+pre { font: 13px/1.5 var(--font-mono); background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow: auto; color: var(--text); white-space: pre-wrap; word-break: break-all; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0 16px; font-size: 14px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+tr.hg th { color: var(--accent-text); font-size: 14px; text-transform: none; letter-spacing: 0; background: var(--accent-bg); }
+td.bsp { font: 12px var(--font-mono); color: var(--muted); }
+.box { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 10px 14px; margin: 12px 0; }
+.box.warn { border-left-color: var(--err); }
+.box p { margin: 4px 0; }
+ol.steps { counter-reset: s; list-style: none; padding: 0; }
+ol.steps > li { counter-increment: s; position: relative; padding: 6px 0 10px 44px; border-bottom: 1px dashed var(--line); }
+ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #1a1206; font: 700 15px var(--font-title); display: flex; align-items: center; justify-content: center; }
+.lead { font-size: 16px; color: var(--text2); }
+.tip { border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); padding: 8px 12px; border-radius: 0 6px 6px 0; }
+.muted { color: var(--muted); }
+@media (max-width: 800px) { body { display: block; } nav { position: static; width: auto; height: auto; } main { padding: 20px 16px; } }
+</style>
+</head>
+<body>
+<nav aria-label="Sommaire">
+  <h2>À propos de l'app</h2>
+  <a href="#zur-app">Auteur, copyright &amp; utilisation</a>
+  <h2>Manuel</h2>
+  <a href="#start">Démarrage &amp; vue d'ensemble</a>
+  <a href="#bibliothek">Ouvrir des plans</a>
+  <a href="#ansichten">Vue 2D et 3D</a>
+  <a href="#bearbeiten">Modifier &amp; raccourcis clavier</a>
+  <a href="#tauschen">Remplacer matériau / niveau Mk</a>
+  <a href="#formen">Générateur de formes</a>
+  <a href="#speichern">Enregistrer</a>
+  <a href="#katalog">Catalogue des bâtiments</a>
+  <a href="#ordnen">Organiser (renommer)</a>
+  <a href="#ablage">Réserve &amp; suggestion de nom</a>
+  <a href="#karte">Carte (sauvegardes)</a>
+  <a href="#megaprints">Megaprints</a>
+  <a href="#papierkorb">Doublons &amp; corbeille</a>
+  <a href="#einrichtung">Configuration (assistant)</a>
+  <a href="#einstellungen">Paramètres</a>
+  <a href="#grenzen">Limites &amp; remarques</a>
+  <h2>Schéma de nommage</h2>
+  <a href="#schema">Structure</a>
+  <a href="#gruppen">Vue d'ensemble des groupes</a>
+  <a href="#bibliothek-struktur">Structure de la bibliothèque</a>
+  <a href="#regeln">Règles &amp; exemples</a>
+  <h2>Mise à jour du jeu</h2>
+  <a href="#update">Liste de contrôle changement de version</a>
+  <a href="#orte">Où se trouve quoi ?</a>
+  <h2>FModel</h2>
+  <a href="#fmodel">Téléchargement &amp; configuration</a>
+  <a href="#fm-icons">Exporter les icônes</a>
+  <a href="#fm-modelle">Exporter les modèles 3D</a>
+  <a href="#fm-props">Exporter les données des éléments</a>
+  <a href="#fm-probleme">Problèmes &amp; solutions</a>
+</nav>
+<main>
+<h1>Blueprint Studio – Manuel</h1>
+<p class="lead">Voir des plans Satisfactory en dehors du jeu (2D/3D avec les vrais modèles du jeu), les modifier, générer de nouvelles formes et nommer tous les plans de façon uniforme. Tout fonctionne localement sur ce PC.</p>
+
+<!-- ============================================================ ZUR APP -->
+<h2 class="sec" id="zur-app">À propos de l'app</h2>
+<table>
+  <tr><th style="width:200px">Programme</th><td><b>Blueprint Studio</b> – outil de plans pour Satisfactory</td></tr>
+  <tr><th>Version</th><td id="za-version">0.9.0</td></tr>
+  <tr><th>Auteur</th><td><b>ODINnuss</b> – idée, concept et conception</td></tr>
+  <tr><th>Copyright</th><td>© 2026 ODINnuss. Tous droits réservés.</td></tr>
+  <tr><th>Réalisation</th><td>Programmé pour le compte de l'auteur avec l'aide de l'IA (Claude, Anthropic).</td></tr>
+</table>
+<h3>Conditions d'utilisation</h3>
+<ol>
+  <li><b>Utilisation :</b> toute personne peut utiliser le programme gratuitement à des fins privées et non commerciales.</li>
+  <li><b>Diffusion et modification :</b> la vente, la location, l'utilisation commerciale ainsi que la publication de versions modifiées ou de parties du programme en dehors du dépôt officiel ne sont autorisées qu'avec l'accord préalable et exprès de l'auteur. La consultation et le fork sur GitHub dans le cadre des conditions d'utilisation de GitHub ainsi que les suggestions d'amélioration (issues, pull requests) sont expressément les bienvenus. Les mentions de l'auteur et de ce copyright ne doivent pas être supprimées. Le fichier <code>LICENSE</code> fait foi.</li>
+  <li><b>Garantie et responsabilité :</b> le programme est fourni sans garantie. Son utilisation se fait sous votre propre responsabilité. Avant de modifier, renommer ou écraser des plans et des sauvegardes, il convient d'effectuer des copies de sécurité ; l'app crée elle-même une copie de sécurité lors d'un écrasement et consigne les renommages. Dans la mesure permise par la loi, aucune responsabilité n'est assumée pour la perte de données, des sauvegardes endommagées ou tout autre dommage.</li>
+  <li><b>Contenus de tiers :</b> <i>Satisfactory</i>, les données du jeu (<code>CommunityResources</code>), les icônes, les modèles 3D et les graphismes du jeu sont la propriété de Coffee Stain Studios. Ils sont uniquement lus ou exportés depuis votre propre installation du jeu, acquise légalement, pour un usage privé, et ne doivent pas être redistribués. Blueprint Studio est un outil de fan non officiel et n'a aucun lien avec Coffee Stain Studios. Les plans d'autres joueurs restent l'œuvre de leurs créateurs respectifs.</li>
+  <li><b>Programmes tiers :</b> FModel et « Satisfactory 3D Map » sont des programmes open source indépendants de leurs développeurs et sont soumis à leurs licences. Blueprint Studio ne contient aucun code de ces programmes, il se contente de les lancer s'ils sont installés.<br><i>Cette traduction est fournie à titre de commodité ; la version allemande fait foi.</i></li>
+</ol>
+<h3>Composants et licences de tiers</h3>
+<table>
+  <tr><th style="width:200px">Contenus du jeu</th><td><i>Satisfactory</i>, données du jeu, icônes, modèles 3D et l'image de carte (tuiles <code>Map_0-0 … Map_1-1</code>) : Copyright © Coffee Stain Studios AB. Uniquement depuis votre propre installation du jeu ou pour un usage privé ; ne pas redistribuer.</td></tr>
+  <tr><th>Icônes</th><td><a href="https://fontawesome.com" target="_blank" rel="noopener">Font Awesome Free</a> 6.7.2 de Fonticons, Inc. – icônes sous <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (licence : fontawesome.com/license/free). L'icône de l'app (hexagone avec bâtiment) est une création propre.</td></tr>
+  <tr><th>Éditeur 3D (facultatif)</th><td><a href="https://github.com/moritz-h/satisfactory-3d-map" target="_blank" rel="noopener">Satisfactory 3D Map</a> de moritz-h (GitHub) – GPL-3.0. Uniquement lancé comme programme indépendant.</td></tr>
+  <tr><th>FModel (facultatif)</th><td><a href="https://github.com/4sval/FModel" target="_blank" rel="noopener">FModel</a> de 4sval – GPL-3.0. Téléchargé si nécessaire par l'assistant depuis les releases officielles sur GitHub et uniquement lancé comme programme indépendant.</td></tr>
+  <tr><th>CUE4Parse (extracteur)</th><td><a href="https://github.com/FabianFG/CUE4Parse" target="_blank" rel="noopener">CUE4Parse</a> de FabianFG – Apache-2.0. Non fourni ; téléchargé en code source depuis GitHub lors de « Récupérer les modèles automatiquement » et compilé sur votre propre PC en programme d'aide <code>werkzeuge\extraktor</code>. Il télécharge lui-même les bibliothèques Oodle (OodleUE) et zlib-ng.</td></tr>
+  <tr><th>SDK .NET 10</th><td><a href="https://dotnet.microsoft.com" target="_blank" rel="noopener">.NET</a> de Microsoft – licence MIT. Non fourni ; installé via winget si nécessaire.</td></tr>
+  <tr><th>Node.js</th><td><a href="https://nodejs.org" target="_blank" rel="noopener">Node.js</a> – licence MIT. Non fourni, mais installé si nécessaire via winget.</td></tr>
+</table>
+
+<!-- ============================================================ HANDBUCH -->
+<h2 class="sec" id="start">Démarrage &amp; vue d'ensemble</h2>
+<ul>
+  <li><b>Démarrer :</b> double-clic sur <code>start.bat</code> ou sur le raccourci du bureau. L'app s'ouvre dans sa propre fenêtre. Si vous fermez la fenêtre, le programme s'arrête de lui-même au bout d'env. 25 secondes.</li>
+  <li><b>En haut</b>, vous choisissez la section : <b>Plan</b> (voir/modifier), <b>Catalogue des bâtiments</b> (tous les éléments avec leurs données), <b>Organiser</b> (uniformiser les noms) et <b>Aide</b> (cette page).</li>
+  <li><b>Dossier</b> ouvre le dossier de plans actuel dans l'Explorateur, <b>Paramètres</b> les chemins, <b>Enregistrer</b> sauvegarde les modifications.</li>
+</ul>
+<div class="box"><p><b>Important :</b> le jeu lit les plans au chargement de la sauvegarde. Après un enregistrement ou un renommage, rechargez donc la sauvegarde. Le mieux est de modifier pendant que le jeu est fermé ou se trouve au menu principal.</p></div>
+
+<h2 class="sec" id="bibliothek">Ouvrir des plans</h2>
+<p>La sélection de dossiers à gauche affiche tous les dossiers sous <code>SaveGames\blueprints</code> <b>avec leurs sous-dossiers</b> (en retrait, p. ex. <code>Sortieren › Chaos › Kreativ</code>) et, en dessous, les dossiers de la bibliothèque. Les dossiers <code>_Ablage</code>, <code>_Duplikate</code>, <code>_Archiv</code> et <code>_Pakete</code> n'y apparaissent pas. Même les dossiers contenant des milliers de plans s'ouvrent rapidement : la liste se charge au fil du défilement, la recherche et la sélection (y compris avec <kbd>Shift</kbd> sur toute la liste) s'appliquent à toutes les entrées.</p>
+<p>À gauche, sous <b>Plans</b>, vous choisissez la <b>sauvegarde (session)</b> – c'est le sous-dossier de <code>…\SaveGames\blueprints\</code> que le jeu utilise pour votre monde (p. ex. « MeineWelt » – c'est le nom de la session dans la sauvegarde). En dessous figurent tous les plans avec couleur, taille, date et description ; le champ de recherche filtre par nom et description. Un clic ouvre le plan.</p>
+<p>L'onglet <b>Éléments</b> liste tous les types d'éléments du plan ouvert avec leur nombre. Un clic sélectionne tous les objets de ce type (avec <kbd>Shift</kbd> pour les ajouter à la sélection).</p>
+
+<h2 class="sec" id="ansichten">Vue 2D et 3D</h2>
+<h3>Vue de dessus 2D</h3>
+<ul>
+  <li>Clic = sélectionner, <kbd>Shift</kbd>+clic = ajouter, glisser sur une zone vide = sélection par cadre.</li>
+  <li>Glisser la sélection = déplacer (selon la grille définie). Bouton droit/central de la souris = déplacer la vue, molette = zoom.</li>
+</ul>
+<h3>Vue 3D</h3>
+<ul>
+  <li>Glisser avec le bouton gauche = pivoter, bouton droit = déplacer, molette = zoom, clic = sélectionner.</li>
+  <li>Maintenir <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> = avancer / gauche / reculer / droite (à l'horizontale dans la direction du regard, la hauteur reste la même). Avec <kbd>Shift</kbd> trois fois plus vite ; la vitesse s'adapte au zoom.</li>
+  <li><b>Modèles</b> (interrupteur en haut) : affiche les vrais modèles du jeu – machines, fondations, murs, toits, poutres, verre (semi-transparent). Désactivé : boîtes simples (plus rapide pour les très grands plans).</li>
+  <li>Avec les modèles, les convoyeurs sont dessinés comme une bande plate avec bords latéraux le long de leur spline, les ascenseurs de convoyeur comme un puits ouvert avec cadre ; tuyaux et hypertubes comme des tubes, rails comme des segments. (Sans « Modèles » : blocs simples.)</li>
+  <li><b>Crayon</b> (bouton en haut ou touche <kbd>P</kbd>) : en maintenant le bouton gauche, entourez librement une zone – tout ce qu'elle contient est sélectionné. <kbd>Shift</kbd> au début = ajouter, <kbd>Ctrl</kbd> = retirer. En mode crayon, on pivote avec le bouton droit. Normalement, seuls les objets visibles sont pris en compte ; avec « y compris les objets cachés », tout ce dont le centre se trouve dans la zone (y compris derrière/dessous). Si un niveau est choisi, seul celui-ci compte. Ensuite <kbd>Suppr</kbd> ou « Supprimer <i>n</i> » ; « Terminé » ou <kbd>Esc</kbd> quitte le crayon.</li>
+  <li>Les modèles proviennent du jeu (export FModel, voir <a href="#fm-modelle">FModel</a>) et sont stockés, préparés, dans <code>app\public\modelle</code>.</li>
+</ul>
+<h3>Niveaux</h3>
+<p>Pour les plans à plusieurs étages, l'app détecte les niveaux de fondation. « Niveau 2 » affiche le niveau 2 ; les niveaux inférieurs sont affichés en pâle, les niveaux supérieurs sont masqués.</p>
+
+<h2 class="sec" id="bearbeiten">Modifier &amp; raccourcis clavier</h2>
+<table>
+  <tr><th>Touche</th><th>Effet</th></tr>
+  <tr><td><kbd>Touches fléchées</kbd></td><td>Déplacer la sélection du pas de la grille (avec <kbd>Shift</kbd> : 8 m = une fondation)</td></tr>
+  <tr><td><kbd>Pg préc</kbd> / <kbd>Pg suiv</kbd></td><td>Monter / descendre de 1 m</td></tr>
+  <tr><td><kbd>Q</kbd> / <kbd>E</kbd></td><td>Pivoter de 90° (autour du centre de la sélection)</td></tr>
+  <tr><td><kbd>Suppr</kbd></td><td>Retirer la sélection. La construction reste au sol : si une pièce supprimée était la plus basse, tout le reste descend ensemble jusqu'à ce que la nouvelle pièce la plus basse touche à nouveau le sol (les écarts entre les pièces restent identiques). <kbd>Ctrl</kbd>+<kbd>Z</kbd> annule ensemble la suppression et l'abaissement ; désactivable dans les paramètres.</td></tr>
+  <tr><td><kbd>P</kbd></td><td>Vue 3D : crayon activé/désactivé (entourer librement une zone = sélectionner)</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd> / <kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>Annuler / rétablir</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd>, <kbd>Esc</kbd></td><td>Tout sélectionner, désélectionner</td></tr>
+  <tr><td><kbd>F</kbd>, <kbd>2</kbd>, <kbd>3</kbd></td><td>Ajuster, 2D, 3D</td></tr>
+  <tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>Enregistrer</td></tr>
+  <tr><td><kbd>H</kbd> / <kbd>I</kbd> / <kbd>Shift</kbd>+<kbd>H</kbd></td><td>Masquer la sélection / afficher seulement la sélection / tout réafficher</td></tr>
+</table>
+<h3>Pivoter / incliner autour de X, Y, Z</h3>
+<p>Outil <b>Pivoter / incliner</b> (icône avec croix d'axes dans la barre d'outils) : choisissez l'axe – <b>X</b> incline vers l'avant/l'arrière, <b>Y</b> sur le côté, <b>Z</b> pivote comme <kbd>Q</kbd>/<kbd>E</kbd> – et l'angle (−90°, +90°, 180° ou valeur personnalisée). S'applique à la sélection ou, si rien n'est sélectionné, à tout le plan. « Reposer au sol » conserve le bord inférieur. Exemple : incliner de 90° autour de X ou Y un croisement construit à la verticale jusqu'à ce que la chaussée soit en haut, puis l'enregistrer comme nouveau plan. Dans la vue 3D, on peut désormais aussi regarder par en dessous.</p>
+<h3>Masquer des objets</h3>
+<p>Pour atteindre des pièces cachées ou situées derrière : faites une sélection et <b>Masquer la sélection</b> (œil barré, <kbd>H</kbd>) – ou <b>Afficher seulement la sélection</b> (<kbd>I</kbd>), et tout le reste disparaît. Les objets masqués ne peuvent pas être cliqués et ne sont dessinés ni en 2D ni en 3D. Le bouton « … masqué(s) · tout afficher » (ou <kbd>Shift</kbd>+<kbd>H</kbd>) fait tout réapparaître. Masquer ne modifie pas le plan et n'est pas enregistré.</p>
+<h3>Nombreux niveaux</h3>
+<p>À partir de onze niveaux, la barre s'affiche en version compacte : premier niveau · cinq niveaux en dessous et au-dessus du niveau choisi · dernier niveau, avec des flèches ‹ › et une liste de tous les niveaux et de leur hauteur.</p>
+<p>À droite, l'<b>inspecteur</b> affiche le nom, la position, la rotation, les dimensions, l'électricité, la recette (avec quantités par minute), le motif de couleur, le niveau et le coût de construction de l'objet sélectionné ; sans sélection, les données de tout le plan et son coût de construction.</p>
+
+<h2 class="sec" id="tauschen">Remplacer matériau / variante / niveau Mk</h2>
+<p>Sélectionnez des objets (p. ex. onglet « Éléments » → toutes les fondations) → à droite <b>Matériau / variante …</b>. Sont proposées les variantes de mêmes dimensions (béton → asphalte, tôle striée, verre ; mur standard → mur à fenêtre …). Le coût de construction et la liste des recettes sont recalculés à l'enregistrement. Les éléments marqués <code>*</code> sont dérivés de pièces apparentées. Les machines (avec raccords/stockage) ne peuvent pas être remplacées.</p>
+<h3>Changer le niveau Mk (convoyeurs, ascenseurs de convoyeur, tuyaux, pompes)</h3>
+<p>Sélectionnez les convoyeurs/ascenseurs (onglet « Éléments » → cliquez p. ex. sur « Convoyeur Mk.5 ») → <b>Matériau / variante / niveau Mk …</b> → choisissez le niveau souhaité (Mk.1–Mk.6 ; tuyaux Mk.1 ↔ Mk.2, y compris sans indicateur de débit ; pompe Mk.1 ↔ Mk.2). Le tracé, les raccords et les connexions sont entièrement conservés – seuls le type et la recette de construction sont remplacés. La liste des recettes du plan est complétée ; le <b>coût de construction affiché dans l'en-tête du plan n'est pas recalculé pour les convoyeurs</b> (le jeu le calcule lui-même au placement). Le niveau doit être débloqué dans la sauvegarde, sinon le plan ne peut pas être construit.</p>
+
+<h2 class="sec" id="formen">Générateur de formes</h2>
+<p>Onglet <b>Formes</b> à gauche : plaque ronde (anneaux comme dans le jeu), cercle sur grille, anneau/voie circulaire, surface rectangulaire, bâtiment (sur plusieurs étages avec murs, rangée de fenêtres, toit) et tour ronde. La taille, les étages et les éléments (béton, asphalte, verre …) sont au choix.</p>
+<ul>
+  <li><b>Ouvrir comme nouveau plan</b> – aperçu ; les modifications des valeurs sont visibles immédiatement. Ensuite, modifiez et enregistrez comme d'habitude.</li>
+  <li><b>Insérer dans le plan ouvert</b> – place la forme au-dessus du plan ouvert (sélectionnée, à déplacer avec les touches fléchées).</li>
+</ul>
+
+<h2 class="sec" id="speichern">Enregistrer</h2>
+<ul>
+  <li><b>Enregistrer comme nouveau plan</b> (recommandé) : copie sous un nouveau nom dans le même dossier de sauvegarde, y compris le <code>.sbpcfg</code> avec description et icône.</li>
+  <li><b>Écraser l'original</b> : l'original est d'abord sauvegardé dans <code>userdata\sicherungen\</code>.</li>
+  <li>Toutes les données non modifiées (recettes, couleurs, connexions …) restent inchangées – octet pour octet.</li>
+  <li>Les plans de la bibliothèque ou de sous-dossiers (ouverts via « Organiser » avec 👁) peuvent également être modifiés ; la copie est placée dans le même dossier que l'original.</li>
+</ul>
+
+<h2 class="sec" id="katalog">Catalogue des bâtiments</h2>
+<p>Tous les bâtiments issus des données du jeu (<code>CommunityResources\Docs\de.json</code>) : catégorie, « débloqué au palier », matériau de construction, dimensions, électricité, coût de construction et toutes les recettes avec quantités par minute. Filtres à gauche par catégorie, palier et matériau ; « Afficher les variantes d'architecture » montre aussi toutes les variantes de matériau des fondations, murs, etc. Les icônes proviennent de l'export FModel (<code>app\public\icons</code>).</p>
+
+<h2 class="sec" id="ordnen">Organiser – nommer tous les plans de façon uniforme</h2>
+<p>La section <b>Organiser</b> lit <b>tous</b> les plans : tous les dossiers de sauvegarde sous <code>SaveGames\blueprints</code> (avec sous-dossiers) et les dossiers de bibliothèque définis dans les <a href="#einstellungen">paramètres</a> (p. ex. <code data-pfad="bibliothek">…\Meine Blaupausen</code>). Les dossiers nommés <code>_Archiv</code>, <code>_Pakete</code> ou <code>_Duplikate</code> sont ignorés.</p>
+<ol class="steps">
+  <li><b>Lecture :</b> la première fois, cela prend 20 à 60 secondes selon le nombre, ensuite c'est rapide (cache).</li>
+  <li><b>Vérifier les suggestions :</b> pour chaque plan figure un <b>nouveau nom</b> selon le <a href="#schema">schéma</a>. Motif « d’après le nom » = dérivé de l'ancien nom ; « d’après le contenu » = l'ancien nom n'était pas parlant (p. ex. <code>2025_10_10 13_40_24</code>), la suggestion vient du contenu (produit, machines, éléments, dimensions) – examinez-les en particulier. Le filtre « Nom d'après le contenu (à vérifier !) » n'affiche que ceux-ci.</li>
+  <li><b>Voir :</b> l'œil 👁 ouvre le plan en 2D/3D (lecture seule). Retour via la section « Organiser » – vos saisies sont conservées.</li>
+  <li><b>Ajuster :</b> modifiez le nouveau nom directement dans la ligne. Bordure rouge = ne respecte pas le schéma (trop long, caractères interdits, sans code de groupe). Vos modifications sont mémorisées immédiatement, même si vous fermez l'app.</li>
+  <li><b>Doublons &amp; similaires :</b> l'app ne compare pas seulement les noms, mais le contenu : quels éléments se trouvent à quel endroit (grille de 1 m, indépendamment de l'emplacement du plan).
+    <ul>
+      <li><b>Identiques</b> (≥ 99 % identiques) <b>dans le même dossier</b> : celui qui est le moins bien nommé est proposé comme « Doublon » et, à l'application, déplacé dans <code>_Duplikate</code> – pas supprimé ; le jeu ne voit pas les sous-dossiers.</li>
+      <li><b>Très similaires</b> (90–98 %) : seulement une indication (« similaire à 93 % à … »), p. ex. une variante avec quelques panneaux en plus. Vous décidez vous-même (mettre l'action sur « Doublon » ou renommer).</li>
+      <li>Les plans identiques dans des dossiers différents (jeu et bibliothèque) reçoivent le même nom.</li>
+    </ul>
+    Le filtre <b>« Doublons &amp; similaires (avec aperçu) »</b> affiche à côté de chaque entrée deux petites vues de dessus : à gauche ce plan, à droite le plan identique/similaire – vous voyez ainsi immédiatement s'il s'agit vraiment d'un doublon.</li>
+  <li><b>Appliquer :</b> cochez les cases (présélection : tout ce qui est en attente) → <b>Appliquer la sélection</b>. Les fichiers <code>.sbp</code> et <code>.sbpcfg</code> sont renommés ensemble.</li>
+  <li><b>Annuler :</b> <b>Historique / annuler</b> affiche chaque opération ; un clic restaure tous les anciens noms et emplacements.</li>
+</ol>
+<div class="box warn"><p>Avant d'appliquer, fermez le jeu ou laissez-le au menu principal. Astuce : procédez par étapes – p. ex. d'abord le filtre « Emplacement : Bibliothèque », puis un groupe après l'autre.</p></div>
+
+<h2 class="sec" id="ablage">Réserve – classer les plans et les activer/désactiver</h2>
+<p>En bas de la section <b>Plan</b> se trouve la <b>Réserve</b> (à déplier et replier avec la flèche). À gauche figurent les dossiers selon le schéma de nommage (1 Construction … 9 Spécial avec leurs sous-groupes) et vos propres dossiers (◆).</p>
+<ul>
+  <li><b>Ranger :</b> faites glisser un plan de la liste de gauche sur un dossier. Il est retiré du dossier de sauvegarde et déplacé dans <code>…\SaveGames\blueprints\_Ablage\&lt;dossier&gt;</code>. Le jeu ne le voit alors plus. Le dossier n'est créé que lorsque quelque chose y est placé.</li>
+  <li><b>Remettre en jeu :</b> cliquez sur l'interrupteur à côté du plan (vert = en jeu). Il retourne dans le dossier de sauvegarde d'où il venait. Avec la case du dossier (à gauche) ou « Tout en jeu / Tout ranger », cela fonctionne pour tout le dossier, sous-dossiers compris.</li>
+  <li><b>Remettre en jeu – quelle sauvegarde ?</b> Le jeu n'affiche que les plans de <code>blueprints\&lt;sauvegarde&gt;</code> (le dossier porte le nom de la session dans la sauvegarde, p. ex. <code>MeineWelt</code>). L'app lit les noms de session dans vos sauvegardes. Sous <b>Paramètres → Sauvegarde pour « Remettre en jeu »</b>, vous en définissez une ; avec « Toujours demander », une liste de toutes les sauvegardes apparaît à l'activation (avec « Définir par défaut »). Les dossiers collecteurs comme <code>Bauen</code> ou <code>Deko</code> ne sont pas des sauvegardes – si un plan activé s'y trouve, la réserve affiche « ⚠ pas dans le jeu » ; désactiver puis réactiver l'interrupteur le place dans la bonne sauvegarde. À gauche, dans la sélection de dossiers, les sauvegardes figurent dans un groupe à part.</li>
+  <li><b>Position &amp; taille :</b> sous <b>Paramètres → Dossier de réserve</b>, vous choisissez si la réserve se trouve <i>en bas</i> ou <i>à gauche à côté des plans</i> sur toute la hauteur de l'app (dossiers en haut, contenu en dessous). La largeur (à gauche) et la hauteur (en bas) se règlent par curseur – ou directement en tirant à la souris sur le bord de la réserve ; un double-clic sur le bord rétablit la valeur par défaut.</li>
+  <li><b>Tout déplier / Tout replier</b> (en haut de la réserve) : déplie ou replie tous les dossiers à la fois.</li>
+  <li><b>Plusieurs à la fois :</b> dans la liste des plans à gauche, ajoutez-en individuellement avec <kbd>Ctrl</kbd>+clic, une plage entière avec <kbd>Shift</kbd>+clic. Sous la liste apparaît « <i>n</i> sélectionné(s) ». Si l'on fait glisser l'un des plans sélectionnés sur un dossier de réserve, tous les plans sélectionnés suivent. <b>Clic droit</b>, <kbd>Suppr</kbd> ou le bouton <b>Supprimer</b> supprime tous les plans sélectionnés après confirmation (vers la corbeille). <kbd>Esc</kbd> ou <b>Annuler</b> annule la sélection.</li>
+  <li><b>Classer depuis la bibliothèque :</b> en haut de la sélection de dossiers, sous <b>Bibliothèque</b>, tous les sous-dossiers de votre bibliothèque de plans (p. ex. <code data-pfad="bibliothek">…\Meine Blaupausen</code>) sont proposés individuellement. Si vous faites glisser un plan de là sur un dossier de réserve, il est <b>copié</b> dans <code>…\SaveGames\blueprints\_Ablage\&lt;dossier&gt;</code> – l'original reste dans la bibliothèque. Pour l'activer, il est placé dans la dernière session de jeu choisie.</li>
+  <li><b>Reclasser :</b> faites glisser un plan de la réserve sur un autre dossier. Si on le fait glisser sur la liste de gauche, il est activé.</li>
+  <li><b>Dossiers personnalisés :</b> « + Dossier personnalisé » ou « + Sous-dossier ». Les dossiers personnalisés vides peuvent être supprimés.</li>
+  <li><b>Voir :</b> double-clic ou « Voir ». Les plans rangés sont seulement affichés ; pour les modifier, remettez-les d'abord en jeu.</li>
+</ul>
+<p>Rien n'est jamais supprimé, seulement déplacé (<code>.sbp</code> et <code>.sbpcfg</code> ensemble). L'app mémorise dans <code>userdata\ablage.json</code> quel plan actif est classé dans quel dossier. Si le jeu est en cours, il ne voit les modifications qu'après le rechargement de la sauvegarde.</p>
+<h3>Supprimer des plans</h3>
+<p>Bouton corbeille en haut à droite de <b>Nom &amp; réserve</b>, corbeille d'un plan dans la réserve ou <b>clic droit</b> sur un plan dans la liste de gauche. Après confirmation, il part (avec son <code>.sbpcfg</code>) dans la <b>corbeille Windows</b> et peut y être restauré. Si cela échoue, il atterrit dans <code>userdata\papierkorb</code>.</p>
+<h3>Suggestion de nom</h3>
+<p>À l'ouverture d'un plan, <b>Nom &amp; réserve</b> en haut à droite affiche une suggestion selon le schéma – répartie en trois champs : <b>Catégorie</b> _ <b>Sous-catégorie</b> _ <b>Nom</b>. L'app place elle-même les tirets bas (les espaces dans le nom deviennent également des tirets bas). Un clic dans « Catégorie » affiche toutes les catégories (1 Construction … 9 Spécial), un clic dans « Sous-catégorie » les sous-groupes de la catégorie choisie – cliquez pour reprendre, ou saisissez simplement quelque chose vous-même (la saisie filtre la liste, touches fléchées + Entrée pour choisir). En dessous figure le nom final avec un compteur de caractères (32 au maximum) ; « Ranger » se base sur la catégorie choisie. <b>Renommer classe en même temps</b> : le plan arrive aussitôt dans le dossier de réserve correspondant (depuis le jeu : ranger, depuis la bibliothèque : copier, depuis la réserve : déplacer) – désactivable dans les paramètres ; « Ranger » reste disponible pour les plans qui ne sont pas renommés. Les dossiers personnalisés numérotés (p. ex. <code>2_7 Wasseraufbereitung</code> sous 2 Production) apparaissent dans la sélection et dans la réserve à la bonne place de l'ordre (marqués « perso » à la fin). <b>Renommer</b> renomme le fichier, <b>Ranger</b> le place directement dans le dossier correspondant. La suggestion apprend de vos propres noms :</p>
+<ol>
+  <li>Si le plan est identique à ≥ 90 % à un plan déjà correctement nommé, son groupe est repris (à 100 %, l'indication « probablement en double » apparaît).</li>
+  <li>Les mots du nom que vous avez déjà souvent utilisés dans un groupe donné (p. ex. « Wegweiser » → 4_7) déterminent le groupe.</li>
+  <li>Pour les noms peu parlants (date, « Neu » …), c'est la similarité de contenu avec vos plans qui compte.</li>
+  <li>Sinon, les règles fixes de la section « Organiser » s'appliquent.</li>
+</ol>
+<p>Chaque renommage que vous effectuez ici ou dans « Organiser » est pris en compte dans les suggestions suivantes (<code>userdata\namen-gelernt.json</code>).</p>
+
+<h2 class="sec" id="karte">Carte – voir les sauvegardes</h2>
+<p>La section <b>Carte</b> lit vos sauvegardes (<code>.sav</code>, version du jeu 1.0 et ultérieure) depuis <code>…\FactoryGame\Saved\SaveGames\&lt;numéro&gt;</code> et affiche tout ce qui est construit en vue de dessus : bâtiments, fondations, murs et colonnes (y compris les pièces « légères » que le jeu enregistre de façon groupée), convoyeurs, tuyaux, rails et hypertubes sous forme de lignes, câbles électriques et votre personnage (croix rouge).</p>
+<ul>
+  <li>Choisissez la sauvegarde à gauche. À la première ouverture, la lecture prend quelques secondes ; ensuite elle provient du cache (<code>userdata\karten</code>), tant que le fichier ne change pas.</li>
+  <li>Glisser = déplacer, molette = zoom, clic = afficher l'élément (nom, position, hauteur, nombre dans la sauvegarde). « Ajuster » montre vos constructions, « Monde entier » toute la carte (grille = 500 m).</li>
+  <li>Activez/désactivez les <b>niveaux</b> à gauche (p. ex. fondations désactivées pour voir les machines). Les gisements de ressources sont désactivés au départ.</li>
+  <li><b>Mettre en évidence un élément :</b> saisissez le nom dans le champ de recherche (p. ex. « Constructeur ») – les pièces correspondantes restent en couleur, les sols sont assombris. À droite, « Éléments les plus fréquents » est cliquable.</li>
+</ul>
+<ul>
+  <li><b>Carte</b> (case en haut) : le monde du jeu en arrière-plan. Les quatre tuiles se trouvent dans <code>userdata\kartenbild</code> (<code>Map_0-0 … Map_1-1</code>, chacune de 3,75 × 3,75 km).</li>
+  <li><b>Hauteur de – à</b> (mètres) : n'affiche que les éléments dans cette plage, p. ex. un seul étage d'une grande usine.</li>
+  <li>À droite, <b>Bâtiments par type</b> : toutes les machines, générateurs, stockages, trains, etc. avec leur nombre. <b>Cocher</b> les met en évidence, tout le reste est assombri (plusieurs cases possibles, la case du groupe prend tout le groupe, p. ex. tous les tuyaux). <b>« Tout normal »</b> (en haut) ou <kbd>Esc</kbd> annule cela.</li>
+  <li><b>Ouvrir en 3D</b> : ouvre la sauvegarde dans l'éditeur 3D « Satisfactory 3D Map » (voir ci-dessous).</li>
+</ul>
+<p>La carte elle-même ne modifie pas la sauvegarde.</p>
+<h3>Copier une zone sous forme de plan</h3>
+<ol>
+  <li>Ouvrez la sauvegarde et réglez avec les niveaux et <b>Hauteur de – à</b> ce qui doit être pris (p. ex. masquer les fondations ou un seul étage).</li>
+  <li>Choisissez l'outil : <b>Rectangle</b> (tracer ; possible aussi à tout moment avec <kbd>Shift</kbd> + glisser) ou <b>Crayon</b> (entourer librement la zone en maintenant le bouton de la souris – relâcher ferme la forme).</li>
+  <li>À droite figurent la taille et le nombre de pièces. <b>Voir en 3D</b> affiche immédiatement l'extrait dans la vue 3D de l'app (avec les modèles du jeu, rien n'est enregistré). <b>Enregistrer comme plan</b> le place dans le dossier choisi ; « ouvrir dans Plan » affiche le résultat.</li>
+</ol>
+<ul>
+  <li>Les <b>bâtiments</b> (machines, convoyeurs, tuyaux, stockages, panneaux …) sont repris à l'identique – avec recette, réglages, raccords et connexions à l'intérieur de la zone.</li>
+  <li>Le jeu enregistre les <b>fondations, murs, colonnes, poutres</b> de façon groupée (« léger ») ; ils sont reconstruits à partir de vos modèles de plans. Les longueurs de poutres sont conservées, <b>pas les couleurs/motifs</b>. Les pièces sans modèle sont ignorées et signalées.</li>
+  <li><b>Câbles électriques</b> seulement si les deux extrémités se trouvent dans la zone. Les connexions vers des pièces à l'extérieur sont supprimées.</li>
+  <li>Le plan est aligné sur le centre de la zone (grille de 8 m) et sur le bord inférieur 0. Les grandes zones nécessitent dans le jeu des mods comme Blueprint Designer Plus.</li>
+  <li>Ce n'est pas (encore) possible depuis les Megaprints – utilisez pour cela une sauvegarde.</li>
+</ul>
+<h3>Image de carte depuis votre propre jeu (FModel)</h3>
+<ol>
+  <li>Dans FModel (voir <a href="#fmodel">FModel</a>), allez à <code>FactoryGame/Content/FactoryGame/Interface/UI/Assets/MapTest/SlicedMap</code>.</li>
+  <li>Sélectionnez les quatre textures <code>Map_0-0</code>, <code>Map_0-1</code>, <code>Map_1-0</code>, <code>Map_1-1</code> → clic droit → <i>Save Texture</i> (PNG).</li>
+  <li>Lancez <code>werkzeuge\kartenbild-uebernehmen.bat</code>. Il cherche les images dans l'export FModel et les place dans <code>userdata\kartenbild</code> (les anciennes images sont conservées en <code>.alt</code>).</li>
+</ol>
+<h3>Éditeur 3D « Satisfactory 3D Map »</h3>
+<p>Un programme open source indépendant (GPL-3.0) de moritz-h, qui affiche en 3D tous les objets d'une sauvegarde et permet de modifier leurs propriétés. Blueprint Studio se contente de le lancer avec la sauvegarde choisie.</p>
+<ol>
+  <li>Téléchargez la dernière version Windows depuis <a href="https://github.com/moritz-h/satisfactory-3d-map/releases" target="_blank" rel="noopener">github.com/moritz-h/satisfactory-3d-map/releases</a> (v0.10 ou ultérieure pour les sauvegardes de la 1.2).</li>
+  <li>Décompressez-la, p. ex. dans <code>werkzeuge\Satisfactory3DMap</code> – l'app l'y trouve d'elle-même. Si elle se trouve ailleurs : renseignez le dossier ou le <code>.exe</code> dans <b>Paramètres → Éditeur 3D</b>.</li>
+  <li>Dans la carte, choisissez la sauvegarde → <b>Ouvrir en 3D</b>.</li>
+</ol>
+<p>Au démarrage, Blueprint Studio configure l'éditeur 3D pour qu'il charge les <b>vrais modèles du jeu</b> depuis vos fichiers du jeu (désactivable dans les paramètres). Il a besoin pour cela du fichier <code>oodle-data-shared.dll</code> ; l'app le copie automatiquement depuis votre dossier FModel (FModel le télécharge lui-même au premier lancement). S'il manque, l'éditeur démarre sans modèles du jeu. L'éditeur 3D est un programme distinct avec sa propre fenêtre – pour un coup d'œil rapide sans changer de fenêtre, la carte propose « Voir en 3D ».</p>
+<p><b>Attention :</b> c'est vous qui enregistrez les modifications là-bas. Sauvegardez d'abord la sauvegarde et n'ayez pas la même sauvegarde ouverte en même temps dans le jeu.</p>
+
+<h2 class="sec" id="megaprints">Megaprints (.cbp)</h2>
+<p>Les Megaprints sont des exports de <i>satisfactory-calculator.com</i> (extension <code>.cbp</code>, JSON compressé contenant tous les objets avec position et propriétés). La carte les liste sous les sauvegardes (dossier défini dans les paramètres, p. ex. <code data-pfad="megaprints">…\Megaprints</code>, sans <code>_Archiv</code>) et les affiche à leur position d'origine sur la carte du monde – avec niveaux, mise en évidence et « Bâtiments par type ». Même les très grands Megaprints (400 Mo de JSON, 300 000 pièces) sont lus en environ 2 secondes. Les convoyeurs et tuyaux y apparaissent pour l'instant sous forme de points plutôt que de lignes.</p>
+
+<h2 class="sec" id="papierkorb">Doublons &amp; corbeille</h2>
+<p>Dans la section <b>Organiser → « Doublons &amp; corbeille »</b> :</p>
+<ul>
+  <li><b>Doublons</b> : tous les plans déplacés dans <code>_Duplikate</code> lors de l'organisation (dossiers du jeu et bibliothèque). <b>Remettre</b> les replace dans leur ancien dossier ; si le nom y est entre-temps déjà pris, l'app en demande un nouveau.</li>
+  <li><b>Supprimé</b> : tous les plans supprimés dans l'app avec leur origine et l'heure. Ce qui se trouve dans la corbeille Windows se restaure là-bas (« Ouvrir la corbeille Windows ») ; ce qui se trouve à la place dans <code>userdata\papierkorb</code>, directement ici.</li>
+  <li>L'app ne supprime rien définitivement – vous le faites vous-même si besoin (vider la corbeille ou supprimer le dossier <code>_Duplikate</code> dans l'Explorateur).</li>
+  <li>Des passes d'organisation entières peuvent toujours être annulées via <b>Historique / annuler</b>.</li>
+</ul>
+
+<h2 class="sec" id="einrichtung">Configuration (assistant) &amp; diffusion</h2>
+<p>Au <b>premier démarrage</b>, l'<b>assistant de configuration</b> s'ouvre (à tout moment de nouveau : <b>Paramètres → Assistant de configuration</b>). Il vous guide en quelques étapes à travers tout le nécessaire :</p>
+<ol class="steps">
+  <li><b>Langue</b> – Deutsch (par défaut), English, Français ou 日本語. Les noms des bâtiments et des objets proviennent alors aussi de votre jeu dans cette langue. Pour changer plus tard : Paramètres → Langue.</li>
+  <li><b>Dossiers</b> – dossier des sauvegardes (par défaut : <code>%LOCALAPPDATA%\FactoryGame\Saved\SaveGames</code>) et installation de Satisfactory. L'app cherche elle-même dans les bibliothèques Steam, chez Epic et sur tous les lecteurs ; « Choisir … » ouvre la boîte de dialogue de dossiers de Windows. Coche verte = trouvé. Facultatif : votre propre collection de plans et dossier Megaprints.</li>
+  <li><b>Sauvegarde</b> – dans quelle sauvegarde « Remettre en jeu » place les plans (ou toujours demander).</li>
+  <li><b>Rendu 3D</b> – <i>boîtes simples</i> (prêt immédiatement) ou <i>vrais modèles du jeu</i>.</li>
+  <li><b>Modèles du jeu</b> (uniquement avec le choix « vrais modèles du jeu ») – <b>automatiquement</b> d'un clic sur « Récupérer les modèles automatiquement » : la première fois, l'app installe le <b>SDK .NET 10</b> gratuit de Microsoft (Windows peut demander une autorisation), télécharge la bibliothèque libre <i>CUE4Parse</i> (la même que celle utilisée par FModel), en construit un petit programme d'aide (<code>werkzeuge\extraktor</code>) et récupère ainsi les données des pièces, les modèles 3D et les icônes directement depuis votre installation du jeu. La progression et la sortie s'affichent dans la fenêtre ; environ 5 à 15 minutes la première fois, bien plus rapide ensuite. Si cela ne fonctionne pas, le guide <b>manuel</b> avec FModel reste disponible en dessous (installer le runtime .NET Desktop 10, télécharger FModel, saisir les valeurs – chacune avec un bouton <b>Copier</b> –, cliquer trois exports, « Importer »).</li>
+  <li><b>Extras</b> – image de carte, éditeur 3D « Satisfactory 3D Map », raccourci sur le bureau.</li>
+</ol>
+<p>En outre, <b>Paramètres → Prérequis &amp; raccourci</b> vérifie à tout moment : Node.js, installation du jeu, dossier des sauvegardes, fenêtre de l'app (Edge/Chrome), modèles 3D, icônes, image de carte, éditeur 3D et raccourci sur le bureau – peuvent être installés après coup en un clic :</p>
+<ul>
+  <li><b>Éditeur 3D</b> « Satisfactory 3D Map » – dernière version Windows depuis GitHub dans <code>werkzeuge\Satisfactory3DMap</code>.</li>
+  <li><b>Image de carte</b> – les quatre tuiles du projet satisfactory-3d-map (état 0.6 ; à remplacer via FModel pour l'état actuel).</li>
+  <li><b>Raccourci sur le bureau</b> – sur le bureau et dans le menu Démarrer, avec icône.</li>
+</ul>
+<p><code>start.bat</code> installe lui-même Node.js au premier démarrage (winget). Les <b>modèles 3D et icônes</b> sont des contenus du jeu de Coffee Stain Studios : ils ne doivent pas être publiés avec l'app et sont récupérés une fois par chaque utilisateur depuis sa propre installation du jeu – automatiquement dans l'assistant ou manuellement avec FModel (<a href="#fmodel">guide FModel</a>).</p>
+<h3 id="updates">Mises à jour</h3>
+<p>Au démarrage (au plus toutes les 6 heures), Blueprint Studio cherche une nouvelle version sur GitHub. S'il y en a une, le bouton <b>⬆ Mise à jour</b> apparaît en haut : il montre les nouveautés et installe la mise à jour avec <b>Mettre à jour maintenant</b>. L'app se recharge ensuite et redémarre elle-même son serveur. Manuellement : <b>Paramètres → Mises à jour → Rechercher des mises à jour maintenant</b>.</p>
+<ul>
+  <li><b>Conservé :</b> les paramètres et tout le contenu de <code>userdata</code>, vos plans, les modèles 3D, les icônes, FModel, l'éditeur 3D et les fichiers de l'extracteur.</li>
+  <li><b>Sauvegarde :</b> chaque fichier du programme remplacé est d'abord copié dans <code>userdata\update-sicherung\&lt;ancienne version&gt;</code> – pour revenir en arrière, recopiez simplement ces fichiers dans le dossier du programme.</li>
+  <li><b>Source :</b> les publications (releases) du projet GitHub, indiquées dans <code>app\update.json</code> ; une autre source peut être saisie dans les paramètres. La recherche automatique peut aussi y être désactivée.</li>
+</ul>
+<h3>Publier (p. ex. GitHub)</h3>
+<p>Le fichier <code>.gitignore</code> dans le dossier du programme exclut tout ce qui ne doit pas être publié ou qui est personnel : <code>userdata</code>, modèles, icônes, image de carte, FModel, l'éditeur 3D et les plans/sauvegardes. L'aide ne contient aucun chemin fixe – elle affiche toujours les dossiers de vos propres paramètres.</p>
+<p><b>Publier une mise à jour :</b> augmenter le numéro de version dans <code>app\server.mjs</code> (<code>VERSION</code>) et <code>app\public\js\main.js</code> (<code>APP_VERSION</code>), envoyer (GitHub Desktop : <i>Commit</i> → <i>Push</i>) puis publier sur GitHub sous <i>Releases → Draft a new release</i> une release avec le tag <code>v</code> + numéro de version (p. ex. <code>v0.9.1</code>) et une courte description des nouveautés. Toutes les apps installées proposent alors la mise à jour au prochain démarrage.</p>
+
+<h2 class="sec" id="einstellungen">Paramètres</h2>
+<ul>
+  <li><b>Dossier des sauvegardes</b> (contient <code>blueprints</code>) : par défaut <code>%LOCALAPPDATA%\FactoryGame\Saved\SaveGames</code>.</li>
+  <li><b>Dossier d'installation de Satisfactory</b> (contient <code>CommunityResources</code>) : chez vous : <code data-pfad="gameDir">…\steamapps\common\Satisfactory</code> (recherché au premier démarrage).</li>
+  <li><b>Autres dossiers de plans (bibliothèque)</b> : un par ligne, p. ex. <code data-pfad="bibliothek">…\Meine Blaupausen</code>. Ils sont inclus dans « Organiser ».</li>
+  <li><b>Langue</b> : Deutsch, English, Français, 日本語 – l'app se recharge ensuite.</li>
+  <li><b>Structure des dossiers de réserve</b> (« Modifier la structure … ») : liste de tous les groupes principaux (<code>7</code>) et sous-groupes (<code>7_3</code>) – par défaut, la structure fournie plus vos propres dossiers numérotés. Modifier les noms, ajouter des entrées (« + Groupe principal », « + Sous ») ou en retirer ; « Rétablir les valeurs par défaut » réinitialise. À l'enregistrement, les dossiers existants de la réserve sont renommés en conséquence (le contenu est conservé), les entrées retirées ne suppriment aucun dossier. Les numéros figurent au début du nom du plan.</li>
+  <li><b>Préfixes</b> : mots comme votre nom de joueur ou de monde, à retirer du début lors de la suggestion de nom (séparés par des virgules).</li>
+  <li><b>Mises à jour</b> : recherche automatique au démarrage (oui/non), source des mises à jour sur GitHub (<code>propriétaire/dépôt</code>, vide = valeur par défaut de l'app) et « Rechercher des mises à jour maintenant » – voir <a href="#updates">Mises à jour</a>.</li>
+  <li><b>Vue à l'ouverture d'un plan</b> : <i>Dernière vue utilisée</i> (par défaut – l'app mémorise si vous étiez en dernier en 2D ou en 3D), <i>Toujours 2D</i> ou <i>Toujours 3D</i>. Basculer avec les boutons 2D/3D ou les touches <kbd>2</kbd>/<kbd>3</kbd> reste possible à tout moment.</li>
+</ul>
+
+<h2 class="sec" id="grenzen">Limites &amp; remarques</h2>
+<ul>
+  <li>Si des machines sont déplacées, les convoyeurs/câbles restent à leur ancienne place – déplacez ensemble les groupes connectés (sélection par cadre).</li>
+  <li>Les machines ne peuvent être ni remplacées ni créées, seulement les pièces d'architecture.</li>
+  <li>Les plans d'anciennes versions du jeu (Update 7/8) sont également lus. Les éléments issus de mods apparaissent sous forme de boîtes grises.</li>
+  <li>Les noms dans le jeu sont limités à 32 caractères – c'est pourquoi « Organiser » raccourcit automatiquement.</li>
+</ul>
+
+<!-- ============================================================ SCHEMA -->
+<h2 class="sec" id="schema">Schéma de nommage</h2>
+<p class="lead">Chaque nom commence par un code de groupe à deux chiffres. Le jeu trie par ordre alphabétique – ainsi, tous les plans d'un groupe se retrouvent automatiquement côte à côte dans le jeu et dans l'Explorateur. Le schéma s'appuie sur vos codes existants (<code>1_1</code> bâtiment, <code>1_2</code> mur, <code>1_3</code> sol, <code>5_9</code> passage à niveau, <code>8_3</code> statue …).</p>
+<pre>GroupePrincipal_SousGroupe_Thème_Détail
+     2     _     1     _Kabel_12xKonstruktor
+     5     _     4     _UBahn_Kurve_90Grad
+     1     _     1     _Leergebäude_12</pre>
+<table>
+  <tr><th>Partie</th><th>Signification</th><th>Exemples</th></tr>
+  <tr><td>Groupe principal</td><td>1–9, comme les dossiers de votre bibliothèque</td><td><code>1</code> Construction, <code>2</code> Production, <code>5</code> Rail</td></tr>
+  <tr><td>Sous-groupe</td><td>1–9 au sein du groupe principal, <code>9</code> = divers</td><td><code>2_1</code> Production, <code>2_3</code> Équilibreurs</td></tr>
+  <tr><td>Thème</td><td>De quoi s'agit-il ? Produit, ouvrage, nom de l'ensemble</td><td><code>Kabel</code>, <code>Hauptbahnhof</code>, <code>COC_Kran</code></td></tr>
+  <tr><td>Détail</td><td>Quantité, taille, débit, variante, partie, côté</td><td><code>10x</code>, <code>22x22</code>, <code>120pm</code>, <code>V2</code>, <code>Teil2</code>, <code>Links</code></td></tr>
+</table>
+
+<h3 id="gruppen">Vue d'ensemble des groupes</h3>
+<table>
+  <tr><th>Code</th><th>Groupe</th><th>Exemple</th></tr>
+  <tbody><tr class="hg"><th>1</th><th colspan="2">Construction</th></tr>
+  <tr><td><code>1_1</code></td><td>Bâtiments &amp; halls</td><td class="bsp">1_1_Leergebäude_12, 1_1_Rundhaus</td></tr>
+  <tr><td><code>1_2</code></td><td>Murs, portails &amp; façades</td><td class="bsp">1_2_Wandelement27_Breit, 1_2_JapTor</td></tr>
+  <tr><td><code>1_3</code></td><td>Sols, fondations &amp; toits</td><td class="bsp">1_3_Rundplatte22x22, 1_3_Dachelement2</td></tr>
+  <tr><td><code>1_4</code></td><td>Tunnels, couloirs &amp; escaliers</td><td class="bsp">1_4_Tunneleingang, 1_4_Glastunnel</td></tr>
+  <tr><td><code>1_5</code></td><td>Supports, piliers &amp; soubassement</td><td class="bsp">1_5_Stütze6_Fahrstuhl</td></tr>
+  <tr><td><code>1_6</code></td><td>Formes &amp; aides à la construction</td><td class="bsp">1_6_Kreis_12teilig, 1_6_Ruler</td></tr>
+  <tr><td><code>1_8</code></td><td>Clôtures &amp; garde-corps</td><td class="bsp">1_8_Zaunteil2_Tor</td></tr>
+  <tr><td><code>1_9</code></td><td>Modules de construction &amp; pièces</td><td class="bsp">petits morceaux de colonnes, poutres, sols, murs (souvent avec des noms de date)</td></tr></tbody>
+  <tbody><tr class="hg"><th>2</th><th colspan="2">Production</th></tr>
+  <tr><td><code>2_1</code></td><td>Production (chaînes de machines)</td><td class="bsp">2_1_Kabel_12xKonstruktor</td></tr>
+  <tr><td><code>2_2</code></td><td>Convoyeurs &amp; tuyaux (tracés)</td><td class="bsp">2_2_Band_10x, 2_2_Rohr_Treibstoff_5x</td></tr>
+  <tr><td><code>2_3</code></td><td>Équilibreurs, répartiteurs &amp; distributeurs</td><td class="bsp">2_3_Balancer_4zu4</td></tr>
+  <tr><td><code>2_4</code></td><td>Extraction &amp; transport</td><td class="bsp">2_4_Miner_Aufsatz</td></tr>
+  <tr><td><code>2_5</code></td><td>Habillages de machines (skins)</td><td class="bsp">2_5_Matrix_Konverter</td></tr>
+  <tr><td><code>2_6</code></td><td>Usines (complètes)</td><td class="bsp">2_6_Turbofuelfabrik</td></tr>
+  <tr><td><code>2_9</code></td><td>Divers production</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>3</th><th colspan="2">Énergie</th></tr>
+  <tr><td><code>3_1</code></td><td>Centrales électriques</td><td class="bsp">3_1_Kohlekraftwerk</td></tr>
+  <tr><td><code>3_2</code></td><td>Stockage d'énergie</td><td class="bsp"></td></tr>
+  <tr><td><code>3_3</code></td><td>Poteaux électriques &amp; distribution</td><td class="bsp">3_3_Strommast1 (auparavant 1_6)</td></tr>
+  <tr><td><code>3_6</code> / <code>3_7</code></td><td>Éolien / solaire (déco)</td><td class="bsp">3_6_Windrad1</td></tr>
+  <tr><td><code>3_9</code></td><td>Divers énergie</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>4</th><th colspan="2">Transport – Route</th></tr>
+  <tr><td><code>4_1</code></td><td>Routes</td><td class="bsp"></td></tr>
+  <tr><td><code>4_2</code></td><td>Croisements &amp; ronds-points</td><td class="bsp">4_2_Rondel1 (auparavant 5_6)</td></tr>
+  <tr><td><code>4_3</code></td><td>Parkings &amp; gares</td><td class="bsp">4_3_Truck_Station</td></tr>
+  <tr><td><code>4_5</code></td><td>Stations-service</td><td class="bsp">4_5_Tankstelle2</td></tr>
+  <tr><td><code>4_6</code></td><td>Ponts &amp; passages inférieurs</td><td class="bsp">4_6_Straße_Unterführung</td></tr>
+  <tr><td><code>4_7</code></td><td>Panneaux routiers</td><td class="bsp"></td></tr>
+  <tr><td><code>4_8</code></td><td>Passerelles</td><td class="bsp">4_8_Gehweg_Kurve</td></tr></tbody>
+  <tbody><tr class="hg"><th>5</th><th colspan="2">Transport – Rail</th></tr>
+  <tr><td><code>5_1</code></td><td>Rails &amp; tracés</td><td class="bsp">5_1_Trasse_Gerade_1</td></tr>
+  <tr><td><code>5_2</code></td><td>Gares</td><td class="bsp">5_2_Hauptbahnhof_Doppelstock</td></tr>
+  <tr><td><code>5_3</code></td><td>Aiguillages, croisements &amp; ronds-points</td><td class="bsp">5_3_4_Clover_Rail_Interchange</td></tr>
+  <tr><td><code>5_4</code></td><td>Métro</td><td class="bsp">5_4_UBahn_Kurve_90Grad</td></tr>
+  <tr><td><code>5_5</code></td><td>Hypertube &amp; monorail</td><td class="bsp"></td></tr>
+  <tr><td><code>5_6</code></td><td>Ponts ferroviaires</td><td class="bsp">5_6_Bahnbrücke_Gerade</td></tr>
+  <tr><td><code>5_9</code></td><td>Divers rail</td><td class="bsp">5_9_Bahnübergang</td></tr></tbody>
+  <tbody><tr class="hg"><th>6</th><th colspan="2">Logistique &amp; stockage</th></tr>
+  <tr><td><code>6_1</code></td><td>Stockage</td><td class="bsp">6_1_Lager_10x</td></tr>
+  <tr><td><code>6_2</code></td><td>Dépôts &amp; téléverseurs</td><td class="bsp"></td></tr>
+  <tr><td><code>6_3</code></td><td>Drones &amp; camions</td><td class="bsp">6_3_Drohnenport</td></tr>
+  <tr><td><code>6_9</code></td><td>Divers logistique</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>7</th><th colspan="2">Lumière &amp; afficheurs</th></tr>
+  <tr><td><code>7_1</code></td><td>Lumière</td><td class="bsp">7_1_Notstrom_Licht_Rot_1</td></tr>
+  <tr><td><code>7_2</code></td><td>Afficheurs &amp; écrans</td><td class="bsp">7_2_Anzeige_Muster_01</td></tr>
+  <tr><td><code>7_3</code></td><td>Panneaux &amp; signalisation</td><td class="bsp">7_3_Warnschild (auparavant 1_7)</td></tr>
+  <tr><td><code>7_4</code></td><td>Publicité &amp; logos</td><td class="bsp">7_4_FICSIT_Logo</td></tr></tbody>
+  <tbody><tr class="hg"><th>8</th><th colspan="2">Déco</th></tr>
+  <tr><td><code>8_1</code></td><td>Mobilier &amp; aménagement intérieur</td><td class="bsp"></td></tr>
+  <tr><td><code>8_2</code></td><td>Extérieur &amp; parc</td><td class="bsp">8_2_Parkbank</td></tr>
+  <tr><td><code>8_3</code></td><td>Statues &amp; sculptures</td><td class="bsp">8_3_Statue, 8_3_Tooritor</td></tr>
+  <tr><td><code>8_4</code></td><td>Déco technique</td><td class="bsp">8_4_Ventilator</td></tr>
+  <tr><td><code>8_5</code></td><td>Pixel art</td><td class="bsp"></td></tr>
+  <tr><td><code>8_6</code></td><td>Grues &amp; véhicules</td><td class="bsp">8_6_Kran_Klein</td></tr>
+  <tr><td><code>8_7</code></td><td>Conteneurs &amp; caisses</td><td class="bsp"></td></tr>
+  <tr><td><code>8_9</code></td><td>Divers déco</td><td class="bsp"></td></tr></tbody>
+  <tbody><tr class="hg"><th>9</th><th colspan="2">Spécial</th></tr>
+  <tr><td><code>9_1</code></td><td>Chantier</td><td class="bsp">9_1_Bauzaun_Absperrung_Gerade</td></tr>
+  <tr><td><code>9_2</code></td><td>Thèmes &amp; constructions de fans</td><td class="bsp">9_2_Kaffebar</td></tr>
+  <tr><td><code>9_8</code></td><td>Triche &amp; créatif</td><td class="bsp">9_8_2000_OC_Constructor</td></tr>
+  <tr><td><code>9_9</code></td><td>Test &amp; incertain</td><td class="bsp"></td></tr></tbody>
+</table>
+
+<h3 id="bibliothek-struktur">Structure de la bibliothèque (dossiers)</h3>
+<p>La réserve reflète le schéma sous forme de dossiers : <code>&lt;groupe principal&gt;\&lt;sous-groupe&gt;\&lt;thème&gt;</code>, p. ex. <code>2 Production\2_1 Production (chaînes de machines)\Fer &amp; acier</code>. Les dossiers thématiques n'existent que pour les grands groupes, afin qu'aucun dossier ne devienne confus. Ils ont été dérivés de l'analyse d'environ 3 000 plans :</p>
+<table>
+<thead><tr><th>Groupe</th><th>Dossiers thématiques</th></tr></thead><tbody>
+<tr><td><code>1_1</code></td><td>Halls &amp; ateliers · Tours · Habitations · Bâtiments vides · Pièces &amp; modules</td></tr>
+<tr><td><code>1_2</code></td><td>Portes &amp; portails · Fenêtres &amp; façades · Murs &amp; digues · Modules de mur</td></tr>
+<tr><td><code>1_5</code></td><td>Colonnes · Poutres · Soubassement</td></tr>
+<tr><td><code>1_9</code></td><td>Colonnes &amp; poutres · Sols &amp; fondations · Murs &amp; cadres</td></tr>
+<tr><td><code>2_1</code></td><td>Dispositions compactes · Fer &amp; acier · Cuivre &amp; caterium · Pétrole, plastique &amp; carburant · Aluminium · Béton, quartz &amp; verre · High-tech &amp; fin de partie</td></tr>
+<tr><td><code>2_2</code></td><td>Convoyeurs · Tuyaux · Ascenseurs de convoyeur</td></tr>
+<tr><td><code>3_1</code></td><td>Nucléaire · Charbon · Carburant</td></tr>
+<tr><td><code>4_6</code></td><td>Ponts suspendus · Modules de pont</td></tr>
+<tr><td><code>5_1</code></td><td>Rampes &amp; embranchements · Tracés &amp; supports</td></tr>
+<tr><td><code>7_2</code></td><td>Motif · Pupitres de commande · Écrans &amp; panneaux</td></tr>
+<tr><td><code>8_6</code></td><td>Grues · Véhicules &amp; excavateurs</td></tr>
+<tr><td><code>8_7</code></td><td>Conteneur · Caisses</td></tr>
+</tbody></table>
+<p>Le thème est reconnu d'après le nom (p. ex. « Eisenplatten » → Fer &amp; acier). Si aucun thème ne correspond, le plan reste dans le dossier du groupe. Le fichier <code>_Ablage\_Struktur.txt</code> montre les dossiers avec leur contenu attendu.</p>
+
+<h3 id="regeln">Règles &amp; exemples</h3>
+<ul>
+  <li><b>32 caractères maximum</b> (limite de saisie dans le jeu). Pas de caractères <code>\ / : * ? " &lt; &gt; |</code>. Les caractères accentués (umlauts) sont autorisés.</li>
+  <li>Les <b>tirets bas</b> séparent les parties ; les mots commencent par une majuscule (<code>Leergebäude_Japanisch12</code>), les petits mots de liaison restent en minuscules (<code>Beton_für_Stahlbeton</code>).</li>
+  <li><b>Quantité à la fin :</b> <code>10x Band</code> → <code>2_2_Band_10x</code>. Rapports en version compacte : <code>Balancer 4 zu 4</code> → <code>2_3_Balancer_4zu4</code>.</li>
+  <li><b>Production :</b> le produit d'abord, puis machines/débit : <code>2_1_Eisenbarren_10xSchmelze</code>, <code>2_1_Platine_5x_150pm</code> (pm = par minute).</li>
+  <li>Les <b>ensembles en plusieurs parties</b> conservent leur nom d'ensemble : <code>8_6_COC_Kran_2_Teil2</code>, <code>1_1_HouseBeckenbauer_2Teil_Turm_Links</code>.</li>
+  <li>Les <b>préfixes personnels</b> (p. ex. <code>Spielername_</code>, <code>Weltname_</code> – à saisir dans les paramètres sous « Préfixes », ainsi que <code>270_</code>) sont retirés – le groupe en dit plus. Les noms de la communauté restent dans leur langue, seulement nettoyés (sans « [1.2 Vanilla] », « v1.1 », « by … »).</li>
+  <li>Les <b>doublons</b> ne reçoivent pas de nom propre, mais vont dans <code>_Duplikate</code>.</li>
+</ul>
+
+<!-- ============================================================ UPDATE -->
+<h2 class="sec" id="update">Liste de contrôle lors d'une mise à jour du jeu (changement de version)</h2>
+<p class="lead">Après une mise à jour importante de Satisfactory (p. ex. 1.2 → 1.3), suivez ces étapes dans l'ordre. Les petits correctifs ne nécessitent généralement que les étapes 1 à 3.</p>
+<ol class="steps">
+  <li><b>Démarrer l'app et vérifier le catalogue.</b> Blueprint Studio relit <code>CommunityResources\Docs\de.json</code> au démarrage dès que le fichier a changé. Dans la section « Catalogue des bâtiments », en bas à gauche, figure le nombre de bâtiments/objets/recettes. En cas d'erreur : <a href="#einstellungen">Paramètres</a> → vérifier le dossier d'installation.</li>
+  <li><b>Ouvrir un plan enregistré avec la nouvelle version du jeu.</b> Les nouvelles versions du jeu modifient parfois le format de fichier. S'il s'ouvre, tout va bien. Sinon : notez le message – le lecteur (<code>app\lib\sbp.mjs</code>) doit être adapté.</li>
+  <li><b>Reconstruire les modèles.</b> Supprimez le fichier <code>userdata\vorlagen-cache.json</code> et redémarrez l'app. L'app apprend ainsi les nouveaux éléments à partir de vos plans/sauvegardes actuels (pour le générateur de formes et le remplacement).</li>
+  <li><b>Tester formes/remplacement.</b> Générez une petite forme, enregistrez-la, placez-la dans le jeu. Si cela fonctionne, tout est compatible.</li>
+  <li><b>Mettre à jour FModel.</b> Décompressez la dernière version de <a href="https://fmodel.app/" target="_blank" rel="noopener">fmodel.app</a> (ou des releases GitHub) dans <code data-pfad="fmodel">…\werkzeuge\FModel</code> – ou utilisez « Télécharger FModel » dans l'assistant de configuration. Sous Settings, vérifiez la <b>version UE</b> (Satisfactory 1.2 : <code>GAME_UE5_6</code> – avec un nouveau moteur, choisissez la version correspondante) et définissez le chemin vers le nouveau fichier de mapping <code>CommunityResources\FactoryGame.usmap</code>.</li>
+  <li><b>Réexporter les icônes</b> (nécessaire uniquement en cas de nouveaux objets/bâtiments) : <a href="#fm-icons">FModel → Icônes</a>, puis <code>werkzeuge\icons-uebernehmen.bat</code>.</li>
+  <li><b>Repréparer les modèles 3D</b> (uniquement en cas de bâtiments nouveaux/modifiés) : exportez les <a href="#fm-props">données des éléments</a> et les <a href="#fm-modelle">modèles</a>, puis <code>werkzeuge\modelle-aufbereiten.bat</code>. Il signale les meshes manquants, que vous exportez ensuite de façon ciblée.</li>
+  <li><b>Relire dans Organiser.</b> Le cache <code>userdata\ordnen-cache.json</code> se renouvelle automatiquement ; en cas de problème, supprimez-le.</li>
+</ol>
+
+<h3 id="orte">Où se trouve quoi ?</h3>
+<table>
+  <tr><th>Quoi</th><th>Emplacement</th></tr>
+  <tr><td>Blueprint Studio</td><td><code data-pfad="appDir">…\BlueprintStudio</code> (démarrage : <code>start.bat</code>)</td></tr>
+  <tr><td>Plans du jeu</td><td><code data-pfad="blueprintDir">%LOCALAPPDATA%\FactoryGame\Saved\SaveGames\blueprints</code><code>\&lt;sauvegarde&gt;</code></td></tr>
+  <tr><td>Bibliothèque de plans</td><td><code data-pfad="bibliothek">(à renseigner dans les paramètres)</code></td></tr>
+  <tr><td>Satisfactory</td><td><code data-pfad="gameDir">…\steamapps\common\Satisfactory</code></td></tr>
+  <tr><td>Données du jeu (catalogue)</td><td><code>…\Satisfactory\CommunityResources\Docs\de.json</code></td></tr>
+  <tr><td>Mapping pour FModel</td><td><code>…\Satisfactory\CommunityResources\FactoryGame.usmap</code></td></tr>
+  <tr><td>FModel + export</td><td><code data-pfad="fmodel">…\werkzeuge\FModel</code>, export : <code data-pfad="fmodelExport">…\werkzeuge\FModel\Output\Exports</code></td></tr>
+  <tr><td>Icônes de l'app</td><td><code>app\public\icons\*.png</code></td></tr>
+  <tr><td>Modèles 3D de l'app</td><td><code>app\public\modelle\index.json</code> + <code>meshes.bin</code></td></tr>
+  <tr><td>Paramètres, copies de sécurité, historiques</td><td><code>userdata\</code> (<code>einstellungen.json</code>, <code>sicherungen\</code>, <code>ordnen-protokoll.json</code>)</td></tr>
+  <tr><td>Outils</td><td><code>werkzeuge\icons-uebernehmen.bat</code>, <code>werkzeuge\modelle-aufbereiten.bat</code></td></tr>
+</table>
+
+<!-- ============================================================ FMODEL -->
+<h2 class="sec" id="fmodel">FModel – téléchargement &amp; configuration</h2>
+<p class="lead">FModel est une visionneuse gratuite pour les fichiers de jeux Unreal Engine. Elle permet d'extraire de Satisfactory les icônes, les modèles 3D et les données des éléments.</p>
+<p class="tip"><b>Plus simple :</b> l'assistant de configuration (étape « Modèles du jeu ») récupère les mêmes données avec <b>Récupérer les modèles automatiquement</b> – sans FModel. Le guide suivant n'est utile que si la méthode automatique ne fonctionne pas chez vous.</p>
+<ul>
+  <li><b>Téléchargement :</b> <a href="https://fmodel.app/" target="_blank" rel="noopener">https://fmodel.app/</a> – ou les releases sur GitHub : <a href="https://github.com/4sval/FModel/releases" target="_blank" rel="noopener">github.com/4sval/FModel/releases</a>. Guide/wiki : <a href="https://github.com/4sval/FModel/wiki" target="_blank" rel="noopener">github.com/4sval/FModel/wiki</a>.</li>
+  <li><b>Guide spécifique à Satisfactory</b> de la communauté de modding : <a href="https://docs.ficsit.app/satisfactory-modding/latest/Development/ExtractGameFiles.html" target="_blank" rel="noopener">docs.ficsit.app → Extract Game Files</a>.</li>
+  <li>Nécessite le runtime .NET Desktop <b>10</b> (FModel le demande au premier lancement ; l'assistant l'installe en un clic).</li>
+</ul>
+<ol class="steps">
+  <li><b>Décompresser</b> dans <code data-pfad="fmodel">…\werkzeuge\FModel</code> (l'assistant de configuration le fait automatiquement) et lancer <code>FModel.exe</code>.</li>
+  <li><b>Ajouter le jeu :</b> dans la fenêtre « Directory Selector », créez un <i>Undetected Game</i> : nom <code>Satisfactory</code>, dossier <code data-pfad="gameDir">…\steamapps\common\Satisfactory</code>, plus bleu, OK.</li>
+  <li><b>Version UE :</b> <code>GAME_UE5_6</code> (Satisfactory 1.2). Si elle n'est pas proposée : désactivez « Enable custom UE versions ».</li>
+  <li><b>Settings → General :</b>
+    <ul>
+      <li><i>Output Directory</i> : <code data-pfad="fmodelOutput">…\werkzeuge\FModel\Output</code></li>
+      <li><i>Keep Directory Structure</i> : activé</li>
+      <li><i>Local Mapping File</i> : activé, chemin <code data-pfad="usmap">…\Satisfactory\CommunityResources\FactoryGame.usmap</code></li>
+      <li>Facultatif : <i>Custom Versions</i> – collez le contenu de <code>CommunityResources\CustomVersions.json</code> (le fichier est en UTF-16).</li>
+    </ul></li>
+  <li><b>Settings → Export (Models) :</b> <i>Mesh Format</i> = <code>glTF 2.0 (binary)</code>, <i>Texture Format</i> = <code>PNG</code>, <i>Auto-Export Attached Materials</i> = désactivé (économise de la place). OK.</li>
+  <li><b>Charger :</b> onglet <i>Archives</i> → <b>Load</b>. Ensuite, les onglets <i>Folders</i> et <i>Packages</i> sont remplis.</li>
+</ol>
+<div class="box"><p><b>Exporter dans les versions récentes de FModel :</b> les exports sont d'abord placés dans une <b>file d'attente</b> (champ jaune en bas à droite dans la barre d'état). Cliquez dessus → fenêtre « Export Session » → <b>Export</b>. Le compteur indique la progression.</p></div>
+
+<h2 class="sec" id="fm-icons">Exporter les icônes</h2>
+<ol class="steps">
+  <li><b>Ouvrir la recherche :</b> menu <i>Packages → Search</i> (<kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>F</kbd>).</li>
+  <li><b>Rechercher :</b> saisissez <code>IconDesc</code>, <kbd>Entrée</kbd>. (Env. 1 500 résultats.)</li>
+  <li><b>Tout sélectionner :</b> cliquez sur le premier résultat, <kbd>Ctrl</kbd>+<kbd>A</kbd>.</li>
+  <li><b>Exporter :</b> clic droit → <i>Export → Texture</i>. Puis file d'attente en bas à droite → <b>Export</b>.</li>
+  <li><b>Reprendre dans l'app :</b> double-clic sur <code>werkzeuge\icons-uebernehmen.bat</code>. Il copie exactement les icônes dont le catalogue a besoin et signale celles qui manquent.</li>
+  <li><b>Compléter les manquantes :</b> l'outil affiche une ligne comme <code>/(Hub_512|Track_512|…)\.uasset$</code>. Dans la recherche de FModel, activez l'icône <b>Regex</b> (deuxième icône à droite dans le champ de recherche), collez la ligne, <kbd>Entrée</kbd>, exportez comme texture comme ci-dessus et relancez l'outil.</li>
+</ol>
+
+<h2 class="sec" id="fm-props">Exporter les données des éléments (pour l'association 3D)</h2>
+<p>L'app doit savoir quel modèle appartient à quel élément et comment il est positionné. Ces informations se trouvent dans les blueprints <code>Build_*</code> du jeu.</p>
+<ol class="steps">
+  <li>Ouvrez la recherche, <b>Regex activé</b>, saisissez : <pre>Buildable/.*/Build_[^/]*\.uasset$</pre></li>
+  <li>Tout sélectionner → clic droit → <i>Export → Properties (json)</i>. Ces exports sont enregistrés immédiatement (env. 590 fichiers).</li>
+</ol>
+
+<h2 class="sec" id="fm-modelle">Exporter les modèles 3D</h2>
+<ol class="steps">
+  <li>Recherche, Regex activé : <pre>Buildable/(Factory|Building)/.*/SM_[^/]*\.uasset$</pre></li>
+  <li>Tout sélectionner → clic droit → <i>Export → Model</i>. File d'attente → <b>Export</b> (env. 500 modèles, quelques minutes).</li>
+  <li>Double-clic sur <code>werkzeuge\modelle-aufbereiten.bat</code>. Il lit les données des éléments + les modèles, les convertit en coordonnées du jeu et écrit <code>app\public\modelle\</code> (~40 Mo).</li>
+  <li>Si l'outil signale des <b>meshes manquants</b> (p. ex. <code>ConstructorMk1_static</code>), recherchez ces noms par regex et exportez-les de même comme Model : <pre>Buildable/.*/(ConstructorMk1_static|SmelterMk1_static)\.uasset$</pre> Relancez ensuite l'outil.</li>
+  <li>Rechargez Blueprint Studio – dans la vue 3D, utilisez l'interrupteur <b>Modèles</b>.</li>
+</ol>
+
+<h2 class="sec" id="fm-probleme">Problèmes &amp; solutions</h2>
+<table>
+  <tr><th>Problème</th><th>Solution</th></tr>
+  <tr><td>FModel plante lors du chargement/de l'analyse</td><td>Utilisez la dernière version de FModel (les anciennes versions ne peuvent pas lire les nouveaux fichiers de mapping).</td></tr>
+  <tr><td>Message « Fatal Error … Index was out of range » après OK dans Settings</td><td>Sans gravité – fermez avec OK. Les réglages sont enregistrés.</td></tr>
+  <tr><td>Les exports n'arrivent pas dans le dossier</td><td>Ouvrez la file d'attente en bas à droite et cliquez sur <b>Export</b>. Vérifiez le dossier Output dans Settings.</td></tr>
+  <tr><td>La recherche regex ne trouve rien</td><td>L'icône Regex du champ de recherche est-elle activée ? Après l'activation, cliquez dans le champ de recherche et appuyez sur <kbd>Entrée</kbd>.</td></tr>
+  <tr><td>Les modèles sont tournés/décalés dans l'app</td><td>Le format de mesh de FModel doit être <code>glTF 2.0 (binary)</code> ; relancez l'outil.</td></tr>
+  <tr><td>Boîtes grises au lieu des modèles</td><td>Il manque un modèle pour cet élément (voir le message de l'outil) – ou il s'agit d'un convoyeur/tuyau/rail/ascenseur (volontairement sans modèle).</td></tr>
+</table>
+<p class="muted">Blueprint Studio 0.9.0 · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
+</main>
+<script>
+// Anker aus der App (#schema usw.) anspringen
+if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrollIntoView(), 50);
+</script>
+<script>
+// Pfade in der Hilfe aus den eigenen Einstellungen einsetzen (keine festen Pfade im Text)
+fetch('/api/config').then((r) => r.json()).then((c) => {
+  const j = (...t) => t.filter(Boolean).join('\\');
+  const w = { appDir: c.appDir, blueprintDir: c.blueprintDir, saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0], megaprints: (c.megaprints || [])[0],
+    fmodel: c.fmodelDir, fmodelOutput: c.fmodelDir && j(c.fmodelDir, 'Output'), fmodelExport: c.fmodelExport, usmap: c.gameDir && j(c.gameDir, 'CommunityResources', 'FactoryGame.usmap') };
+  document.querySelectorAll('[data-pfad]').forEach((e) => { const v = w[e.dataset.pfad]; if (v) { e.textContent = v; e.title = 'd’après vos paramètres'; } });
+}).catch(() => {});
+</script>
+</body>
+</html>

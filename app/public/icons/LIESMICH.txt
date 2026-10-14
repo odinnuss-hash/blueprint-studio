@@ -1,0 +1,3 @@
+Hier koennen Icons aus dem Spiel als PNG liegen (Export mit FModel).
+Dateiname wie im Spiel, z. B. IconDesc_ConstructorMk1_512.png oder IconDesc_IronPlates_256.png.
+Die App findet sie beim naechsten Start automatisch.
