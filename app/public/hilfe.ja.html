@@ -86,7 +86,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">アプリについて</h2>
 <table>
   <tr><th style="width:200px">プログラム</th><td><b>Blueprint Studio</b> – Satisfactory 用の設計図ツール</td></tr>
-  <tr><th>バージョン</th><td id="za-version">0.9.0</td></tr>
+  <tr><th>バージョン</th><td id="za-version">0.9.1</td></tr>
   <tr><th>作者</th><td><b>ODINnuss</b>– アイデア、コンセプト、デザイン</td></tr>
   <tr><th>著作権</th><td>© 2026 ODINnuss. 無断複製・転載を禁じます。</td></tr>
   <tr><th>実装</th><td>作者の依頼により AI の支援(Claude、Anthropic)を受けてプログラミングされました。</td></tr>
@@ -234,7 +234,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <p>ここや「整理」で行ったすべての名前変更は、次回以降の提案に反映されます(<code>userdata\namen-gelernt.json</code>)。</p>
 
 <h2 class="sec" id="karte">マップ – セーブデータを見る</h2>
-<p><b>マップ</b>領域は、<code>…\FactoryGame\Saved\SaveGames\&lt;番号&gt;</code> にあるセーブデータ(<code>.sav</code>、ゲームバージョン 1.0 以降)を読み込み、建設したものすべてを上面図で表示します: 建物、基礎、壁、柱(ゲームがまとめて保存する「軽量」パーツも含む)、コンベアベルト、パイプ、線路、ハイパーチューブは線として、さらに電線とあなたのキャラクター(赤い十字)。</p>
+<p><b>マップ</b>領域は、<code>…\FactoryGame\Saved\SaveGames\&lt;番号&gt;</code> にあるセーブデータ(<code>.sav</code>、Update 8 からバージョン 1.2 まで – 非常に大きな古いセーブは開くときに多くのメモリが必要です)を読み込み、建設したものすべてを上面図で表示します: 建物、基礎、壁、柱(ゲームがまとめて保存する「軽量」パーツも含む)、コンベアベルト、パイプ、線路、ハイパーチューブは線として、さらに電線とあなたのキャラクター(赤い十字)。</p>
 <ul>
   <li>左でセーブデータを選びます。初回は読み込みに数秒かかります。その後はファイルが変わらない限りキャッシュ(<code>userdata\karten</code>)から読み込まれます。</li>
   <li>ドラッグ = 移動、マウスホイール = ズーム、クリック = パーツを表示(名前、位置、高さ、セーブデータ内の数)。「合わせる」はあなたの建築物を、「ワールド全体」はマップ全体を表示します(グリッド = 500 m)。</li>
@@ -541,7 +541,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>アプリ内でモデルが回転/ずれている</td><td>FModel の Mesh Format は <code>glTF 2.0 (binary)</code> である必要があります。ツールを再度実行してください。</td></tr>
   <tr><td>モデルの代わりに灰色の箱が表示される</td><td>このパーツのモデルがありません(ツールのメッセージ参照)– またはベルト/パイプ/線路/リフトです(意図的にモデルなし)。</td></tr>
 </table>
-<p class="muted">Blueprint Studio 0.9.0 · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
+<p class="muted">Blueprint Studio 0.9.1 · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

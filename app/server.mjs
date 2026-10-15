@@ -32,7 +32,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '0.9.0';
+const VERSION = '0.9.1';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 

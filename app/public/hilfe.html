@@ -86,7 +86,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">Zur App</h2>
 <table>
   <tr><th style="width:200px">Programm</th><td><b>Blueprint Studio</b> – Blaupausen-Werkzeug für Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">0.9.0</td></tr>
+  <tr><th>Version</th><td id="za-version">0.9.1</td></tr>
   <tr><th>Urheber</th><td><b>ODINnuss</b> – Idee, Konzept und Gestaltung</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Alle Rechte vorbehalten.</td></tr>
   <tr><th>Umsetzung</th><td>Programmiert im Auftrag des Urhebers mit KI-Unterstützung (Claude, Anthropic).</td></tr>
@@ -234,7 +234,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <p>Jede Umbenennung, die du hier oder in „Ordnen“ vornimmst, fließt in die nächsten Vorschläge ein (<code>userdata\namen-gelernt.json</code>).</p>
 
 <h2 class="sec" id="karte">Karte – Spielstände ansehen</h2>
-<p>Der Bereich <b>Karte</b> liest deine Spielstände (<code>.sav</code>, Spielversion 1.0 und neuer) aus <code>…\FactoryGame\Saved\SaveGames\&lt;Nummer&gt;</code> und zeigt alles Gebaute als Draufsicht: Gebäude, Fundamente, Wände und Säulen (auch die „Leichtbau“-Teile, die das Spiel gesammelt speichert), Förderbänder, Rohre, Schienen und Hypertubes als Linien, Stromleitungen und deine Spielfigur (rotes Kreuz).</p>
+<p>Der Bereich <b>Karte</b> liest deine Spielstände (<code>.sav</code>, ab Update 8 bis Version 1.2 – sehr große alte Spielstände brauchen beim Öffnen viel Arbeitsspeicher) aus <code>…\FactoryGame\Saved\SaveGames\&lt;Nummer&gt;</code> und zeigt alles Gebaute als Draufsicht: Gebäude, Fundamente, Wände und Säulen (auch die „Leichtbau“-Teile, die das Spiel gesammelt speichert), Förderbänder, Rohre, Schienen und Hypertubes als Linien, Stromleitungen und deine Spielfigur (rotes Kreuz).</p>
 <ul>
   <li>Links den Spielstand wählen. Beim ersten Öffnen dauert das Lesen einige Sekunden; danach kommt er aus dem Zwischenspeicher (<code>userdata\karten</code>), solange sich die Datei nicht ändert.</li>
   <li>Ziehen = verschieben, Mausrad = Zoom, Klick = Bauteil anzeigen (Name, Position, Höhe, Anzahl im Spielstand). „Einpassen“ zeigt deine Bauten, „Ganze Welt“ die ganze Karte (Raster = 500 m).</li>
@@ -541,7 +541,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Modelle liegen in der App verdreht/versetzt</td><td>FModel-Mesh-Format muss <code>glTF 2.0 (binary)</code> sein; Werkzeug erneut laufen lassen.</td></tr>
   <tr><td>Graue Kästen statt Modellen</td><td>Für dieses Bauteil fehlt ein Modell (siehe Meldung des Werkzeugs) – oder es ist ein Band/Rohr/Schiene/Lift (bewusst ohne Modell).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 0.9.0 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
+<p class="muted">Blueprint Studio 0.9.1 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

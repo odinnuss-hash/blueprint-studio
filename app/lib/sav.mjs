@@ -1,4 +1,4 @@
-// Satisfactory-Spielstaende (.sav, Spielversion 1.0–1.2) lesen – ohne fremde Abhaengigkeiten.
+// Satisfactory-Spielstaende (.sav, Update 8 bis 1.2) lesen – ohne fremde Abhaengigkeiten.
 //
 // Aufbau (Kopf-Version 14, Save-Version 60 / 1.2):
 //   Kopf: headerVersion, saveVersion, buildVersion, saveName, mapName, mapOptions, sessionName, playedSeconds,
@@ -48,7 +48,7 @@ export const shortClass = (p) => {
 export function readSavHeader(buf) {
   const r = new Reader(buf);
   const h = { headerVersion: r.i32(), saveVersion: r.i32(), buildVersion: r.i32() };
-  if (h.headerVersion < 13 || h.headerVersion > 20) throw new Error(`Spielstand-Kopf Version ${h.headerVersion} wird nicht unterstützt (nur Spielversion 1.0 und neuer).`);
+  if (h.headerVersion < 13 || h.headerVersion > 20) throw new Error(`Spielstand-Kopf Version ${h.headerVersion} wird nicht unterstützt (unterstützt: ab Update 8).`);
   h.saveName = h.headerVersion >= 14 ? r.str() : '';
   h.mapName = r.str(); h.mapOptions = r.str(); h.sessionName = r.str();
   h.playedSeconds = r.i32();
@@ -101,7 +101,7 @@ function readLevel(r, name, objects, levelIdx, opts) {
     const typePath = r.str();
     r.skipStr(); // levelName
     const pathName = r.str();
-    const flags = r.i32();
+    const flags = opts.mitFlags ? r.i32() : 0; // Objekt-Flags erst ab 1.0 (Save-Version 46)
     if (type === 1) {
       r.i32(); // needTransform
       const rot = [r.f32(), r.f32(), r.f32(), r.f32()];
@@ -140,7 +140,7 @@ export function readSave(buf, { props = true, readProps = null } = {}) {
   // ab 1.2: Paket-Versionsblock (int32 0, UE4-Version 5xx, …); 1.0/1.1 beginnen direkt mit den Rastern
   const neu = r.b.readInt32LE(r.p) === 0 && r.b.readInt32LE(r.p + 4) > 400 && r.b.readInt32LE(r.p + 4) < 1000;
   if (neu) skipPackageBlock(r);
-  const opt = { neu };
+  const opt = { neu, mitFlags: header.saveVersion >= 46 };
   // Validierungs-Raster
   const ng = r.i32();
   for (let g = 0; g < ng; g++) { r.skipStr(); r.i32(); r.u32(); const n = r.i32(); for (let c = 0; c < n; c++) { r.skipStr(); r.u32(); } }
@@ -154,7 +154,7 @@ export function readSave(buf, { props = true, readProps = null } = {}) {
     try { readLevel(r, name, objects, l, opt); } catch (e) { e.message += ` (Level ${l}/${nl} „${name}“ ab Byte ${at})`; throw e; }
     if (!persistent) {
       // Level-Anhang: Version, entfernte Objekte (Liste von Referenzen), hatPaket, Paketblock
-      r.i32(); // Level-Version
+      if (opt.mitFlags) r.i32(); // Level-Version (erst ab 1.0)
       const nd = r.i32();
       for (let k = 0; k < nd; k++) { r.skipStr(); r.skipStr(); }
       if (neu && r.i32()) skipPackageBlock(r); // ab 1.2: Paketblock je Level

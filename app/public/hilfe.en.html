@@ -86,7 +86,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">About the app</h2>
 <table>
   <tr><th style="width:200px">Program</th><td><b>Blueprint Studio</b> – blueprint tool for Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">0.9.0</td></tr>
+  <tr><th>Version</th><td id="za-version">0.9.1</td></tr>
   <tr><th>Author</th><td><b>ODINnuss</b> – idea, concept and design</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. All rights reserved.</td></tr>
   <tr><th>Implementation</th><td>Programmed on behalf of the author with AI assistance (Claude, Anthropic).</td></tr>
@@ -234,7 +234,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <p>Every renaming you do here or in “Organize” feeds into the next suggestions (<code>userdata\namen-gelernt.json</code>).</p>
 
 <h2 class="sec" id="karte">Map – viewing saves</h2>
-<p>The <b>Map</b> area reads your saves (<code>.sav</code>, game version 1.0 and newer) from <code>…\FactoryGame\Saved\SaveGames\&lt;number&gt;</code> and shows everything built as a top view: buildings, foundations, walls and pillars (including the “lightweight” parts that the game stores collectively), conveyor belts, pipelines, railways and hypertubes as lines, power lines and your character (red cross).</p>
+<p>The <b>Map</b> area reads your saves (<code>.sav</code>, from Update 8 up to version 1.2 – very large old saves need a lot of memory when opened) from <code>…\FactoryGame\Saved\SaveGames\&lt;number&gt;</code> and shows everything built as a top view: buildings, foundations, walls and pillars (including the “lightweight” parts that the game stores collectively), conveyor belts, pipelines, railways and hypertubes as lines, power lines and your character (red cross).</p>
 <ul>
   <li>Choose the save on the left. The first time it is opened, reading takes a few seconds; after that it comes from the cache (<code>userdata\karten</code>) as long as the file does not change.</li>
   <li>Drag = pan, mouse wheel = zoom, click = show part (name, position, height, count in the save). “Fit” shows your builds, “Whole world” the whole map (grid = 500 m).</li>
@@ -541,7 +541,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Models are rotated/offset in the app</td><td>The FModel mesh format must be <code>glTF 2.0 (binary)</code>; run the tool again.</td></tr>
   <tr><td>Gray boxes instead of models</td><td>A model is missing for this part (see the tool's message) – or it is a belt/pipeline/railway/lift (intentionally without a model).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 0.9.0 · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
+<p class="muted">Blueprint Studio 0.9.1 · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

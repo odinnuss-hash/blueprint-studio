@@ -86,7 +86,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">À propos de l'app</h2>
 <table>
   <tr><th style="width:200px">Programme</th><td><b>Blueprint Studio</b> – outil de plans pour Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">0.9.0</td></tr>
+  <tr><th>Version</th><td id="za-version">0.9.1</td></tr>
   <tr><th>Auteur</th><td><b>ODINnuss</b> – idée, concept et conception</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Tous droits réservés.</td></tr>
   <tr><th>Réalisation</th><td>Programmé pour le compte de l'auteur avec l'aide de l'IA (Claude, Anthropic).</td></tr>
@@ -234,7 +234,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <p>Chaque renommage que vous effectuez ici ou dans « Organiser » est pris en compte dans les suggestions suivantes (<code>userdata\namen-gelernt.json</code>).</p>
 
 <h2 class="sec" id="karte">Carte – voir les sauvegardes</h2>
-<p>La section <b>Carte</b> lit vos sauvegardes (<code>.sav</code>, version du jeu 1.0 et ultérieure) depuis <code>…\FactoryGame\Saved\SaveGames\&lt;numéro&gt;</code> et affiche tout ce qui est construit en vue de dessus : bâtiments, fondations, murs et colonnes (y compris les pièces « légères » que le jeu enregistre de façon groupée), convoyeurs, tuyaux, rails et hypertubes sous forme de lignes, câbles électriques et votre personnage (croix rouge).</p>
+<p>La section <b>Carte</b> lit vos sauvegardes (<code>.sav</code>, de l'Update 8 à la version 1.2 – les très grandes anciennes sauvegardes demandent beaucoup de mémoire à l'ouverture) depuis <code>…\FactoryGame\Saved\SaveGames\&lt;numéro&gt;</code> et affiche tout ce qui est construit en vue de dessus : bâtiments, fondations, murs et colonnes (y compris les pièces « légères » que le jeu enregistre de façon groupée), convoyeurs, tuyaux, rails et hypertubes sous forme de lignes, câbles électriques et votre personnage (croix rouge).</p>
 <ul>
   <li>Choisissez la sauvegarde à gauche. À la première ouverture, la lecture prend quelques secondes ; ensuite elle provient du cache (<code>userdata\karten</code>), tant que le fichier ne change pas.</li>
   <li>Glisser = déplacer, molette = zoom, clic = afficher l'élément (nom, position, hauteur, nombre dans la sauvegarde). « Ajuster » montre vos constructions, « Monde entier » toute la carte (grille = 500 m).</li>
@@ -541,7 +541,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Les modèles sont tournés/décalés dans l'app</td><td>Le format de mesh de FModel doit être <code>glTF 2.0 (binary)</code> ; relancez l'outil.</td></tr>
   <tr><td>Boîtes grises au lieu des modèles</td><td>Il manque un modèle pour cet élément (voir le message de l'outil) – ou il s'agit d'un convoyeur/tuyau/rail/ascenseur (volontairement sans modèle).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 0.9.0 · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
+<p class="muted">Blueprint Studio 0.9.1 · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

@@ -82,7 +82,7 @@ export function kartenDaten(buf) {
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (let i = 0; i < n; i++) { const x = f[i * 6], y = f[i * 6 + 1]; if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; }
   const meta = {
-    name: header.saveName, sitzung: header.sessionName, datum: header.saveDate, spielzeit: header.playedSeconds,
+    name: header.saveName || header.sessionName, sitzung: header.sessionName, datum: header.saveDate, spielzeit: header.playedSeconds,
     version: header.saveVersion, build: header.buildVersion, kreativ: !!header.isCreative, mods: header.mods,
     anzahl: n, leichtbau: leicht, klassen, linien, leitungen, spieler,
     grenzen: n ? [minX, minY, maxX, maxY] : null, dauer: Date.now() - t0,
