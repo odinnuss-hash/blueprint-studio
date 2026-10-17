@@ -21,6 +21,7 @@
       <button type="button" role="tab" id="mode-katalog" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M64 32C46.3 32 32 46.3 32 64l0 240 0 48 0 80c0 26.5 21.5 48 48 48l416 0c26.5 0 48-21.5 48-48l0-128 0-151.8c0-18.2-19.4-29.7-35.4-21.1L352 215.4l0-63.2c0-18.2-19.4-29.7-35.4-21.1L160 215.4 160 64c0-17.7-14.3-32-32-32L64 32z"/></svg> Gebäude-Katalog</button>
       <button type="button" role="tab" id="mode-ordnen" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M64 32C64 14.3 49.7 0 32 0S0 14.3 0 32l0 96L0 384c0 35.3 28.7 64 64 64l192 0 0-64L64 384l0-224 192 0 0-64L64 96l0-64zM288 192c0 17.7 14.3 32 32 32l224 0c17.7 0 32-14.3 32-32l0-128c0-17.7-14.3-32-32-32l-98.7 0c-8.5 0-16.6-3.4-22.6-9.4L409.4 9.4c-6-6-14.1-9.4-22.6-9.4L320 0c-17.7 0-32 14.3-32 32l0 160zm0 288c0 17.7 14.3 32 32 32l224 0c17.7 0 32-14.3 32-32l0-128c0-17.7-14.3-32-32-32l-98.7 0c-8.5 0-16.6-3.4-22.6-9.4l-13.3-13.3c-6-6-14.1-9.4-22.6-9.4L320 288c-17.7 0-32 14.3-32 32l0 160z"/></svg> Ordnen</button>
       <button type="button" role="tab" id="mode-karte" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M384 476.1L192 421.2l0-385.3L384 90.8l0 385.3zm32-1.2l0-386.5L543.1 37.5c15.8-6.3 32.9 5.3 32.9 22.3l0 334.8c0 9.8-6 18.6-15.1 22.3L416 474.8zM15.1 95.1L160 37.2l0 386.5L32.9 474.5C17.1 480.8 0 469.2 0 452.2L0 117.4c0-9.8 6-18.6 15.1-22.3z"/></svg> Karte</button>
+      <button type="button" role="tab" id="mode-planer" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M208 80c0-26.5 21.5-48 48-48l64 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-8 0 0 40 152 0c30.9 0 56 25.1 56 56l0 32 8 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-64 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l8 0 0-32c0-4.4-3.6-8-8-8l-152 0 0 40 8 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-64 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l8 0 0-40-152 0c-4.4 0-8 3.6-8 8l0 32 8 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-64 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l8 0 0-32c0-30.9 25.1-56 56-56l152 0 0-40-8 0c-26.5 0-48-21.5-48-48l0-64z"/></svg> Planer</button>
       <button type="button" role="tab" id="mode-hilfe" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM169.8 165.3c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"/></svg> Hilfe</button>
     </nav>
     <div class="pathbox" id="pathbox" title="Blaupausen-Ordner">
@@ -276,6 +277,41 @@
       <div class="statusbar"><span id="k-pos">–</span><span class="muted" id="k-hinweis">Ziehen = verschieben · Mausrad = Zoom · Klick = Bauteil anzeigen</span><span class="muted">Nur Ansicht – der Spielstand wird nicht verändert.</span></div>
     </main>
     <aside class="side right" id="k-info"><div class="muted">Links einen Spielstand wählen.</div></aside>
+  </div>
+
+  <!-- ===================== Produktionsplaner ===================== -->
+  <div class="layout" id="view-planer" hidden>
+    <aside class="side left pl-links">
+      <div class="label">Ziel (Output)</div>
+      <div id="pl-ziele" class="pl-eingaben"></div>
+      <div class="pl-knoepfe"><button type="button" class="btn small" id="pl-ziel-neu">+ Ziel</button><button type="button" class="btn small" id="pl-mc" title="Fertige Lehrbuch-Fabriken (Master Class) nach Stufe auswählen">Master Class …</button></div>
+      <div class="label">Vorhanden / angeliefert (Input)</div>
+      <div id="pl-vorhanden" class="pl-eingaben"></div>
+      <button type="button" class="btn small" id="pl-vorh-neu">+ Zulieferung</button>
+      <p class="hint">Vorhandene Mengen (z. B. 120 Eisenbarren/min vom Band nebenan) werden zuerst genutzt; der Rest wird hergestellt bzw. als Rohstoff-Zulieferung ausgewiesen. Menge jeweils pro Minute.</p>
+      <datalist id="pl-items"></datalist>
+      <div class="side-foot"><button type="button" class="linkbtn" id="pl-zuruecksetzen" title="Alle gewählten Rezepte zurück auf die Standardrezepte">Rezepte auf Standard</button></div>
+    </aside>
+    <main class="stage">
+      <div class="toolbar">
+        <span class="seg-group" role="radiogroup" aria-label="Ansicht">
+          <label class="radio"><input type="radio" name="pl-ansicht" value="graph" checked> Graph</label>
+          <label class="radio"><input type="radio" name="pl-ansicht" value="liste"> Liste</label>
+        </span>
+        <button type="button" class="btn" id="pl-fit" title="Graph einpassen">Einpassen</button>
+        <button type="button" class="btn" id="pl-auto" title="Eigene Anordnung verwerfen und Kästen wieder automatisch anordnen">Neu anordnen</button>
+        <button type="button" class="btn primary" id="pl-bp" title="Eine Fertigungsstufe als Blaupause bauen">Blaupause erstellen …</button>
+        <span class="grow"></span>
+        <span class="muted pl-tipp">Kästen ziehen = verschieben · Klick = Rezept wählen · ▣ = Blaupause dieser Stufe · Hintergrund ziehen / Mausrad = Ansicht</span>
+      </div>
+      <div id="pl-grundlage" class="pl-grundlage" hidden></div>
+      <div class="pl-stage">
+        <svg id="pl-svg" aria-label="Produktionsgraph"><g id="pl-g"></g></svg>
+        <div id="pl-tabelle" class="pl-tabelle" hidden></div>
+      </div>
+      <div class="statusbar"><span id="pl-status">–</span></div>
+    </main>
+    <aside class="side right" id="pl-info"></aside>
   </div>
 
   <!-- ===================== Hilfe ===================== -->

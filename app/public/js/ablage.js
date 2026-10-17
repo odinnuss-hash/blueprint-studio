@@ -406,7 +406,7 @@ export class AblageUI {
   zielOrdner() {
     const v = this.vorschlag; if (!v) return null;
     const k = $('nv-kat').value.trim(), u = $('nv-unt').value.trim(), code = k && u ? `${k}_${u}` : k;
-    const vcode = (/^(\d_\d)_/.exec(v.neu || '') || [])[1];
+    const vcode = (/^(\d+_\d+)_/.exec(v.neu || '') || [])[1];
     const fuer = this.daten?.ordnerFuer || {};
     this.gruppenListe();
     const eigen = this.eigeneOrdner || {};
@@ -479,7 +479,7 @@ export class AblageUI {
   }
   laengeZeigen() {
     const v = $('nv-neu').value.trim(), max = this.vorschlag?.maxLen || 32;
-    const ok = /^\d_\d_/.test(v) && v.length <= max && !/[\\/:*?"<>|]/.test(v);
+    const ok = /^\d+_\d+_/.test(v) && v.length <= max && !/[\\/:*?"<>|]/.test(v);
     $('nv-len').textContent = `${v.length}/${max}`;
     $('nv-len').classList.toggle('bad', !ok);
     $('nv-ok').disabled = !v || v === this.app.bp?.name || /[\\/:*?"<>|]/.test(v);

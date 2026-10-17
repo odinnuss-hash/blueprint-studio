@@ -82,7 +82,7 @@ export class Ordnen {
   aktionVon(x) { return this.edit.has(x.id) ? this.edit.get(x.id).aktion : x.aktion; }
   ok(x) {
     const n = this.neuVon(x);
-    return this.aktionVon(x) === 'duplikat' || (/^\d_\d_/.test(n) && n.length <= this.data.maxLen && !BAD.test(n) && n.trim() === n);
+    return this.aktionVon(x) === 'duplikat' || (/^\d+_\d+_/.test(n) && n.length <= this.data.maxLen && !BAD.test(n) && n.trim() === n);
   }
 
   renderLegend() {

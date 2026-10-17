@@ -32,3 +32,5 @@ werkzeuge/extraktor/obj/
 werkzeuge/extraktor/Export/
 werkzeuge/extraktor/daten/
 # Update-Arbeitsordner liegen in userdata (schon ausgeschlossen)
+# Master-Class-Pakete (fremde Blaupausen, nur privat)
+*.bsmc

@@ -5,19 +5,23 @@
 
 import http from 'node:http';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { readBlueprint, writeBlueprint, readCfg, createBlueprint } from './lib/sbp.mjs';
+import { baueReihe, baueKette } from './lib/fabrik.mjs';
+import { masterclassEinlesen, masterclassDatei, masterclassExport, masterclassImport, masterclassAblegen } from './lib/masterclass.mjs';
+import { rechne as planRechnen, vorstufen } from './public/js/planer-rechner.js';
 import { buildLibrary, availability, buildObject, costDelta, makeHead, newInstance, templateFor, makeCfg, i32, replaceObjectProp } from './lib/vorlagen.mjs';
 import { loadKatalog } from './lib/katalog.mjs';
 import { readSavHeader } from './lib/sav.mjs';
 import { kartenDaten, packen } from './lib/karte.mjs';
 import { megaprintKarte } from './lib/megaprint.mjs';
 import { bereichAlsBlaupause } from './lib/extrahieren.mjs';
-import { scannen, planen, anwenden, rueckgaengig, vorschau, GRUPPEN, GRUPPEN_STANDARD, setGruppen, setPraefixe, setThemenUebersetzung, MAXLEN, pass, merkmale, lernen, vorschlagGelernt, ablageOrdner, strukturOrdner } from './lib/ordnen.mjs';
+import { scannen, planen, anwenden, rueckgaengig, vorschau, GRUPPEN, GRUPPEN_STANDARD, GRUPPEN_NEU, setGruppen, setPraefixe, setThemenUebersetzung, MAXLEN, pass, merkmale, lernen, vorschlagGelernt, ablageOrdner, strukturOrdner } from './lib/ordnen.mjs';
 import { Ablage } from './lib/ablage.mjs';
 import { Einrichtung, findeSpielOrdner, ordnerWaehlen } from './lib/einrichtung.mjs';
 import { Updater } from './lib/update.mjs';
@@ -54,6 +58,11 @@ const ordnerSicher = (s) => String(s).replace(/[\\/:*?"<>|]/g, '-').trim();
 function strukturSprache() {
   const w = woerterbuch(settings.strukturSprache);
   setThemenUebersetzung(w ? (n) => ordnerSicher(w[n] || n) : null);
+  // eigene Struktur um später hinzugekommene Standard-Gruppen ergänzen (z. B. „10 Master Class“), Nummer frei vorausgesetzt
+  if (Array.isArray(settings.struktur)) for (const hg of GRUPPEN_NEU) {
+    if (settings.struktur.some(([c]) => c === hg || c.startsWith(hg + '_'))) continue;
+    settings.struktur.push(...GRUPPEN_STANDARD.filter(([c]) => c === hg || c.startsWith(hg + '_')).map(([c, n]) => [c, w ? ordnerSicher(w[n] || n) : n]));
+  }
   setGruppen(settings.struktur || (w ? GRUPPEN_STANDARD.map(([c, n]) => [c, ordnerSicher(w[n] || n)]) : null));
 }
 const standardStruktur = () => { const w = woerterbuch(settings.strukturSprache); return GRUPPEN_STANDARD.map(([c, n]) => [c, w ? ordnerSicher(w[n] || n) : n]); };
@@ -547,10 +556,15 @@ function umbenennenMerken(alt, neu) {
 }
 
 // ------------------------------------------------------------------ Fenster-Lebenszeichen
-let lastBeat = Date.now(), seenBeat = false;
+// Das Fenster meldet sich alle 5 s. Beim Schließen schickt es zusätzlich „fenster-zu“: kommt danach binnen 8 s kein
+// Lebenszeichen mehr (Neuladen meldet sich sofort wieder), beendet sich der Server – und damit sein Konsolenfenster.
+// Fallback ohne Abmeldung: 150 s ohne Lebenszeichen (Browser drosseln Zeitgeber in minimierten Fenstern auf 1×/min).
+let lastBeat = Date.now(), seenBeat = false, zuSeit = 0;
 setInterval(() => {
-  if (FENSTER_ENDE && seenBeat && Date.now() - lastBeat > 25000) { log('Fenster geschlossen – beende.'); process.exit(0); }
-}, 5000).unref();
+  if (!FENSTER_ENDE || !seenBeat) return;
+  if (zuSeit && lastBeat < zuSeit && Date.now() - zuSeit > 8000) { log('Fenster geschlossen – beende.'); process.exit(0); }
+  if (Date.now() - lastBeat > 150000) { log('Kein Lebenszeichen vom Fenster – beende.'); process.exit(0); }
+}, 2000).unref();
 
 // ------------------------------------------------------------------ Karte (Spielstaende)
 async function spielstaende() {
@@ -709,6 +723,112 @@ async function karteZuBlaupause({ id, bereich, ohne = [], session, name }) {
   log(`Blaupause aus Karte: ${dst} (${r.info.objekte} Objekte)`);
   return { ok: true, name, session, info: r.info };
 }
+// ------------------------------------------------------------------ Master Class (Lehrbuch-Fabriken als Vorlagen)
+const MC_DIR = () => path.join(DATA_DIR, 'masterclass');
+// Quellen: eigene Einstellung, sonst Sortieren\Tschukki und der Ablage-Ordner „10 Master Class“ (dorthin wird einsortiert)
+const mcQuellen = () => (settings.masterclassOrdner?.length ? settings.masterclassOrdner : [path.join(bpRoot(), 'Sortieren', 'Tschukki'), ablage.ordnerPfad(ablageOrdner('10'))]).filter((d) => d && fs.existsSync(d));
+async function masterclassEinsortieren() {
+  await masterclass();
+  const r = await masterclassAblegen({ ziel: MC_DIR(), quellen: mcQuellen(), ordnerFuer: (code) => ablage.ordnerPfad(ablageOrdner(code)) });
+  mcCache = null; bpCache.clear(); letzterPlan = null;
+  log(`Master Class einsortiert: ${r.verschoben} verschoben, ${r.angelegt} aus Abdruck angelegt, ${r.vorhanden} schon da${r.fehler.length ? `, ${r.fehler.length} Fehler` : ''}`);
+  return r;
+}
+let mcCache = null;
+async function masterclass(neu = false) {
+  if (mcCache && !neu) return mcCache;
+  if (!neu) { try { mcCache = JSON.parse(await fsp.readFile(path.join(MC_DIR(), 'index.json'), 'utf8')); if (mcCache.version === 4) return mcCache; } catch { /* einlesen */ } }
+  const k = getKatalog();
+  if (!k) throw Object.assign(new Error(katalogFehler || 'Spieldaten (Katalog) fehlen.'), { status: 422 });
+  mcCache = await masterclassEinlesen({ quellen: mcQuellen(), ziel: MC_DIR(), kat: k, log });
+  return mcCache;
+}
+async function masterclassKopieren({ id, session, name }) {
+  if (!safeName(name)) throw Object.assign(new Error('Bitte einen gültigen Namen angeben (ohne \\ / : * ? " < > |).'), { status: 400 });
+  const src = masterclassDatei(MC_DIR(), id), dst = bpPath(session, name);
+  if (fs.existsSync(dst)) throw Object.assign(new Error(`„${name}“ gibt es in „${session}“ schon. Bitte einen anderen Namen wählen.`), { status: 409 });
+  await fsp.mkdir(path.dirname(dst), { recursive: true });
+  await fsp.copyFile(src, dst);
+  if (fs.existsSync(src + 'cfg')) await fsp.copyFile(src + 'cfg', dst + 'cfg');
+  bpCache.clear(); letzterPlan = null;
+  return { ok: true, name, session };
+}
+
+// ------------------------------------------------------------------ Planer → Blaupause (eine Fertigungsstufe als Reihe)
+function planerSchritt(k, s) {
+  const r = k.rezepte[s?.rezept];
+  if (!r) throw Object.assign(new Error('Unbekanntes Rezept'), { status: 400 });
+  const n = Math.max(0.01, Math.min(500, +s.maschinen || +s.anzahl || 1));
+  const gebaeude = r.gebaeude.find((g) => /^Build_/.test(g));
+  return { rezept: s.rezept, name: r.name, gebaeude, maschinen: n, anzahl: Math.max(1, Math.ceil(n - 1e-6)),
+    zutaten: r.zutaten.map((z) => ({ item: z.item, proMin: z.proMin * n })), produkte: r.produkte.map((p) => ({ item: p.item, proMin: p.proMin * n })) };
+}
+function planerPlan(p0 = {}) {
+  const liste = (l) => (Array.isArray(l) ? l : []).slice(0, 50).filter((x) => x && typeof x.item === 'string').map((x) => ({ item: x.item.slice(0, 120), menge: +x.menge || 0 }));
+  return { ziele: liste(p0.ziele), vorhanden: liste(p0.vorhanden), wahl: Object.fromEntries(Object.entries(p0.wahl || {}).slice(0, 500).filter(([, v]) => typeof v === 'string').map(([k, v]) => [k.slice(0, 120), v.slice(0, 120)])),
+    layout: Object.fromEntries(Object.entries(p0.layout || {}).slice(0, 500).filter(([, v]) => Array.isArray(v) && v.length === 2 && v.every(Number.isFinite))) };
+}
+async function planerBauen(body) {
+  const l = await getLib(), k = getKatalog();
+  if (!k) throw Object.assign(new Error(katalogFehler || 'Spieldaten (Katalog) fehlen.'), { status: 422 });
+  if (!l.basis) throw Object.assign(new Error('Keine Basis-Blaupause gefunden (mindestens eine eigene Blaupause nötig).'), { status: 422 });
+  const basis = l.basis, bandMax = Math.max(1, Math.min(6, +body.bandMax || 6));
+  if (body.kette) {
+    const plan = planerPlan(body.plan);
+    if (!plan.ziele.some((z) => z.menge > 0)) throw Object.assign(new Error('Der Plan hat kein Ziel.'), { status: 400 });
+    const ergebnis = planRechnen(k, plan);
+    let nur = null, bisName = null;
+    if (body.bis) { // Teilfabrik: diese Stufe und alles, was ihr zuliefert
+      const i = ergebnis.schritte.findIndex((x) => x.rezept === body.bis);
+      if (i < 0) throw Object.assign(new Error('Die gewählte Stufe gibt es im Plan nicht (mehr).'), { status: 400 });
+      nur = vorstufen(ergebnis, i); nur.max = i; bisName = ergebnis.schritte[i].name;
+    }
+    const r = baueKette({ kat: k, lib: l, ver: basis.saveVersion, hasFlags: basis.hasFlags, ergebnis, bandMax, fundament: body.fundament, nur });
+    r.info.bis = bisName;
+    const datei = createBlueprint(basis, r.objs, r.kopf);
+    return { datei, info: { ...r.info, objekte: r.objs.length, rezept: bisName ? `bis ${bisName}` : 'ganze Kette' }, basis, ergebnis, kette: true, bis: bisName };
+  }
+  const schritt = planerSchritt(k, body.schritt);
+  const r = baueReihe({ kat: k, lib: l, ver: basis.saveVersion, hasFlags: basis.hasFlags, schritt, bandMax, fundament: body.fundament });
+  const datei = createBlueprint(basis, r.objs, r.kopf);
+  return { datei, info: { ...r.info, objekte: r.objs.length, rezept: schritt.name }, basis, schritt };
+}
+async function planerVorschau(body) {
+  const r = await planerBauen(body);
+  const bp = readBlueprint(r.datei);
+  return { ...bpToClient(bp, '', `Planer-Vorschau ${r.kette ? (r.bis ? `bis ${r.bis}` : 'ganze Kette') : r.schritt.name}`, {}), nurAnsicht: true, planer: true, info: r.info };
+}
+async function planerSpeichern(body) {
+  const { session, name } = body;
+  if (!safeName(name)) throw Object.assign(new Error('Bitte einen gültigen Namen angeben (ohne \\ / : * ? " < > |).'), { status: 400 });
+  const dst = bpPath(session, name);
+  if (fs.existsSync(dst)) throw Object.assign(new Error(`„${name}“ gibt es in „${session}“ schon. Bitte einen anderen Namen wählen.`), { status: 409 });
+  const r = await planerBauen(body);
+  readBlueprint(r.datei); // Selbstprüfung
+  // Grundlage (Plan + gebaute Stufe) merken – die Blaupause trägt nur die Kennung „Plan #…“ in der Beschreibung
+  const planId = crypto.randomBytes(4).toString('hex');
+  const herkunft = { id: planId, datum: new Date().toISOString(), name, session, bandMax: +body.bandMax || 6, kette: !!r.kette, bis: typeof body.bis === 'string' ? body.bis : null,
+    schritt: r.schritt ? { rezept: r.schritt.rezept, maschinen: r.schritt.maschinen } : null, plan: planerPlan(body.plan) };
+  await fsp.mkdir(path.join(DATA_DIR, 'planer'), { recursive: true });
+  await fsp.writeFile(path.join(DATA_DIR, 'planer', planId + '.json'), JSON.stringify(herkunft, null, 1));
+  await fsp.mkdir(path.dirname(dst), { recursive: true });
+  await fsp.writeFile(dst, r.datei);
+  const s = r.schritt, nm = (it) => getKatalog().items[it]?.name || it, z = (v) => (Math.round(v * 100) / 100).toLocaleString('de-DE');
+  const text = r.kette
+    ? r.bis ? `Blueprint Studio Planer: Teilfabrik bis ${r.bis} (${r.info.reihen} Reihen, ${r.info.maschinen} Maschinen)` : `Blueprint Studio Planer: ganze Kette (${r.info.reihen} Reihen, ${r.info.maschinen} Maschinen) → ${r.ergebnis.ziele.map((x) => `${z(x.menge)}/min ${nm(x.item)}`).join(', ')}. Zulieferung: ${Object.entries({ ...r.ergebnis.rohstoffe, ...r.ergebnis.fehlt, ...r.ergebnis.vorhanden }).map(([it, m]) => `${z(m)}/min ${nm(it)}`).join(', ')}`
+    : `Blueprint Studio Planer: ${s.anzahl}× ${s.name}. Eingang ${s.zutaten.map((x) => `${z(x.proMin)}/min ${nm(x.item)}`).join(', ')} → Ausgang ${s.produkte.map((x) => `${z(x.proMin)}/min ${nm(x.item)}`).join(', ')}`;
+  const cfg = makeCfg(r.basis.cfg, `${text} · Plan #${planId}`);
+  if (cfg) await fsp.writeFile(dst + 'cfg', cfg);
+  bpCache.clear(); letzterPlan = null;
+  log(`Planer-Blaupause: ${dst} (${r.info.objekte} Objekte)`);
+  return { ok: true, name, session, info: r.info, planId };
+}
+async function planerHerkunft(id) {
+  if (!/^[0-9a-f]{8}$/.test(id || '')) throw Object.assign(new Error('Ungültige Plan-Kennung'), { status: 400 });
+  try { return JSON.parse(await fsp.readFile(path.join(DATA_DIR, 'planer', id + '.json'), 'utf8')); }
+  catch { throw Object.assign(new Error(`Plan #${id} ist auf diesem Rechner nicht gespeichert.`), { status: 404 }); }
+}
+
 const kartenCache = new Map();
 // Megaprints (.cbp von satisfactory-calculator) – Ordner aus den Einstellungen
 const megaprintDirs = () => (settings.megaprints || []).filter((d) => d && fs.existsSync(d));
@@ -766,6 +886,8 @@ const server = http.createServer(async (req, res) => {
   const p = url.pathname;
   try {
     if (p.startsWith('/api/')) {
+      // Abmeldung beim Schließen (sendBeacon kann keine eigenen Kopfzeilen senden; harmlos: laufende Fenster melden sich weiter)
+      if (p === '/api/fenster-zu') { zuSeit = Date.now(); seenBeat = true; return sendJson(res, 200, { ok: true }); }
       const mutating = req.method !== 'GET';
       if (mutating && req.headers['x-bs'] !== '1') return sendJson(res, 403, { fehler: 'Nicht erlaubt' });
       if (p === '/api/ping') return sendJson(res, 200, { app: 'blueprint-studio', version: VERSION, pid: process.pid });
@@ -899,6 +1021,15 @@ const server = http.createServer(async (req, res) => {
         return fs.createReadStream(f).pipe(res);
       }
       if (p === '/api/karte/vorschau' && req.method === 'POST') return sendJson(res, 200, await karteVorschau(await readJsonBody(req)));
+      if (p === '/api/masterclass') return sendJson(res, 200, await masterclass(url.searchParams.get('neu') === '1'));
+      if (p === '/api/masterclass/vorschau') { const f = masterclassDatei(MC_DIR(), url.searchParams.get('id')); const e = (await masterclass()).eintraege.find((x) => x.id === url.searchParams.get('id')); return sendJson(res, 200, { ...bpToClient(readBlueprint(await fsp.readFile(f)), '', `Master Class ${e?.name || ''}`, {}), nurAnsicht: true }); }
+      if (p === '/api/masterclass/export') { await masterclass(); const j = JSON.stringify(await masterclassExport(MC_DIR())); res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': 'attachment; filename="BlueprintStudio-MasterClass.bsmc"' }); res.end(j); return; }
+      if (p === '/api/masterclass/import' && req.method === 'POST') { const r = await masterclassImport(MC_DIR(), await readJsonBody(req, 300 * 1024 * 1024)); mcCache = null; return sendJson(res, 200, r); }
+      if (p === '/api/masterclass/ablegen' && req.method === 'POST') return sendJson(res, 200, await masterclassEinsortieren());
+      if (p === '/api/masterclass/kopieren' && req.method === 'POST') return sendJson(res, 200, await masterclassKopieren(await readJsonBody(req)));
+      if (p === '/api/planer/herkunft') return sendJson(res, 200, await planerHerkunft(url.searchParams.get('id')));
+      if (p === '/api/planer/vorschau' && req.method === 'POST') return sendJson(res, 200, await planerVorschau(await readJsonBody(req)));
+      if (p === '/api/planer/blaupause' && req.method === 'POST') return sendJson(res, 200, await planerSpeichern(await readJsonBody(req)));
       if (p === '/api/karte/blaupause' && req.method === 'POST') return sendJson(res, 200, await karteZuBlaupause(await readJsonBody(req)));
       if (p === '/api/karte/3d' && req.method === 'POST') return sendJson(res, 200, oeffne3d((await readJsonBody(req)).id));
       if (p === '/api/karte/daten') {

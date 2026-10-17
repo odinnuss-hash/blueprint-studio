@@ -12,6 +12,8 @@ import { PapierkorbUI } from './papierkorb.js';
 import { StrukturUI } from './struktur.js';
 import { AssistentUI } from './assistent.js';
 import { UpdateUI } from './update.js';
+import { PlanerUI } from './planer.js';
+import { selectMitBildern, bauteilBild } from './bildwahl.js';
 import { i18nStart, SPRACHEN, t } from './i18n.js';
 import { Katalog, tileHtml, dims, powerText, extraText, fmt, ICONS } from './katalog.js';
 import { frage, ungespeichert, auswahl } from './dialog.js';
@@ -53,10 +55,15 @@ class App {
     this.struktur = new StrukturUI(this);
     this.assistent = new AssistentUI(this);
     this.update = new UpdateUI(this);
+    this.planer = new PlanerUI(this);
     this.bindUi();
     new ResizeObserver(() => this.render()).observe($('canvaswrap'));
     setInterval(() => fetch('/api/heartbeat', { method: 'POST', headers: { 'x-bs': '1' } }).catch(() => {}), 5000);
     fetch('/api/heartbeat', { method: 'POST', headers: { 'x-bs': '1' } }).catch(() => {});
+    // Fenster geschlossen → Server beendet sich gleich mit (sendBeacon kommt auch beim Schließen noch an)
+    const abmelden = () => { try { navigator.sendBeacon('/api/fenster-zu', ''); } catch { /* egal */ } };
+    window.addEventListener('pagehide', abmelden);
+    window.addEventListener('beforeunload', abmelden);
     this.init();
   }
 
@@ -73,7 +80,7 @@ class App {
       this.modellWahlAnwenden();
       if (!this.cfg.blueprintDirOk) this.toast('Kein Blaupausen-Ordner gefunden – bitte in den Einstellungen prüfen.', 'err');
     } catch (e) { this.toast('Server nicht erreichbar: ' + e.message, 'err'); }
-    try { this.kat = await api('katalog'); this.katalog.setData(this.kat); if (this.bp) this.openScene(); this.initGenerator(); }
+    try { this.kat = await api('katalog'); this.katalog.setData(this.kat); if (this.area === 'planer') this.planer.show(); if (this.bp) this.openScene(); this.initGenerator(); }
     catch (e) { this.toast(e.message, 'err'); }
   }
 
@@ -616,6 +623,7 @@ class App {
       box.className = '';
       box.innerHTML = `<div class="insp-title">${esc(this.bp.name)}</div>
         ${this.bp.beschreibung ? `<div class="insp-sub" style="white-space:pre-line">${esc(this.bp.beschreibung)}</div>` : ''}
+        ${/Plan #[0-9a-f]{8}/.test(this.bp.beschreibung || '') ? '<button type="button" class="btn section" id="insp-plan" title="Den Produktionsplan anzeigen, aus dem diese Blaupause erzeugt wurde">Planer-Grundlage ansehen</button>' : ''}
         <div class="section">
           <div class="kv"><span class="k">Objekte</span><span class="v mono">${this.scene.objs.filter((o) => !o.removed).length}</span></div>
           ${b ? `<div class="kv"><span class="k">Ausdehnung</span><span class="v mono">${m1(b.x1 - b.x0)} × ${m1(b.y1 - b.y0)} × ${m1(b.z1 - b.z0)} m</span></div>` : ''}
@@ -624,6 +632,7 @@ class App {
         </div>
         <div class="section"><div class="label">Nach Kategorie</div>${Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `<div class="typecount"><span>${esc(c)}</span><span class="mono">${n}</span></div>`).join('')}</div>
         <div class="hint section">Objekt anklicken, um Details zu sehen.</div>`;
+      $('insp-plan')?.addEventListener('click', () => this.planer.grundlageZeigen(/Plan #([0-9a-f]{8})/.exec(this.bp.beschreibung)[1], this.bp.name));
       return;
     }
     if (ids.length > 1) {
@@ -745,13 +754,14 @@ class App {
   }
   setMode(m) {
     this.area = m;
-    for (const v of ['editor', 'katalog', 'ordnen', 'karte', 'hilfe']) {
+    for (const v of ['editor', 'katalog', 'ordnen', 'karte', 'planer', 'hilfe']) {
       $('view-' + v).hidden = v !== m;
       $('mode-' + v).classList.toggle('on', v === m); $('mode-' + v).setAttribute('aria-selected', v === m);
     }
     if (m === 'katalog' && this.kat) this.katalog.renderCards();
     if (m === 'ordnen') this.ordnen.show();
     if (m === 'karte') this.karte.show();
+    if (m === 'planer') this.planer.show();
     if (m === 'hilfe' && $('hilfe-frame').src === 'about:blank') $('hilfe-frame').src = this.hilfeDatei();
     if (m === 'editor') requestAnimationFrame(() => this.render());
   }
@@ -807,11 +817,21 @@ class App {
     const ids = this.selIds(), groups = new Map();
     for (const i of ids) { const o = this.scene.byId.get(i); if ((o.sp || o.lt) && !this.mkVarianten(o.cls).length) continue; if (!groups.has(o.cls)) groups.set(o.cls, []); groups.get(o.cls).push(i); }
     const rows = [...groups].map(([cls, list]) => ({ cls, list, vars: this.mkVarianten(cls).length ? this.mkVarianten(cls) : tauschVarianten(cls, this.kat, this.avail), mk: this.mkVarianten(cls).length > 0 })).filter((r) => r.vars.length);
-    $('swap-rows').innerHTML = rows.map((r, k) => `<div class="swaprow"><div><span class="n">${esc(teilLabel(this.kat, r.cls))}</span><br><span class="muted">${r.list.length}×</span></div>
+    $('swap-rows').innerHTML = rows.map((r, k) => `<div class="swaprow"><div class="swap-akt">${bauteilBild(this.kat, r.cls)}<div><span class="n">${esc(teilLabel(this.kat, r.cls))}</span><br><span class="muted">${r.list.length}× · jetzt</span></div><span class="swap-pfeil">→</span></div>
       <select data-k="${k}" aria-label="Neue Variante für ${esc(teilLabel(this.kat, r.cls))}"><option value="">– nicht tauschen –</option>${r.vars.map((v) => `<option value="${esc(v)}">${esc(teilLabel(this.kat, v))}${this.avail[v] === 'abgeleitet' ? ' (abgeleitet)' : ''}</option>`).join('')}</select></div>`).join('');
     this.swapRows = rows;
+    $('swap-rows').querySelectorAll('select').forEach((sel) => selectMitBildern(sel, this.bildOpt(`Tauschen: ${teilLabel(this.kat, rows[+sel.dataset.k].cls)}`)));
     $('swap-error').hidden = true;
     $('dlg-swap').showModal();
+  }
+  /** Optionen für die Bildauswahl von Bauteilen (Tauschen, Formen) */
+  bildOpt(titel) {
+    return {
+      titel, bild: (c) => bauteilBild(this.kat, c),
+      gruppe: (c) => this.kat.gebaeude[c]?.unterkategorie || this.kat.gebaeude[c]?.kategorie || '',
+      marke: (c) => ((this.avail || this.genAvail || {})[c] === 'abgeleitet' ? 'abgeleitet' : ''),
+      hinweis: 'Klick auf ein Bild wählt es aus. „abgeleitet“ = Vorlage aus einem verwandten Bauteil erzeugt.',
+    };
   }
   applySwap() {
     const plan = [];
@@ -845,6 +865,7 @@ class App {
       return `<div class="genrow"><label for="${id}">${esc(p.label)}</label><select id="${id}">${p.leer ? `<option value="">${esc(p.leer)}</option>` : ''}${opts.map((c) => `<option value="${esc(c)}" ${c === std ? 'selected' : ''}>${esc(teilLabel(this.kat, c))}${av[c] === 'abgeleitet' ? ' *' : ''}</option>`).join('')}</select></div>`;
     }).join('');
     $('gen-params').querySelectorAll('input, select').forEach((el) => el.addEventListener('change', () => this.genPreviewUpdate()));
+    $('gen-params').querySelectorAll('select').forEach((sel) => selectMitBildern(sel, this.bildOpt(sel.closest('.genrow')?.querySelector('label')?.textContent || 'Bauteil wählen')));
     $('gen-params').querySelectorAll('input[type=number]').forEach((el) => el.addEventListener('input', () => this.genInfo()));
     this.genInfo();
   }
@@ -935,6 +956,7 @@ class App {
     $('mode-katalog').addEventListener('click', () => this.setMode('katalog'));
     $('mode-ordnen').addEventListener('click', () => this.setMode('ordnen'));
     $('mode-karte').addEventListener('click', () => this.setMode('karte'));
+    $('mode-planer').addEventListener('click', () => this.setMode('planer'));
     $('mode-hilfe').addEventListener('click', () => this.setMode('hilfe'));
     $('st-version').addEventListener('click', (e) => { e.preventDefault(); this.showHelp('zur-app'); });
     $('o-help').addEventListener('click', (e) => { e.preventDefault(); this.showHelp('schema'); });

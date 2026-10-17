@@ -7,8 +7,16 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { readBlueprint } from './sbp.mjs';
+import { wert } from './eigenschaften.mjs';
 
-const VERSION = 3;
+/** Enthält ein Lager (mInventoryStacks) Gegenstände? */
+function lagerBelegt(d) {
+  try { const w = wert(d, false, 'mInventoryStacks'); return !!w && w.includes('/Game/'); } catch { return d.includes('/Game/FactoryGame/Resource/'); }
+}
+
+const VERSION = 5;
+// Bauteile mit Innenleben (Anschlüsse, Lager), die als ganze Baugruppe (Entität + Komponenten) gespeichert werden – für den Fabrikplaner
+const BAUGRUPPE = /^Build_(SmelterMk1|ConstructorMk1|AssemblerMk1|FoundryMk1|ManufacturerMk1|OilRefinery|Blender|Packager|HadronCollider|QuantumEncoder|Converter|ConveyorBeltMk\d|ConveyorLiftMk\d|ConveyorAttachmentSplitter|ConveyorAttachmentMerger|PowerPoleMk\d|PowerLine|Pipeline(MK2)?(_NoIndicator)?|PipelineJunction_Cross|PipelinePump(Mk2)?|ResourceSink)_C$/;
 
 // ------------------------------------------------------------------ Bytes
 export const i32 = (v) => { const b = Buffer.alloc(4); b.writeInt32LE(v); return b; };
@@ -99,9 +107,20 @@ export async function buildLibrary({ bpRoot, saveDir, cacheFile, log = () => {} 
     const v = String(bp.header.saveVersion);
     const parents = new Set(bp.objects.filter((o) => o.kind === 'component').map((o) => o.parent));
     const lv = (lib.vorlagen[v] ||= {});
+    const bg = ((lib.baugruppen ||= {})[v] ||= {});
+    const kompVon = new Map();
+    for (const o of bp.objects) if (o.kind === 'component') { if (!kompVon.has(o.parent)) kompVon.set(o.parent, []); kompVon.get(o.parent).push(o); }
     for (const o of bp.objects) {
       if (o.kind !== 'entity') continue;
       lib.pfade[o.cls] ||= o.typePath;
+      if (parents.has(o.instance) && BAUGRUPPE.test(o.cls) && (!bg[o.cls] || bg[o.cls].inhalt)) {
+        // „Inhalt“: Lager mit Gegenständen (z. B. aus Karte → Blaupause) – nur nehmen, wenn nichts Leeres da ist
+        const inhalt = kompVon.get(o.instance).some((c) => /Inventory/.test(c.typePath) && lagerBelegt(bp.body.subarray(c.dBody, c.dEnd)));
+        if (bg[o.cls] && inhalt) continue;
+        bg[o.cls] = { inhalt, typePath: o.typePath, instance: o.instance, flags: o.flags, placed: o.placedInLevel, quelle: path.basename(p),
+          data: bp.body.subarray(o.dBody, o.dEnd).toString('base64'),
+          komp: kompVon.get(o.instance).map((c) => ({ typePath: c.typePath, root: c.root, name: c.instance.slice(o.instance.length + 1), flags: c.flags, data: bp.body.subarray(c.dBody, c.dEnd).toString('base64') })) };
+      }
       if (parents.has(o.instance) || lv[o.cls]) continue;
       lv[o.cls] = { flags: o.flags, placed: o.placedInLevel, data: bp.body.subarray(o.dBody, o.dEnd).toString('base64') };
     }

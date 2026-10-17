@@ -30,7 +30,12 @@ export const GRUPPEN_STANDARD = [
   ['8_6', 'Kräne & Fahrzeuge'], ['8_7', 'Container & Kisten'], ['8_9', 'Sonstiges Deko'],
   ['9', 'Spezial'],
   ['9_1', 'Baustelle'], ['9_2', 'Themen & Fan-Bauten'], ['9_8', 'Cheat & Kreativ'], ['9_9', 'Test & Unklar'],
+  ['10', 'Master Class'],
+  ['10_1', 'Eisen & Stahl'], ['10_2', 'Kupfer & Caterium'], ['10_3', 'Öl, Kunststoff & Gummi'], ['10_4', 'Aluminium'],
+  ['10_5', 'Quarz & Elektronik'], ['10_6', 'Endgame & Raumfahrt'], ['10_7', 'Bahn & Signale'], ['10_8', 'Fundamente'], ['10_9', 'Sonstiges Master Class'],
 ];
+// Gruppen, die nach dem ersten Speichern einer eigenen Struktur dazugekommen sind (werden dort ergänzt)
+export const GRUPPEN_NEU = ['10'];
 // aktuelle Struktur (in den Einstellungen änderbar) – Arrays/Objekte werden an Ort und Stelle aktualisiert,
 // damit alle Importe dieselben Daten sehen
 export const GRUPPEN = GRUPPEN_STANDARD.map((g) => [...g]);
@@ -230,7 +235,7 @@ const STICH = [
 const STARK = [[/cheat|\bfree\b|gratis|no input|place anywhere|anywhere|\b\d+ oc\b|overclock|unlimited|without input/, '9_8'], [/\btest\b|^test|kompressortest/, '9_9']];
 function codeFuer(rec, m) {
   const name = lower(rec.alt);
-  const ex = /^(\d)_(\d)_/.exec(rec.alt);
+  const ex = /^(\d+)_(\d+)_/.exec(rec.alt);
   if (ex) { const c = `${ex[1]}_${ex[2]}`; const c2 = UMCODE[c] || c; if (GRUPPE_NAME[c2]) return c2; }
   for (const [re, c] of STARK) if (re.test(name)) return c;
   let hg = null;
@@ -262,7 +267,7 @@ function codeFuer(rec, m) {
 function themaAusName(alt) {
   const ganz = GANZ[alt.trim()];
   if (ganz) return ganz.split('_');
-  let s = alt.replace(/\(\d\)$/, '').replace(/^(\d)_(\d)_+/, '').replace(/^270_/, '')
+  let s = alt.replace(/\(\d\)$/, '').replace(/^(\d+)_(\d+)_+/, '').replace(/^270_/, '')
     .replace(PRAEFIXE || /^\0/, '').replace(/^coc[_\- ]+/i, 'COC_').replace(/^BS_Test_/i, 'Test_');
   s = s.replace(/U-Bahn/gi, 'UBahn').replace(/\[[^\]]*\]/g, ' ').replace(/\((?:[^)]*(?:vanilla|update|v\d|1\.\d|mod|compatible)[^)]*)\)/gi, ' ')
     .replace(/\bv\d+(\.\d+)*\b/gi, ' ').replace(/\b(ver\d+)\b/gi, ' ').replace(/\s+by\s+\S+.*$/i, ' ').replace(/\b(1\.0|1\.1|1\.2)\b/g, ' ')
@@ -331,7 +336,7 @@ function kuerzen(code, tokens) {
 
 /** Vorschlag fuer eine Blaupause: rec = { alt, dir, ort }, m = merkmale */
 export function vorschlag(rec, m, overrides = {}) {
-  if (overrides[rec.alt]) return { neu: overrides[rec.alt], code: overrides[rec.alt].slice(0, 3), grund: 'kuratiert' };
+  if (overrides[rec.alt]) return { neu: overrides[rec.alt], code: (/^\d+_\d+/.exec(overrides[rec.alt]) || [''])[0], grund: 'kuratiert' };
   const code = codeFuer(rec, m);
   const leer = istNichtssagend(rec.alt.replace(/\(\d\)$/, '').trim());
   let tokens = leer ? themaAusInhalt(m, code) : themaAusName(rec.alt);
@@ -340,11 +345,12 @@ export function vorschlag(rec, m, overrides = {}) {
 }
 
 export const istMojibake = (s) => MOJIBAKE.test(s);
-export const pass = (neu) => /^\d_\d_/.test(neu) && neu.length <= MAXLEN && !/[\\/:*?"<>|]/.test(neu);
+const codeVon = (n) => (/^\d+_\d+/.exec(n || '') || [''])[0];
+export const pass = (neu) => /^\d+_\d+_/.test(neu) && neu.length <= MAXLEN && !/[\\/:*?"<>|]/.test(neu);
 
 // ------------------------------------------------------------------ Plan ueber alle Blaupausen
 const guteNote = (e) => (istNichtssagend(e.alt.replace(/\(\d\)$/, '').trim()) ? 0 : 4) + (/\(\d\)$/.test(e.alt) ? 0 : 2) + (istMojibake(e.alt) ? 0 : 2)
-  + (/^\d_\d_/.test(e.alt) ? 1 : 0) + (e.ort === 'Bibliothek' ? 1 : 0);
+  + (/^\d+_\d+_/.test(e.alt) ? 1 : 0) + (e.ort === 'Bibliothek' ? 1 : 0);
 
 /** eintraege: [{ id, ort, dir, alt, m }]  ->  [{ ...eintrag, neu, code, grund, aktion, dupVon }] */
 export function planen(eintraege, overrides = {}) {
@@ -542,7 +548,7 @@ export function vorschau(file, kat) {
 
 // ------------------------------------------------------------------ Lernen aus den eigenen, schon passend benannten Blaupausen
 const STOPP = new Set(['mk', 'mk1', 'mk2', 'mk3', 'mk4', 'mk5', 'mk6', 'klein', 'gross', 'groß', 'neu', 'alt', 'links', 'rechts', 'oben', 'unten']);
-const worte = (name) => lower(name.replace(/^\d_\d_/, '')).split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !/^\d+(x|m|pm)?$/.test(w) && !STOPP.has(w));
+const worte = (name) => lower(name.replace(/^\d+_\d+_/, '')).split(/[^a-z0-9]+/).filter((w) => w.length >= 4 && !/^\d+(x|m|pm)?$/.test(w) && !STOPP.has(w));
 const katVektor = (m) => { const t = Object.values(m.cat || {}).reduce((a, b) => a + b, 0) || 1; return Object.fromEntries(Object.entries(m.cat || {}).map(([k, v]) => [k, v / t])); };
 const cosinus = (a, b) => { let s = 0, na = 0, nb = 0; for (const k in a) { na += a[k] * a[k]; if (b[k]) s += a[k] * b[k]; } for (const k in b) nb += b[k] * b[k]; return s / (Math.sqrt(na * nb) || 1); };
 
@@ -552,20 +558,20 @@ export function lernen(eintraege, eigene = {}) {
   const stimme = (w, code, g = 1) => { let m = woerter.get(w); if (!m) woerter.set(w, m = {}); m[code] = (m[code] || 0) + g; };
   for (const e of eintraege) {
     if (!e.m || !e.m.n || !pass(e.alt)) continue;
-    const code = e.alt.slice(0, 3);
+    const code = codeVon(e.alt);
     if (!GRUPPE_NAME[code]) continue;
     beispiele.push({ id: e.id, name: e.alt, code, sk: e.m.sk, vek: katVektor(e.m), dim: e.m.dim || [0, 0, 0], n: e.m.n });
     for (const w of new Set(worte(e.alt))) stimme(w, code);
   }
   // eigene Korrekturen (im Bereich „Ordnen“ bzw. beim Umbenennen eingegeben) zaehlen doppelt
-  for (const v of Object.values(eigene)) if (v?.neu && pass(v.neu) && v.alt) for (const w of new Set(worte(v.alt))) stimme(w, v.neu.slice(0, 3), 2);
+  for (const v of Object.values(eigene)) if (v?.neu && pass(v.neu) && v.alt) for (const w of new Set(worte(v.alt))) stimme(w, codeVon(v.neu), 2);
   return { beispiele, woerter, anzahl: beispiele.length };
 }
 
 /** Vorschlag mit Gelerntem: 1. fast gleiche Blaupause (>= 90 %) -> deren Gruppe, 2. Woerter im Namen, 3. aehnlicher Inhalt, sonst Regeln */
 export function vorschlagGelernt(rec, m, modell) {
   const regel = vorschlag(rec, m);
-  if (pass(rec.alt)) return { ...regel, neu: rec.alt, code: rec.alt.slice(0, 3), grund: 'passt schon zum Schema' };
+  if (pass(rec.alt)) return { ...regel, neu: rec.alt, code: codeVon(rec.alt), grund: 'passt schon zum Schema' };
   if (!modell?.anzahl || !m?.n) return regel;
   const leer = istNichtssagend(rec.alt.replace(/\(\d\)$/, '').trim());
   const mitCode = (code, grund, extra = {}) => {
@@ -644,7 +650,7 @@ export function ablageOrdner(code, name = '') {
   const top = `${hg} ${ok(GRUPPE_NAME[hg] || 'Sonstiges')}`;
   if (!(GRUPPE_NAME[code] && String(code).includes('_'))) return top;
   const gruppe = `${top}/${code} ${ok(GRUPPE_NAME[code])}`;
-  const n = lower(name.replace(/^\d_\d_/, ''));
+  const n = lower(name.replace(/^\d+_\d+_/, ''));
   const t = name && (THEMEN[code] || []).find(([, re]) => re.test(n));
   return t ? `${gruppe}/${ok(THEMA_NAME(t[0]))}` : gruppe;
 }
