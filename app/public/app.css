@@ -193,6 +193,9 @@ dialog::backdrop { background: rgba(0,0,0,.55); }
 .o-neu .o-in { font-family: var(--font-mono); min-height: 32px; width: calc(100% - 50px); }
 .o-len { display: inline-block; width: 46px; text-align: right; font: 11px var(--font-mono); color: var(--muted); }
 .o-dup { color: var(--muted); font-style: italic; }
+.o-weg { color: #e07a6a; }
+.o-ziel { display: block; margin-top: 3px; font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.otab tr.loeschen td { opacity: .6; }
 .o-akt { min-height: 32px; width: auto; }
 .o-info { font-size: 12px; max-width: 320px; }
 .o-view { width: 32px; height: 32px; }

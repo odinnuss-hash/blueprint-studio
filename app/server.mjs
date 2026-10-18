@@ -362,39 +362,147 @@ function ordnenPlan() {
   const plan = planen(eintraege);
   const eigene = readJsonFile(ORDNEN_EIGENE(), {});
   for (const r of plan) if (eigene[r.id]) { r.neu = eigene[r.id].neu ?? r.neu; r.aktion = eigene[r.id].aktion ?? r.aktion; r.eigen = true; }
+  // Bibliothek: passende Namen gleich in die Ablage-Struktur des Eingangsordners vorsortieren
+  for (const r of plan) {
+    r.ziel = vorsortZiel(r, r.neu);
+    if (r.aktion === 'gleich' && r.ziel != null && r.ziel !== r.dir && pass(r.neu)) r.aktion = 'einsortieren';
+  }
   letzterPlan = new Map(plan.map((r) => [r.id, r]));
   log(`Ordnen: ${plan.length} Blaupausen (${gelesen} neu gelesen, ${Date.now() - t} ms)`);
   return {
-    gruppen: GRUPPEN, maxLen: MAXLEN, dauer: Date.now() - t, gelesen,
+    gruppen: GRUPPEN, maxLen: MAXLEN, dauer: Date.now() - t, gelesen, uebernehmbar: vorsortiert().length,
     orte: ordnenOrte().map((o) => ({ ort: o.ort, root: o.root })),
-    eintraege: plan.map((r) => ({ id: r.id, ort: r.ort, dir: r.dir, alt: r.alt, neu: r.neu, code: r.code, grund: r.grund, aktion: r.aktion,
+    eintraege: plan.map((r) => ({ id: r.id, ort: r.ort, dir: r.dir, alt: r.alt, neu: r.neu, code: r.code, grund: r.grund, aktion: r.aktion, ziel: r.ziel,
       dupVon: r.dupVon, dupId: r.dupId || null, aehnlich: r.aehnlich || null, gleiche: r.gleicheWie || 0, eigen: !!r.eigen, n: r.m.n, dim: r.m.dim, prod: r.m.prod?.[0]?.name || null, fehler: r.m.fehler || null })),
   };
 }
-function ordnenAnwenden(liste) {
+// Vorsortierung: Bibliotheks-Blaupausen landen im Eingangsordner (erster Unterordner mit „_“, z. B. _sortieren – sonst
+// Hauptordner der Bibliothek) unter derselben Struktur wie die Ablage: _sortieren/1 Bauen/1_3 …/Böden/1_3_Fläche_54x16m.
+// Erst „In Ablage übernehmen“ verschiebt sie von dort in die Spiel-Ablage.
+const eingangVon = (dir) => { const s = (dir || '').split('/')[0]; return s.startsWith('_') ? s : ''; };
+function vorsortZiel(r, neu) {
+  if (r.ort !== 'Bibliothek' || !pass(neu)) return null;
+  const e = eingangVon(r.dir), o = ablageOrdner((/^\d+_\d+/.exec(neu) || [''])[0], neu);
+  return e ? `${e}/${o}` : o;
+}
+/** Alle vorsortierten Blaupausen der Bibliotheken: [{ von (Ordner), rel (Ablage-Ordner), name }] */
+function vorsortiert() {
+  const haupt = GRUPPEN.filter(([c]) => !c.includes('_')).map(([c]) => ablageOrdner(c));
+  const out = [];
+  for (const root of settings.bibliotheken || []) {
+    if (!root || !fs.existsSync(root)) continue;
+    let basen = [''];
+    try { basen = basen.concat(fs.readdirSync(root, { withFileTypes: true }).filter((e) => e.isDirectory() && e.name.startsWith('_') && !LIB_SKIP.test(e.name)).map((e) => e.name)); } catch { /* leer */ }
+    for (const b of basen) for (const hg of haupt) {
+      const walk = (rel) => {
+        const abs = path.join(root, b, ...rel.split('/'));
+        let l = []; try { l = fs.readdirSync(abs, { withFileTypes: true }); } catch { return; }
+        for (const e of l) {
+          if (e.isFile() && /\.sbp$/i.test(e.name)) out.push({ von: abs, rel, name: e.name.slice(0, -4) });
+          else if (e.isDirectory() && !e.name.startsWith('_') && rel.split('/').length < 4) walk(`${rel}/${e.name}`);
+        }
+      };
+      walk(hg);
+    }
+  }
+  return out;
+}
+const UEBERNAHME_PROTOKOLL = () => path.join(DATA_DIR, 'uebernahme-protokoll.json');
+/** Vorsortiertes aus den Bibliotheken in die Spiel-Ablage verschieben (gleicher Ordnerpfad). Gibt es den Namen dort schon: liegen lassen. */
+function inAblageUebernehmen() {
+  const liste = vorsortiert(), erledigt = [], fehler = [];
+  // Namen, die es irgendwo in der Ablage schon gibt (auch in anderem Unterordner oder gerade aktiv im Spiel) – nicht doppelt anlegen
+  const da = new Map();
+  for (const [rel, l] of Object.entries(ablage.lesen().ordner)) for (const b of l) da.set(b.name.toLowerCase(), rel);
+  for (const v of liste) {
+    const schon = da.get(v.name.toLowerCase());
+    if (schon != null) { fehler.push({ name: v.name, von: v.von, fehler: `Gibt es in der Ablage schon (${schon})` }); continue; }
+    try { Ablage.bewegen(v.von, ablage.ordnerPfad(v.rel), v.name); erledigt.push({ von: v.von, nach: v.rel, name: v.name }); da.set(v.name.toLowerCase(), v.rel); }
+    catch (e) { fehler.push({ name: v.name, von: v.von, fehler: e.message }); }
+  }
+  // leer gewordene Struktur-Ordner im Eingang aufräumen (nur wirklich leere)
+  const ordner = [...new Set(erledigt.map((e) => e.von))].sort((a, b) => b.length - a.length);
+  for (let d of ordner) for (let i = 0; i < 4; i++) { try { fs.rmdirSync(d); } catch { break; } d = path.dirname(d); }
+  if (erledigt.length) { const p = readJsonFile(UEBERNAHME_PROTOKOLL(), []); p.push({ zeit: new Date().toISOString(), eintraege: erledigt }); fs.writeFileSync(UEBERNAHME_PROTOKOLL(), JSON.stringify(p)); }
+  letzterPlan = null; lernModell = null; bpCache.clear(); lib = null; libPromise = null; availCache.clear();
+  log(`In Ablage übernommen: ${erledigt.length}, liegen geblieben: ${fehler.length}`);
+  return { ok: erledigt.length, fehler };
+}
+
+async function ordnenAnwenden(liste) {
   if (!letzterPlan) ordnenPlan();
-  const aenderungen = [];
+  const aenderungen = [], weg = [];
   const fehler = [];
   for (const a of liste) {
     const r = letzterPlan.get(a.id);
     if (!r) { fehler.push({ id: a.id, fehler: 'Unbekannt – bitte neu einlesen' }); continue; }
-    const aktion = a.aktion === 'duplikat' ? 'duplikat' : 'umbenennen';
-    const neu = String(a.neu || r.neu).trim();
-    if (aktion === 'umbenennen' && (!pass(neu) || !safeName(neu))) { fehler.push({ id: a.id, alt: r.alt, fehler: 'Name passt nicht zum Schema' }); continue; }
-    if (aktion === 'umbenennen' && neu === r.alt) continue;
-    aenderungen.push({ id: r.id, ort: r.ort, root: r.root, dir: r.dir, alt: r.alt, neu, aktion });
+    const aktion = ['duplikat', 'loeschen', 'einsortieren'].includes(a.aktion) ? a.aktion : 'umbenennen';
+    if (aktion === 'loeschen') {
+      const dir = path.join(r.root, ...(r.dir ? r.dir.split('/') : []));
+      const dateien = [r.alt + '.sbp', r.alt + '.sbpcfg'].map((f) => path.join(dir, f)).filter((f) => fs.existsSync(f));
+      if (dateien.length) weg.push({ name: r.alt, ort: `${r.ort} · ${r.dir || '(Hauptordner)'}`, dir, dateien }); else fehler.push({ id: a.id, alt: r.alt, fehler: 'Datei nicht gefunden' });
+      continue;
+    }
+    const neu = aktion === 'einsortieren' ? r.alt : String(a.neu || r.neu).trim();
+    if (aktion !== 'duplikat' && (!pass(neu) || !safeName(neu))) { fehler.push({ id: a.id, alt: r.alt, fehler: 'Name passt nicht zum Schema' }); continue; }
+    // Bibliothek: Duplikate alle in einen Ordner „_Duplikate“ im Eingang (z. B. _sortieren\_Duplikate)
+    const zielDir = aktion === 'duplikat' ? (r.ort === 'Bibliothek' ? [eingangVon(r.dir), '_Duplikate'].filter(Boolean).join('/') : null) : vorsortZiel(r, neu);
+    if (aktion !== 'duplikat' && neu === r.alt && (zielDir == null || zielDir === r.dir)) continue;
+    aenderungen.push({ id: r.id, ort: r.ort, root: r.root, dir: r.dir, alt: r.alt, neu, aktion, zielDir });
   }
+  const geloescht = weg.length ? await inPapierkorb(weg) : [];
   const ergebnis = anwenden(aenderungen);
+  // Bibliothek: Ordner, die dadurch leer geworden sind, in den Papierkorb (nie der Eingang/Hauptordner selbst)
+  const quellen = [...ergebnis.filter((e) => e.ok && e.ort === 'Bibliothek'), ...weg.map((w) => ({ ort: 'Bibliothek', dirAbs: w.dir }))];
+  const leer = await leereOrdnerInPapierkorb(quellen.map((e) => e.dirAbs || path.join(e.root, ...(e.dir ? e.dir.split('/') : []))), (settings.bibliotheken || []));
   const prot = readJsonFile(ORDNEN_PROTOKOLL(), []);
   const zeit = new Date().toISOString();
   if (ergebnis.some((e) => e.ok)) { prot.push({ zeit, eintraege: ergebnis }); fs.writeFileSync(ORDNEN_PROTOKOLL(), JSON.stringify(prot)); }
   // eigene Aenderungen der erledigten Eintraege vergessen
   const eigene = readJsonFile(ORDNEN_EIGENE(), {});
   for (const e of ergebnis) if (e.ok) delete eigene[e.id];
+  for (const a of liste) if (a.aktion === 'loeschen') delete eigene[a.id];
   fs.writeFileSync(ORDNEN_EIGENE(), JSON.stringify(eigene));
   letzterPlan = null; lernModell = null; bpCache.clear(); lib = null; libPromise = null; availCache.clear();
-  log(`Ordnen: ${ergebnis.filter((e) => e.ok).length} erledigt, ${ergebnis.filter((e) => !e.ok).length + fehler.length} Fehler`);
-  return { zeit, ok: ergebnis.filter((e) => e.ok).length, fehler: [...fehler, ...ergebnis.filter((e) => !e.ok)] };
+  log(`Ordnen: ${ergebnis.filter((e) => e.ok).length} erledigt, ${geloescht.length} gelöscht, ${leer.length} leere Ordner in den Papierkorb, ${ergebnis.filter((e) => !e.ok).length + fehler.length} Fehler`);
+  return { zeit, ok: ergebnis.filter((e) => e.ok).length, geloescht: geloescht.length, leereOrdner: leer, fehler: [...fehler, ...ergebnis.filter((e) => !e.ok)] };
+}
+
+/** Ordner (und darüber liegende), die nichts mehr enthalten außer desktop.ini/Thumbs.db, in den Windows-Papierkorb.
+ *  Grenzen (Bibliotheks-Hauptordner) und deren direkte „_“-Eingänge (z. B. _sortieren) bleiben immer stehen. */
+async function leereOrdnerInPapierkorb(dirs, grenzen) {
+  const g = grenzen.map((x) => path.resolve(x).toLowerCase());
+  const geschuetzt = (d) => { const p = path.resolve(d).toLowerCase(); return g.some((x) => p === x || (path.dirname(p) === x && path.basename(p).startsWith('_')) || !p.startsWith(x + path.sep)); };
+  const NEBEN = /^(desktop\.ini|thumbs\.db)$/i;
+  const weg = new Map(); // klein geschrieben -> Pfad
+  const istLeer = (d) => { try { return fs.readdirSync(d, { withFileTypes: true }).every((e) => (e.isFile() && NEBEN.test(e.name)) || (e.isDirectory() && weg.has(path.join(d, e.name).toLowerCase()))); } catch { return false; } };
+  // tiefste zuerst, dann nach oben weiter prüfen
+  const offen = [...new Set(dirs.map((d) => path.resolve(d)))].sort((a, b) => b.length - a.length);
+  while (offen.length) {
+    const d = offen.shift();
+    if (geschuetzt(d) || weg.has(d.toLowerCase()) || !istLeer(d)) continue;
+    weg.set(d.toLowerCase(), d);
+    const p = path.dirname(d); if (!offen.includes(p)) { offen.push(p); offen.sort((a, b) => b.length - a.length); }
+  }
+  // nur die obersten leeren Ordner wegwerfen – ihre (leeren) Unterordner gehen mit
+  const alle = [...weg.keys()];
+  const echt = alle.filter((d) => !alle.some((x) => x !== d && d.startsWith(x + path.sep))).map((d) => weg.get(d));
+  if (!echt.length) return [];
+  if (process.platform === 'win32') {
+    const ps = "Add-Type -AssemblyName Microsoft.VisualBasic; foreach ($d in [IO.File]::ReadAllLines($env:BS_LISTE)) { if ($d) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteDirectory($d, 'OnlyErrorDialogs', 'SendToRecycleBin') } }";
+    const listeDatei = path.join(os.tmpdir(), `bs-ordner-${process.pid}-${Date.now()}.txt`);
+    fs.writeFileSync(listeDatei, '﻿' + echt.join('\r\n'), 'utf8');
+    await new Promise((res) => { const c = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { env: { ...process.env, BS_LISTE: listeDatei }, windowsHide: true, stdio: 'ignore' }); c.on('exit', res); c.on('error', res); });
+    try { fs.unlinkSync(listeDatei); } catch { /* egal */ }
+  }
+  const erledigt = echt.filter((d) => !fs.existsSync(d));
+  if (erledigt.length) {
+    const logbuch = readJsonFile(GELOESCHT(), []);
+    for (const d of erledigt) logbuch.push({ zeit: new Date().toISOString(), name: path.basename(d), ort: 'leerer Ordner', ordner: path.dirname(d), ziel: 'Papierkorb', dateien: [], pk: null });
+    fs.writeFileSync(GELOESCHT(), JSON.stringify(logbuch.slice(-5000)));
+    for (const d of erledigt) log(`Leerer Ordner in den Papierkorb: ${d}`);
+  }
+  return erledigt;
 }
 
 // ------------------------------------------------------------------ Ablage + Namensvorschlag
@@ -525,27 +633,39 @@ async function loeschen({ session, ordner, name }) {
   const dir = session ? path.dirname(bpPath(session, name)) : ablage.ordnerPfad(ordner);
   const dateien = [path.join(dir, name + '.sbp'), path.join(dir, name + '.sbpcfg')].filter((f) => fs.existsSync(f));
   if (!dateien.length) throw Object.assign(new Error(`„${name}“ nicht gefunden.`), { status: 404 });
-  let ziel = 'Papierkorb';
-  if (process.platform === 'win32') {
-    const ps = "Add-Type -AssemblyName Microsoft.VisualBasic; foreach ($f in $env:BS_DATEIEN.Split('|')) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($f, 'OnlyErrorDialogs', 'SendToRecycleBin') }";
+  const [e] = await inPapierkorb([{ name, ort: session ? `Spiel · ${session}` : `Ablage · ${ordner}`, dir, dateien }]);
+  return { ok: true, ziel: e.ziel };
+}
+/** Blaupausen (je { name, ort, dir, dateien }) in den Windows-Papierkorb – ein PowerShell-Aufruf für alle;
+ *  was danach noch da ist, kommt nach userdata\papierkorb. Logbuch geloescht.json. */
+async function inPapierkorb(liste) {
+  const alle = liste.flatMap((e) => e.dateien);
+  if (process.platform === 'win32' && alle.length) {
+    const ps = "Add-Type -AssemblyName Microsoft.VisualBasic; foreach ($f in [IO.File]::ReadAllLines($env:BS_LISTE)) { if ($f) { [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile($f, 'OnlyErrorDialogs', 'SendToRecycleBin') } }";
+    const listeDatei = path.join(os.tmpdir(), `bs-papierkorb-${process.pid}-${Date.now()}.txt`);
+    fs.writeFileSync(listeDatei, '﻿' + alle.join('\r\n'), 'utf8');
     await new Promise((res) => {
-      const c = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { env: { ...process.env, BS_DATEIEN: dateien.join('|') }, windowsHide: true, stdio: 'ignore' });
+      const c = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', ps], { env: { ...process.env, BS_LISTE: listeDatei }, windowsHide: true, stdio: 'ignore' });
       c.on('exit', res); c.on('error', res);
     });
+    try { fs.unlinkSync(listeDatei); } catch { /* egal */ }
   }
-  if (dateien.some((f) => fs.existsSync(f))) {
-    // Ersatz: in userdata\papierkorb verschieben
-    const pk = path.join(DATA_DIR, 'papierkorb', new Date().toISOString().slice(0, 10));
-    await fsp.mkdir(pk, { recursive: true });
-    for (const f of dateien) if (fs.existsSync(f)) { let z = path.join(pk, path.basename(f)); if (fs.existsSync(z)) z = z.replace(/(\.sbp(cfg)?)$/, `_${Date.now()}$1`); try { await fsp.rename(f, z); } catch { await fsp.copyFile(f, z); await fsp.unlink(f); } }
-    ziel = path.join('userdata', 'papierkorb');
-  }
-  bpCache.clear(); letzterPlan = null;
+  const pk = path.join(DATA_DIR, 'papierkorb', new Date().toISOString().slice(0, 10));
   const logbuch = readJsonFile(GELOESCHT(), []);
-  logbuch.push({ zeit: new Date().toISOString(), name, ort: session ? `Spiel · ${session}` : `Ablage · ${ordner}`, ordner: dir, ziel, dateien: dateien.map((f) => path.basename(f)), pk: ziel === 'Papierkorb' ? null : path.join(DATA_DIR, 'papierkorb', new Date().toISOString().slice(0, 10)) });
-  fs.writeFileSync(GELOESCHT(), JSON.stringify(logbuch.slice(-1000)));
-  log(`Gelöscht (${ziel}): ${dateien.join(', ')}`);
-  return { ok: true, ziel };
+  for (const e of liste) {
+    e.ziel = 'Papierkorb';
+    if (e.dateien.some((f) => fs.existsSync(f))) {
+      // Ersatz: in userdata\papierkorb verschieben
+      await fsp.mkdir(pk, { recursive: true });
+      for (const f of e.dateien) if (fs.existsSync(f)) { let z = path.join(pk, path.basename(f)); if (fs.existsSync(z)) z = z.replace(/(\.sbp(cfg)?)$/, `_${Date.now()}$1`); try { await fsp.rename(f, z); } catch { await fsp.copyFile(f, z); await fsp.unlink(f); } }
+      e.ziel = path.join('userdata', 'papierkorb');
+    }
+    logbuch.push({ zeit: new Date().toISOString(), name: e.name, ort: e.ort, ordner: e.dir, ziel: e.ziel, dateien: e.dateien.map((f) => path.basename(f)), pk: e.ziel === 'Papierkorb' ? null : pk });
+    log(`Gelöscht (${e.ziel}): ${e.dateien.join(', ')}`);
+  }
+  fs.writeFileSync(GELOESCHT(), JSON.stringify(logbuch.slice(-5000)));
+  bpCache.clear(); letzterPlan = null;
+  return liste;
 }
 function umbenennenMerken(alt, neu) {
   if (!pass(neu) || alt === neu) return;
@@ -990,7 +1110,8 @@ const server = http.createServer(async (req, res) => {
         fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(ORDNEN_EIGENE(), JSON.stringify(eigene));
         return sendJson(res, 200, { ok: true });
       }
-      if (p === '/api/ordnen/anwenden' && req.method === 'POST') return sendJson(res, 200, ordnenAnwenden((await readJsonBody(req)).liste || []));
+      if (p === '/api/ordnen/anwenden' && req.method === 'POST') return sendJson(res, 200, await ordnenAnwenden((await readJsonBody(req)).liste || []));
+      if (p === '/api/ordnen/uebernehmen' && req.method === 'POST') return sendJson(res, 200, inAblageUebernehmen());
       if (p === '/api/ordnen/protokoll') return sendJson(res, 200, readJsonFile(ORDNEN_PROTOKOLL(), []).map((b) => ({ zeit: b.zeit, anzahl: b.eintraege.filter((e) => e.ok).length, zurueck: !!b.zurueck })).reverse());
       if (p === '/api/ordnen/rueckgaengig' && req.method === 'POST') {
         const { zeit } = await readJsonBody(req);

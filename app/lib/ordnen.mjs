@@ -236,7 +236,8 @@ const STARK = [[/cheat|\bfree\b|gratis|no input|place anywhere|anywhere|\b\d+ oc
 function codeFuer(rec, m) {
   const name = lower(rec.alt);
   const ex = /^(\d+)_(\d+)_/.exec(rec.alt);
-  if (ex) { const c = `${ex[1]}_${ex[2]}`; const c2 = UMCODE[c] || c; if (GRUPPE_NAME[c2]) return c2; }
+  // alte Codes nur umschlüsseln, wenn es sie in der aktuellen Struktur nicht (mehr) gibt – sonst gilt der Code im Namen
+  if (ex) { const c = `${ex[1]}_${ex[2]}`; const c2 = GRUPPE_NAME[c] ? c : UMCODE[c] || c; if (GRUPPE_NAME[c2]) return c2; }
   for (const [re, c] of STARK) if (re.test(name)) return c;
   let hg = null;
   for (const [re, c] of ORDNER) if (re.test(rec.dir || '')) { hg = c; break; }
@@ -346,7 +347,8 @@ export function vorschlag(rec, m, overrides = {}) {
 
 export const istMojibake = (s) => MOJIBAKE.test(s);
 const codeVon = (n) => (/^\d+_\d+/.exec(n || '') || [''])[0];
-export const pass = (neu) => /^\d+_\d+_/.test(neu) && neu.length <= MAXLEN && !/[\\/:*?"<>|]/.test(neu);
+// Code muss in der Gruppenliste stehen – sonst gälten Zeitstempel wie „2025_10_10 12_12_46“ als fertig benannt
+export const pass = (neu) => /^\d+_\d+_/.test(neu) && !!GRUPPE_NAME[codeVon(neu)] && neu.length <= MAXLEN && !/[\\/:*?"<>|]/.test(neu);
 
 // ------------------------------------------------------------------ Plan ueber alle Blaupausen
 const guteNote = (e) => (istNichtssagend(e.alt.replace(/\(\d\)$/, '').trim()) ? 0 : 4) + (/\(\d\)$/.test(e.alt) ? 0 : 2) + (istMojibake(e.alt) ? 0 : 2)
@@ -389,11 +391,8 @@ export function planen(eintraege, overrides = {}) {
       const pct = Math.round(sim * 100);
       const selberOrdner = a.ort === b.ort && a.dir === b.dir;
       if (selberOrdner || pct < 99) for (const [x, y] of [[a, b], [b, a]]) if (!x.aehnlich || x.aehnlich.pct < pct) x.aehnlich = { id: y.id, alt: y.alt, ort: y.ort, dir: y.dir, pct };
-      // praktisch identisch (>= 99 %) im selben Ordner -> schlechter benannte als Duplikat
-      if (sim >= 0.99 && a.ort === b.ort && a.dir === b.dir && a.aktion !== 'duplikat' && b.aktion !== 'duplikat') {
-        const [keep, dup] = guteNote(a) >= guteNote(b) ? [a, b] : [b, a];
-        dup.aktion = 'duplikat'; dup.dupVon = keep.alt; dup.dupId = keep.id;
-      }
+      // Kein Duplikat allein wegen >= 99 % Ähnlichkeit: Duplikat nur bei gleichen Bauteilen (Signatur, oben je Gruppe erledigt).
+      // Der Fingerabdruck nimmt nur 128 Stichproben – Zwischenstände großer Bauten (z. B. 2313 vs. 2321 Teile) erreichen sonst auch 99–100 %.
     }
   }
   // Namensgleichheit im selben Ordner bei verschiedenem Inhalt -> _2, _3 …
@@ -470,9 +469,16 @@ export function anwenden(aenderungen) {
     const dir = path.join(a.root, a.dir);
     const res = { id: a.id, ort: a.ort, root: a.root, dir: a.dir, alt: a.alt, neu: a.neu, aktion: a.aktion, ok: false };
     try {
-      const zielDir = a.aktion === 'duplikat' ? path.join(dir, '_Duplikate') : dir;
-      const zielName = a.aktion === 'duplikat' ? a.alt : a.neu;
-      if (a.aktion !== 'duplikat' && (!pass(a.neu))) throw new Error('Name passt nicht zum Schema');
+      // Zielordner: a.zielDir (relativ zu a.root – Vorsortierung der Bibliothek bzw. gemeinsamer _Duplikate-Ordner im Eingang),
+      // sonst Duplikate in <Ordner>\_Duplikate, Umbenennen an Ort und Stelle
+      const zielDir = a.zielDir != null ? path.join(a.root, ...a.zielDir.split('/')) : a.aktion === 'duplikat' ? path.join(dir, '_Duplikate') : dir;
+      let zielName = a.aktion === 'duplikat' ? a.alt : a.neu;
+      // gemeinsamer Duplikate-Ordner: gleiche Namen aus verschiedenen Ordnern bekommen „ (2)“, „ (3)“ …
+      const belegt = (n) => fs.existsSync(path.join(zielDir, n + '.sbp')) && path.resolve(dir, a.alt + '.sbp').toLowerCase() !== path.resolve(zielDir, n + '.sbp').toLowerCase();
+      if (a.aktion === 'duplikat') for (let k = 2; belegt(zielName); k++) zielName = `${a.alt} (${k})`;
+      // Vorsortierung führt Ordner zusammen: gleicher Name mit anderem Inhalt aus einem anderen Ordner → _2, _3 … (Schema-Länge beachten)
+      else if (a.zielDir != null) for (let k = 2; belegt(zielName) && k < 100; k++) { const suf = '_' + k; zielName = a.neu.slice(0, MAXLEN - suf.length).replace(/_$/, '') + suf; }
+      if (a.aktion !== 'duplikat' && (!pass(zielName))) throw new Error('Name passt nicht zum Schema');
       fs.mkdirSync(zielDir, { recursive: true });
       for (const ext of ['.sbp', '.sbpcfg']) {
         const von = path.join(dir, a.alt + ext), nach = path.join(zielDir, zielName + ext);
@@ -483,7 +489,7 @@ export function anwenden(aenderungen) {
         const von = path.join(dir, a.alt + ext), nach = path.join(zielDir, zielName + ext);
         if (fs.existsSync(von)) fs.renameSync(von, nach);
       }
-      res.ok = true; res.zielDir = path.relative(a.root, zielDir).split(path.sep).join('/'); res.zielName = zielName;
+      res.ok = true; res.zielDir = path.relative(a.root, zielDir).split(path.sep).join('/'); res.zielName = zielName; if (a.aktion !== 'duplikat') res.neu = zielName;
     } catch (e) { res.fehler = e.message; }
     ergebnis.push(res);
   }
@@ -500,6 +506,7 @@ export function rueckgaengig(eintraege) {
         const von = path.join(r.root, r.zielDir, r.zielName + ext), nach = path.join(r.root, r.dir, r.alt + ext);
         if (!fs.existsSync(von)) continue;
         if (fs.existsSync(nach)) throw new Error('Alter Name ist inzwischen wieder belegt: ' + r.alt);
+        fs.mkdirSync(path.dirname(nach), { recursive: true }); // alter Ordner kann leer geworden und weggeräumt sein
         fs.renameSync(von, nach);
       }
       res.zurueck = true;

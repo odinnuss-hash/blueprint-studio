@@ -220,7 +220,7 @@
         <select id="o-ort" aria-label="Ort" style="width:auto"><option value="">Spiel + Bibliothek</option><option value="Spiel">Nur Spiel-Ordner</option><option value="Bibliothek">Nur Bibliothek</option></select>
         <select id="o-ordner" aria-label="Ordner" style="width:auto;max-width:280px"></select>
         <select id="o-art" aria-label="Anzeigen" style="width:auto">
-          <option value="offen" selected>Zu erledigen</option><option value="umbenennen">Nur Umbenennen</option><option value="duplikat">Nur Duplikate</option><option value="doppelt">Duplikate &amp; Ähnliche (mit Vorschau)</option>
+          <option value="offen" selected>Zu erledigen</option><option value="umbenennen">Nur Umbenennen</option><option value="einsortieren">Nur Einsortieren</option><option value="duplikat">Nur Duplikate</option><option value="loeschen">Nur Löschen</option><option value="doppelt">Duplikate &amp; Ähnliche (mit Vorschau)</option>
           <option value="inhalt">Name aus Inhalt (prüfen!)</option><option value="fehler">Ungültige Namen</option><option value="gleich">Passen schon</option><option value="alle">Alle</option>
         </select>
         <span class="sep"></span>
@@ -228,6 +228,7 @@
         <button type="button" class="btn" id="o-protokoll">Protokoll / Rückgängig</button>
         <button type="button" class="btn" id="o-papierkorb">Duplikate &amp; Papierkorb</button>
         <button type="button" class="btn primary" id="o-apply" disabled>Ausgewählte anwenden</button>
+        <button type="button" class="btn" id="o-uebernehmen" disabled title="Vorsortierte Blaupausen aus der Bibliothek (z. B. _sortieren / 1 Bauen / …) in die Ablage im Spielordner verschieben">In Ablage übernehmen</button>
       </div>
       <div class="o-wrap">
         <table class="otab">

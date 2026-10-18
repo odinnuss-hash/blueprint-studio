@@ -3,7 +3,7 @@ import { frage } from './dialog.js';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const $ = (id) => document.getElementById(id);
-const AKTION = { umbenennen: 'Umbenennen', duplikat: 'Duplikat', gleich: 'passt schon' };
+const AKTION = { umbenennen: 'Umbenennen', einsortieren: 'Einsortieren', duplikat: 'Duplikat', loeschen: 'Löschen', gleich: 'passt schon' };
 const BAD = /[\\/:*?"<>|]/;
 const FARBEN = ['#e8a33d', '#f2d04b', '#5b9bd5', '#8a7a66', '#6b7380', '#3fb6a8', '#9aa0a8'];
 const vorschauCache = new Map();
@@ -40,6 +40,7 @@ export class Ordnen {
     this.saveT = 0;
     $('o-load').addEventListener('click', () => this.load(true));
     $('o-apply').addEventListener('click', () => this.apply());
+    $('o-uebernehmen').addEventListener('click', () => this.uebernehmen());
     $('o-protokoll').addEventListener('click', () => this.protokoll());
     $('o-all').addEventListener('change', (e) => this.selectAll(e.target.checked));
     for (const id of ['o-ort', 'o-ordner', 'o-art']) $(id).addEventListener('change', () => { this.f.ort = $('o-ort').value; this.f.ordner = $('o-ordner').value; this.f.art = $('o-art').value; this.render(); });
@@ -80,9 +81,15 @@ export class Ordnen {
 
   neuVon(x) { return this.edit.has(x.id) ? this.edit.get(x.id).neu : x.neu; }
   aktionVon(x) { return this.edit.has(x.id) ? this.edit.get(x.id).aktion : x.aktion; }
+  /** Aktion für „Umbenennen“ in der Auswahl: gleicher Name → nur einsortieren (Bibliothek) bzw. nichts zu tun */
+  basisAktion(x, neu) {
+    if (neu !== x.alt) return 'umbenennen';
+    return x.aktion === 'einsortieren' || (x.aktion === 'umbenennen' && x.ort === 'Bibliothek') ? 'einsortieren' : 'gleich';
+  }
   ok(x) {
     const n = this.neuVon(x);
-    return this.aktionVon(x) === 'duplikat' || (/^\d+_\d+_/.test(n) && n.length <= this.data.maxLen && !BAD.test(n) && n.trim() === n);
+    const code = (/^\d+_\d+/.exec(n) || [''])[0]; // Code muss eine Gruppe sein (nicht z. B. „2025_10“ aus einem Zeitstempel)
+    return ['duplikat', 'loeschen'].includes(this.aktionVon(x)) || (/^\d+_\d+_/.test(n) && this.data.gruppen.some(([c]) => c === code) && n.length <= this.data.maxLen && !BAD.test(n) && n.trim() === n);
   }
 
   renderLegend() {
@@ -112,6 +119,8 @@ export class Ordnen {
       if (f.art === 'offen' && a === 'gleich') return false;
       if (f.art === 'umbenennen' && a !== 'umbenennen') return false;
       if (f.art === 'duplikat' && a !== 'duplikat') return false;
+      if (f.art === 'einsortieren' && a !== 'einsortieren') return false;
+      if (f.art === 'loeschen' && a !== 'loeschen') return false;
       if (f.art === 'doppelt' && a !== 'duplikat' && !x.aehnlich) return false;
       if (f.art === 'inhalt' && x.grund !== 'aus Inhalt') return false;
       if (f.art === 'gleich' && a !== 'gleich') return false;
@@ -135,8 +144,8 @@ export class Ordnen {
         <td><input type="checkbox" class="o-chk" ${this.sel.has(x.id) ? 'checked' : ''} ${akt === 'gleich' ? 'disabled' : ''} aria-label="Auswählen"></td>
         <td class="o-ort">${esc(x.ort)}<br><span>${esc(x.dir || '–')}</span></td>
         <td class="o-alt">${esc(x.alt)}</td>
-        <td class="o-neu">${akt === 'duplikat' ? `<span class="o-dup">→ Unterordner _Duplikate</span>` : `<input type="text" class="o-in" value="${esc(neu)}" maxlength="40" spellcheck="false" aria-label="Neuer Name für ${esc(x.alt)}"><span class="o-len">${neu.length}/${this.data.maxLen}</span>`}</td>
-        <td><select class="o-akt" aria-label="Aktion"><option value="umbenennen"${akt === 'umbenennen' || akt === 'gleich' ? ' selected' : ''}>${akt === 'gleich' ? AKTION.gleich : AKTION.umbenennen}</option><option value="duplikat"${akt === 'duplikat' ? ' selected' : ''}>Duplikat → _Duplikate</option></select></td>
+        <td class="o-neu">${akt === 'duplikat' ? `<span class="o-dup">→ ${x.ort === 'Bibliothek' ? esc([(x.dir || '').split('/')[0]].filter((s) => s.startsWith('_')).concat('_Duplikate').join('/')) : 'Unterordner _Duplikate'}</span>` : akt === 'loeschen' ? `<span class="o-dup o-weg">→ Windows-Papierkorb</span>` : `<input type="text" class="o-in" value="${esc(neu)}" maxlength="40" spellcheck="false" aria-label="Neuer Name für ${esc(x.alt)}"><span class="o-len">${neu.length}/${this.data.maxLen}</span>${this.zielText(x, neu, akt)}`}</td>
+        <td><select class="o-akt" aria-label="Aktion"><option value="umbenennen"${['umbenennen', 'einsortieren', 'gleich'].includes(akt) ? ' selected' : ''}>${AKTION[['einsortieren', 'gleich'].includes(akt) ? akt : 'umbenennen']}</option><option value="duplikat"${akt === 'duplikat' ? ' selected' : ''}>Duplikat → _Duplikate</option><option value="loeschen"${akt === 'loeschen' ? ' selected' : ''}>Löschen → Papierkorb</option></select></td>
         <td class="o-vs">${thumbs}</td>
         <td class="o-info">${esc(x.grund)}${x.eigen || this.edit.has(x.id) ? ' · <b>geändert</b>' : ''}<br><span>${esc(info)}</span></td>
         <td><button type="button" class="tool o-view" title="Ansehen (2D/3D)" aria-label="Ansehen">👁</button></td>
@@ -148,10 +157,20 @@ export class Ordnen {
     const bad = [...this.sel].filter((id) => !this.ok(this.byId.get(id))).length;
     $('o-apply').textContent = `Ausgewählte anwenden (${nSel})`;
     $('o-apply').disabled = !nSel || bad > 0;
-    const stat = { umbenennen: 0, duplikat: 0, gleich: 0 };
+    const stat = { umbenennen: 0, einsortieren: 0, duplikat: 0, loeschen: 0, gleich: 0 };
     for (const x of this.rows) stat[this.aktionVon(x)]++;
-    $('o-status').textContent = `${list.length} von ${this.rows.length} angezeigt${list.length > MAX ? ` (erste ${MAX} – Filter nutzen)` : ''} · ${stat.umbenennen} umbenennen · ${stat.duplikat} Duplikate · ${stat.gleich} passen schon${bad ? ` · ${bad} ausgewählte Namen ungültig` : ''}`;
+    $('o-status').textContent = `${list.length} von ${this.rows.length} angezeigt${list.length > MAX ? ` (erste ${MAX} – Filter nutzen)` : ''} · ${stat.umbenennen} umbenennen · ${stat.einsortieren} einsortieren · ${stat.duplikat} Duplikate${stat.loeschen ? ` · ${stat.loeschen} löschen` : ''} · ${stat.gleich} passen schon${bad ? ` · ${bad} ausgewählte Namen ungültig` : ''}`;
+    const ue = this.data.uebernehmbar || 0;
+    $('o-uebernehmen').textContent = `In Ablage übernehmen (${ue})`; $('o-uebernehmen').disabled = !ue;
     $('o-all').checked = list.length > 0 && list.every((x) => this.aktionVon(x) === 'gleich' || this.sel.has(x.id));
+  }
+
+  /** Zielordner der Vorsortierung (nur Bibliothek) unter dem Namen anzeigen */
+  zielText(x, neu, akt) {
+    if (x.ziel == null || akt === 'gleich') return '';
+    const code = (/^\d+_\d+/.exec(neu) || [''])[0];
+    const ziel = code === x.code ? x.ziel : `Ordner der Gruppe ${code || '?'}`;
+    return `<span class="o-ziel" title="Vorsortierung in der Bibliothek – „In Ablage übernehmen“ bringt sie danach in den Spielordner">→ ${esc(ziel)}</span>`;
   }
 
   selectAll(on) {
@@ -169,7 +188,7 @@ export class Ordnen {
     if (!e.target.classList.contains('o-in')) return;
     const x = this.rowOf(e); if (!x) return;
     const v = e.target.value;
-    this.edit.set(x.id, { neu: v, aktion: v === x.alt ? 'gleich' : 'umbenennen' });
+    this.edit.set(x.id, { neu: v, aktion: this.basisAktion(x, v) });
     if (v !== x.alt) this.sel.add(x.id);
     const tr = e.target.closest('tr');
     tr.classList.toggle('bad', !this.ok(x));
@@ -183,7 +202,7 @@ export class Ordnen {
     if (e.target.classList.contains('o-chk')) { if (e.target.checked) this.sel.add(x.id); else this.sel.delete(x.id); this.render(); return; }
     if (e.target.classList.contains('o-akt')) {
       const a = e.target.value;
-      this.edit.set(x.id, { neu: this.neuVon(x), aktion: a === 'umbenennen' && this.neuVon(x) === x.alt ? 'gleich' : a });
+      this.edit.set(x.id, { neu: this.neuVon(x), aktion: a === 'umbenennen' ? this.basisAktion(x, this.neuVon(x)) : a });
       this.remember(x); this.sel.add(x.id); this.render();
     }
   }
@@ -195,15 +214,33 @@ export class Ordnen {
   async apply() {
     const liste = [...this.sel].map((id) => this.byId.get(id)).filter((x) => x && this.aktionVon(x) !== 'gleich').map((x) => ({ id: x.id, neu: this.neuVon(x), aktion: this.aktionVon(x) }));
     if (!liste.length) return;
-    const dup = liste.filter((x) => x.aktion === 'duplikat').length;
-    if (!(await frage({ titel: 'Änderungen ausführen?', text: `${liste.length - dup} Blaupausen umbenennen und ${dup} Duplikate in „_Duplikate“ verschieben.`, hinweis: 'Tipp: Das Spiel dabei schließen oder im Hauptmenü lassen. Alles lässt sich über „Protokoll“ rückgängig machen.', ok: 'Ausführen' }))) return;
+    const n = (a) => liste.filter((x) => x.aktion === a).length;
+    const teile = [n('umbenennen') && `${n('umbenennen')} umbenennen`, n('einsortieren') && `${n('einsortieren')} einsortieren`, n('duplikat') && `${n('duplikat')} Duplikate nach „_Duplikate“`, n('loeschen') && `${n('loeschen')} in den Windows-Papierkorb`].filter(Boolean);
+    if (!(await frage({ art: n('loeschen') ? 'warnung' : undefined, titel: 'Änderungen ausführen?', text: teile.join(' · ') + '.', hinweis: 'Bibliotheks-Blaupausen werden dabei im Eingangsordner (z. B. _sortieren) nach der Ablage-Struktur vorsortiert. Umbenennen, Einsortieren und Duplikate lassen sich über „Protokoll“ rückgängig machen, Gelöschtes über den Windows-Papierkorb. Tipp: Das Spiel dabei schließen oder im Hauptmenü lassen.', ok: 'Ausführen' }))) return;
     $('o-apply').disabled = true;
     try {
       const r = await fetch('/api/ordnen/anwenden', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-bs': '1' }, body: JSON.stringify({ liste }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.fehler || r.status);
-      this.app.toast(`${j.ok} erledigt${j.fehler.length ? `, ${j.fehler.length} Fehler (siehe Liste)` : ''}.`, j.fehler.length ? 'err' : 'ok');
+      this.app.toast(`${j.ok} erledigt${j.geloescht ? `, ${j.geloescht} gelöscht` : ''}${j.fehler.length ? `, ${j.fehler.length} Fehler (siehe Konsole)` : ''}.`, j.fehler.length ? 'err' : 'ok');
       if (j.fehler.length) console.warn('Ordnen-Fehler', j.fehler);
+      await this.load(false);
+      this.app.afterOrdnen?.();
+    } catch (e) { this.app.toast('Fehler: ' + e.message, 'err'); }
+  }
+
+  /** Vorsortiertes aus der Bibliothek in die Ablage im Spielordner verschieben */
+  async uebernehmen() {
+    const n = this.data?.uebernehmbar || 0;
+    if (!n) return;
+    if (!(await frage({ titel: 'In die Ablage übernehmen?', text: `${n} vorsortierte Blaupausen aus der Bibliothek in die Ablage im Spielordner verschieben (gleiche Ordnerstruktur).`, hinweis: 'Gibt es einen Namen dort schon, bleibt die Blaupause in der Bibliothek liegen und wird gemeldet. Leer gewordene Ordner im Eingang werden entfernt.', ok: 'Übernehmen' }))) return;
+    $('o-uebernehmen').disabled = true;
+    try {
+      const r = await fetch('/api/ordnen/uebernehmen', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-bs': '1' }, body: '{}' });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.fehler || r.status);
+      this.app.toast(`${j.ok} in die Ablage übernommen${j.fehler.length ? `, ${j.fehler.length} liegen geblieben (Name schon in der Ablage – siehe Konsole)` : ''}.`, j.fehler.length ? 'err' : 'ok');
+      if (j.fehler.length) console.warn('Übernehmen – liegen geblieben', j.fehler);
       await this.load(false);
       this.app.afterOrdnen?.();
     } catch (e) { this.app.toast('Fehler: ' + e.message, 'err'); }

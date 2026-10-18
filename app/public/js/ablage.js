@@ -479,7 +479,8 @@ export class AblageUI {
   }
   laengeZeigen() {
     const v = $('nv-neu').value.trim(), max = this.vorschlag?.maxLen || 32;
-    const ok = /^\d+_\d+_/.test(v) && v.length <= max && !/[\\/:*?"<>|]/.test(v);
+    const code = (/^\d+_\d+/.exec(v) || [''])[0], gruppen = this.daten?.gruppen;
+    const ok = /^\d+_\d+_/.test(v) && (!gruppen || gruppen.some(([c]) => c === code)) && v.length <= max && !/[\\/:*?"<>|]/.test(v);
     $('nv-len').textContent = `${v.length}/${max}`;
     $('nv-len').classList.toggle('bad', !ok);
     $('nv-ok').disabled = !v || v === this.app.bp?.name || /[\\/:*?"<>|]/.test(v);
