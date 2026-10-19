@@ -86,16 +86,24 @@ function scanSaveForPaths(file, into) {
 }
 
 export async function buildLibrary({ bpRoot, saveDir, cacheFile, log = () => {} }) {
-  // Schluessel: Dateiliste + Zeitstempel
+  // Schluessel: Dateiliste + Zeitstempel. Quellen: zuerst die Spielstand-Ordner (blueprints\<Sitzung>), danach die
+  // Ablage samt Unterordnern (dort liegen nach dem Aufräumen die meisten Blaupausen) – ohne _Duplikate/_Archiv/_Pakete.
   const bpFiles = [];
+  const SKIP = /^_(duplikate|archiv|pakete)$/i;
+  const sammeln = async (dir, tiefe) => {
+    let l = []; try { l = await fsp.readdir(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of l) if (e.isFile() && e.name.endsWith('.sbp')) { const p = path.join(dir, e.name); const st = await fsp.stat(p); bpFiles.push({ p, t: st.mtimeMs }); }
+    if (tiefe > 0) for (const e of l) if (e.isDirectory() && !SKIP.test(e.name)) await sammeln(path.join(dir, e.name), tiefe - 1);
+  };
   try {
-    for (const s of await fsp.readdir(bpRoot, { withFileTypes: true })) if (s.isDirectory())
-      for (const f of await fsp.readdir(path.join(bpRoot, s.name))) if (f.endsWith('.sbp')) {
-        const p = path.join(bpRoot, s.name, f); const st = await fsp.stat(p); bpFiles.push({ p, t: st.mtimeMs });
-      }
+    const ordner = (await fsp.readdir(bpRoot, { withFileTypes: true })).filter((s) => s.isDirectory());
+    for (const s of ordner) if (!s.name.startsWith('_')) await sammeln(path.join(bpRoot, s.name), 0);
+    for (const s of ordner) if (s.name.startsWith('_') && !SKIP.test(s.name)) await sammeln(path.join(bpRoot, s.name), 6);
   } catch { /* kein Ordner */ }
   const saves = await newestSaves(saveDir);
-  const key = JSON.stringify({ v: VERSION, b: bpFiles.map((x) => x.p + x.t).sort(), s: saves.map((x) => x.p + x.t) });
+  // Schlüssel aus Dateiname + Änderungszeit (nicht Pfad): Verschieben zwischen Ablage und Spielstand ändert den Inhalt nicht
+  // und soll keinen Neuaufbau (bei vielen Blaupausen ~20 s) auslösen
+  const key = JSON.stringify({ v: VERSION, b: bpFiles.map((x) => path.basename(x.p) + x.t).sort(), s: saves.map((x) => x.p + x.t) });
   try { const c = JSON.parse(await fsp.readFile(cacheFile, 'utf8')); if (c.key === key) return c; } catch { /* neu */ }
 
   const t0 = Date.now();
