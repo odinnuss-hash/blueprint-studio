@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">Zur App</h2>
 <table>
   <tr><th style="width:200px">Programm</th><td><b>Blueprint Studio</b> – Blaupausen-Werkzeug für Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">1.0.0</td></tr>
+  <tr><th>Version</th><td id="za-version">1.1.0</td></tr>
   <tr><th>Urheber</th><td><b>ODINnuss</b> – Idee, Konzept und Gestaltung</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Alle Rechte vorbehalten.</td></tr>
   <tr><th>Umsetzung</th><td>Programmiert im Auftrag des Urhebers mit KI-Unterstützung (Claude, Anthropic).</td></tr>
@@ -269,7 +269,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Graph / Liste:</b> Der Graph zeigt die Kette als Kästen. Kästen ziehen = verschieben, Klick = Rezept wählen (auch Alternativrezepte – die müssen im Spiel freigeschaltet sein), Hintergrund ziehen / Mausrad = Ansicht. <b>Einpassen</b> und <b>Neu anordnen</b> helfen bei großen Ketten; <b>Rezepte auf Standard</b> setzt alle Rezepte zurück.</li>
   <li><b>Blaupause erstellen …</b> (oder ▣ an einem Kasten): wahlweise die <b>ganze Fabrik</b> (Reihen übereinander, mit Bändern und Förderliften verbunden), eine <b>Teilfabrik</b> bis zu einer Stufe oder eine <b>einzelne Stufe</b> als Maschinenreihe mit Verteilern, Sammlern, Fundament, Strom und Schildern. Name, Spielstand und höchste Förderband-Stufe wählen, vorher in 3D ansehen, dann <b>Als Blaupause speichern</b>.</li>
   <li><b>Grundlage:</b> Öffnest du eine im Planer gebaute Blaupause, zeigt der Planer ihren Plan („Grundlage der Blaupause“) – <b>Als meinen Plan übernehmen</b> oder <b>Zurück zu meinem Plan</b>.</li>
-  <li><b>Grenzen:</b> Stufen mit Flüssigkeiten/Rohren oder Nebenprodukten lassen sich noch nicht als Reihe bauen (ausgegraut, die Maus zeigt den Grund). Alle Maschinen laufen mit 100 % – die Zulieferung begrenzt die Menge.</li>
+  <li><b>Bauweise:</b> kompakt wie in deinen eigenen Blaupausen gemessen – Maschinen direkt nebeneinander, Splitter/Merger 2 m vor dem Anschluss, jede weitere Leitung 4 m weiter außen und 2 m höher, Rohre immer über den Bändern. Vor jeder Maschine steht außerhalb der Leitungen ein Strommast. Bänder, Lifte und Rohre sind für <b>alle Maschinen bei 100 %</b> ausgelegt (nicht nur für die geplante Teilmenge); Verbindungen zwischen Reihen tragen die volle Menge der liefernden Reihe.</li>
+  <li><b>Rohre & Flüssigkeiten:</b> Rohrwege mit Ecken sind ein Rohr mit Bögen (wie im Spiel gebaut). Liegen zwei Reihen nebeneinander, geht das Rohr direkt hinüber, sonst über die Rohr-Spalte rechts. Steigt ein Rohr höher als 9 m, setzt der Planer eine <b>Pumpe</b> (mit Strom; Mk.2, wenn es sehr hoch geht). Flüssige <b>Nebenprodukte</b> laufen in einen <b>Flüssigkeitsspeicher</b>, feste in einen AWESOME-Schredder.</li>
+  <li><b>Wasser & mehrere Quellen:</b> Kommt ein Stoff aus mehreren Reihen, werden alle angeschlossen (Bänder über je einen Merger, Rohre über je eine Kreuzung von oben). Was in der Fabrik selbst entsteht (z. B. Wasser aus der Aluminium-Kette), wird zuerst verwendet; nur der <b>Rest</b> kommt von außen – bei Rohren über eine Kreuzung mit einem Anschluss <b>nach oben</b> (Schild „ZULAUF VON OBEN“). Mit <b>Wasserextraktoren mitbauen</b> im Dialog stellt der Planer für fehlendes Wasser Extraktoren samt Strom daneben (je 120 m³/min; im Spiel geht das nur über Blaupausen).</li>
+  <li><b>Grenzen:</b> Für manche Gebäude gibt es noch keinen Reihen-Bauplan (ausgegraut, die Maus zeigt den Grund) – dort entstehen freie Ein-/Ausgänge mit Schild. Blaupausen, die der Planer erzeugt hat, dienen nie als Bauteil-Vorlagen; hat eine Vorlage Gegenstände im Lager, speichere im Spiel eine Blaupause mit dem leeren Gebäude.</li>
 </ul>
 <h2 class="sec" id="masterclass">Master Class – fertige Lehrbuch-Fabriken</h2>
 <p><b>Master Class …</b> im Planer zeigt sauber aufgebaute Vorlagen-Fabriken nach Stufe (höchster nötiger Meilenstein) und Thema. Quelle sind die Master-Class-Ordner (Standard: <code>blueprints\Sortieren\Tschukki</code> und die Ablage „10 Master Class“).</p>
@@ -363,7 +366,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ul>
 <h3>Veröffentlichen (z. B. GitHub)</h3>
 <p>Die Datei <code>.gitignore</code> im Programmordner schließt alles aus, was nicht veröffentlicht werden darf oder persönlich ist: <code>userdata</code>, Modelle, Icons, Kartenbild, FModel, den 3D-Editor und Blaupausen/Spielstände. Die Hilfe enthält keine festen Pfade – sie zeigt immer die Ordner aus deinen eigenen Einstellungen.</p>
-<p><b>Ein Update herausgeben:</b> Versionsnummer in <code>app\server.mjs</code> (<code>VERSION</code>) und <code>app\public\js\main.js</code> (<code>APP_VERSION</code>) erhöhen, hochladen (GitHub Desktop: <i>Commit</i> → <i>Push</i>) und auf GitHub unter <i>Releases → Draft a new release</i> ein Release mit dem Tag <code>v</code> + Versionsnummer (z. B. <code>v1.0.0</code>) und einer kurzen Beschreibung der Neuerungen veröffentlichen. Alle installierten Apps bieten das Update dann beim nächsten Start an.</p>
+<p><b>Ein Update herausgeben:</b> Versionsnummer in <code>app\server.mjs</code> (<code>VERSION</code>) und <code>app\public\js\main.js</code> (<code>APP_VERSION</code>) erhöhen, hochladen (GitHub Desktop: <i>Commit</i> → <i>Push</i>) und auf GitHub unter <i>Releases → Draft a new release</i> ein Release mit dem Tag <code>v</code> + Versionsnummer (z. B. <code>v1.1.0</code>) und einer kurzen Beschreibung der Neuerungen veröffentlichen. Alle installierten Apps bieten das Update dann beim nächsten Start an.</p>
 
 <h2 class="sec" id="einstellungen">Einstellungen</h2>
 <ul>
@@ -589,7 +592,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Modelle liegen in der App verdreht/versetzt</td><td>FModel-Mesh-Format muss <code>glTF 2.0 (binary)</code> sein; Werkzeug erneut laufen lassen.</td></tr>
   <tr><td>Graue Kästen statt Modellen</td><td>Für dieses Bauteil fehlt ein Modell (siehe Meldung des Werkzeugs) – oder es ist ein Band/Rohr/Schiene/Lift (bewusst ohne Modell).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.0.0 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
+<p class="muted">Blueprint Studio 1.1.0 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

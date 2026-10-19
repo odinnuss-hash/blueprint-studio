@@ -24,6 +24,13 @@ KATEGORIEN IM SPIEL
   das Original wird vorher einmalig nach userdata\sicherungen\spielstaende gesichert.
   Laeuft das Spiel, wartet die App, bis es geschlossen ist (App dabei offen lassen).
 
+PLANER
+  Rechnet ganze Produktionsketten und baut sie als Blaupause – mit Baendern UND Rohren:
+  Pumpen ab 9 m Hoehe, Fluessigkeitsspeicher fuer fluessige Nebenprodukte, auf Wunsch
+  Wasserextraktoren, mehrere Quellen je Stoff (Intern geht vor, der Rest kommt von aussen bzw.
+  "von oben"). Kompakte Bauweise wie in echten Blaupausen gemessen.
+  Vom Planer erzeugte Blaupausen dienen nie als Bauteil-Vorlagen.
+
 HILFE
   In der App oben auf "Hilfe": Handbuch, Namensschema, Checkliste bei Spiel-Updates,
   FModel-Anleitung. Als Datei: app\public\hilfe.html (Englisch: hilfe.en.html usw.)

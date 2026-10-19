@@ -355,7 +355,7 @@ export class PlanerUI {
         <p class="hint">Nur diese Maschinen mit Verteilern, Sammlern, Strom und Schildern; Ein- und Ausgänge sind freie Bänder.</p>
         <div class="bw-grid">${einzelKarten}</div>
       </div>
-      <div class="bw-fuss"><span class="muted bw-zahl">Ausgegraut = geht noch nicht (Flüssigkeiten/Rohre, Nebenprodukte) – Maus darüber zeigt den Grund.</span><button type="button" class="btn small bw-abbr">Abbrechen</button></div></div>`;
+      <div class="bw-fuss"><span class="muted bw-zahl">Ausgegraut = geht noch nicht – Maus darüber zeigt den Grund.</span><button type="button" class="btn small bw-abbr">Abbrechen</button></div></div>`;
     d.querySelector('.bw-zu').addEventListener('click', () => d.close());
     d.querySelector('.bw-abbr').addEventListener('click', () => d.close());
     d.onclick = (e) => { if (e.target === d) d.close(); };
@@ -408,16 +408,19 @@ export class PlanerUI {
     } else {
       titel = s.name;
       beschreibung = `${s.anzahl}× <span data-no-i18n>${esc(this.kat.gebaeude[s.gebaeude]?.name || s.gebaeude)}</span> in einer Reihe · Eingang ${zl(s.zutaten)} → Ausgang ${zl(s.produkte)}`;
-      aufbau = 'Aufbau: Verteiler (Splitter) vor jeder Maschine – bei mehreren Zutaten je Zutat eine eigene Leitung, jede weitere 8 m weiter außen und 3 m höher, die Zuführbänder laufen darüber hinweg –, Sammler (Merger) dahinter, Förderbänder verbunden, 8×1-Fundamente, je ein Schild am Eingang und am Ausgang. Neben jeder Maschine steht ein Strommast, alles ist verkabelt – du musst nur noch einen Mast an dein Netz anschließen. Höher liegende Verteiler schweben (Stützen setzt du bei Bedarf selbst).';
+      aufbau = 'Aufbau: Maschinen direkt nebeneinander, Verteiler (Splitter) vor jeder Maschine – bei mehreren Zutaten je Zutat eine eigene Leitung, jede weitere 4 m weiter außen und 2 m höher (Rohre immer über den Bändern), die Zuführungen laufen darüber hinweg –, Sammler (Merger) dahinter, Förderbänder verbunden, 8×1-Fundamente, je ein Schild am Eingang und am Ausgang. Vor jeder Maschine steht außerhalb der Leitungen ein Strommast, alles ist verkabelt – du musst nur noch einen Mast an dein Netz anschließen. Höher liegende Verteiler schweben (Stützen setzt du bei Bedarf selbst).';
       vorschlag = `Planer_${this.itemName(s.produkte[0].item)}_${fmt(s.produkte[0].proMin, 0)}`;
     }
     vorschlag = vorschlag.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_').slice(0, 80);
+    const wasser = (kette ? baubare : [s]).some((x) => x.zutaten.some((z) => z.item === 'Desc_Water_C'));
+    const wasserZeile = wasser ? `<label for="pl-bp-wasser">Wasser</label><label class="pl-bp-check"><input type="checkbox" id="pl-bp-wasser"${this.plan.wasser ? ' checked' : ''}> Wasserextraktoren mitbauen (je 120 m³/min, mit Strom – stehen dann auf dem Fundament, das geht im Spiel nur über Blaupausen)</label>` : '';
     d.innerHTML = `<form method="dialog" class="dlg"><h2>Blaupause: <span data-no-i18n>${esc(titel)}</span></h2>
       <p>${beschreibung}</p>
       ${grund ? `<p class="err">${esc(grund)}</p>` : `
       <p class="hint">${esc(aufbau)} Alle Maschinen laufen mit 100 % – die Zulieferung begrenzt die Menge.</p>
       <div class="pl-bp-grid">
         <label for="pl-bp-band">Förderband höchstens</label><select id="pl-bp-band">${[1, 2, 3, 4, 5, 6].map((m) => `<option value="${m}"${m === (this.plan.band || 6) ? ' selected' : ''}>Mk.${m} (${[0, 60, 120, 270, 480, 780, 1200][m]}/min)</option>`).join('')}</select>
+        ${wasserZeile}
         <label for="pl-bp-name">Name</label><input id="pl-bp-name" type="text" value="${esc((kette ? this.bpNameKette : this.bpName) || vorschlag)}" spellcheck="false">
         <label for="pl-bp-ziel">Speichern in</label><select id="pl-bp-ziel">${sessions.map((x) => `<option${x === ziel ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>
       </div>
@@ -425,7 +428,7 @@ export class PlanerUI {
       <div class="dlg-actions"><button type="button" class="btn" value="nein">Schließen</button>${grund ? '' : '<button type="button" class="btn" id="pl-bp-3d">In 3D ansehen</button><button type="button" class="btn primary" id="pl-bp-ok">Als Blaupause speichern</button>'}</div></form>`;
     d.querySelector('[value=nein]').addEventListener('click', () => d.close());
     const planDaten = () => ({ ziele: this.plan.ziele, vorhanden: this.plan.vorhanden, wahl: this.ergebnis.wahl, layout: this.plan.layout || {} });
-    const daten = () => (kette ? { kette: true, bis: bis ? bis.rezept : undefined, plan: planDaten(), bandMax: +$('pl-bp-band').value } : { schritt: { rezept: s.rezept, maschinen: s.maschinen }, bandMax: +$('pl-bp-band').value });
+    const daten = () => ({ ...(kette ? { kette: true, bis: bis ? bis.rezept : undefined, plan: planDaten() } : { schritt: { rezept: s.rezept, maschinen: s.maschinen } }), bandMax: +$('pl-bp-band').value, wasser: !!$('pl-bp-wasser')?.checked });
     const post = async (url, body) => {
       const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify(body) });
       const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status); return j;
@@ -433,6 +436,7 @@ export class PlanerUI {
     const infoText = (i2) => (i2.reihen ? `${i2.objekte} Objekte · ${i2.reihen} Reihen · ${i2.maschinen} Maschinen · ${i2.verbindungen} Verbindungen (${i2.lifte} Förderlifte) · ${i2.eingaenge} Zulieferungen · ${i2.masten} Strommasten · ${i2.fundamente} Fundamente · ca. ${i2.groesse[0]} × ${i2.groesse[1]} m` : '') || `${i2.objekte} Objekte · ${i2.maschinen} Maschinen im Abstand ${i2.abstand / 100} m · ${i2.leitungen > 1 ? i2.leitungen + ' Verteilerleitungen · ' : ''}${i2.masten ? i2.masten + ' Strommasten · ' : ''} Bänder Mk.${i2.bandEin} (Eingang) / Mk.${i2.bandAus} (Ausgang) · ${i2.fundamente} Fundamente · ca. ${i2.groesse[0]} × ${i2.groesse[1]} m`;
     if (grund) { d.showModal(); return; }
     $('pl-bp-band').addEventListener('change', (e) => { this.plan.band = +e.target.value; this.speichern(); });
+    $('pl-bp-wasser')?.addEventListener('change', (e) => { this.plan.wasser = e.target.checked; this.speichern(); });
     $('pl-bp-name').addEventListener('input', (e) => { if (kette) this.bpNameKette = e.target.value; else this.bpName = e.target.value; });
     $('pl-bp-ziel').addEventListener('change', (e) => { this.bpZiel = e.target.value; });
     $('pl-bp-3d').addEventListener('click', async (e) => {

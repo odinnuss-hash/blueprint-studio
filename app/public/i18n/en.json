@@ -1607,5 +1607,9 @@
  "Paket speichern": "Save package",
  "Paket laden": "Load package",
  "vom {0} – die gebaute Stufe ist markiert. Änderungen hier werden nicht gespeichert.": "from {0} – the built stage is marked. Changes here are not saved.",
- "– die gebaute Stufe ist markiert. Änderungen hier werden nicht gespeichert.": "– the built stage is marked. Changes here are not saved."
+ "– die gebaute Stufe ist markiert. Änderungen hier werden nicht gespeichert.": "– the built stage is marked. Changes here are not saved.",
+ "Wasser": "Water",
+ "Wasserextraktoren mitbauen (je 120 m³/min, mit Strom – stehen dann auf dem Fundament, das geht im Spiel nur über Blaupausen)": "Build water extractors too (120 m³/min each, with power – they then stand on the foundation, which the game only allows via blueprints)",
+ "Ausgegraut = geht noch nicht – Maus darüber zeigt den Grund.": "Greyed out = not possible yet – hover to see why.",
+ "Aufbau: Maschinen direkt nebeneinander, Verteiler (Splitter) vor jeder Maschine – bei mehreren Zutaten je Zutat eine eigene Leitung, jede weitere 4 m weiter außen und 2 m höher (Rohre immer über den Bändern), die Zuführungen laufen darüber hinweg –, Sammler (Merger) dahinter, Förderbänder verbunden, 8×1-Fundamente, je ein Schild am Eingang und am Ausgang. Vor jeder Maschine steht außerhalb der Leitungen ein Strommast, alles ist verkabelt – du musst nur noch einen Mast an dein Netz anschließen. Höher liegende Verteiler schweben (Stützen setzt du bei Bedarf selbst).": "Layout: machines right next to each other, distributors (splitters) in front of each machine – with several ingredients one line per ingredient, each further one 4 m farther out and 2 m higher (pipes always above the belts), the feeds run over them –, collectors (mergers) behind, conveyor belts connected, 8×1 foundations, one sign each at the input and output. In front of each machine, outside the lines, stands a power pole, everything is wired – you only need to connect one pole to your grid. Higher distributors float (add supports yourself if needed)."
 }

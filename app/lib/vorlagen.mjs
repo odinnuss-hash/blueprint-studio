@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { readBlueprint } from './sbp.mjs';
+import { readBlueprint, readCfg } from './sbp.mjs';
 import { wert } from './eigenschaften.mjs';
 
 /** Enthält ein Lager (mInventoryStacks) Gegenstände? */
@@ -14,9 +14,10 @@ function lagerBelegt(d) {
   try { const w = wert(d, false, 'mInventoryStacks'); return !!w && w.includes('/Game/'); } catch { return d.includes('/Game/FactoryGame/Resource/'); }
 }
 
-const VERSION = 5;
+const VERSION = 6; // 6: vom Planer erzeugte Blaupausen sind keine Vorlagen mehr
+const PLANER_AUSGABE = /Plan #[0-9a-f]{8}\b|^Blueprint Studio Planer:/;
 // Bauteile mit Innenleben (Anschlüsse, Lager), die als ganze Baugruppe (Entität + Komponenten) gespeichert werden – für den Fabrikplaner
-const BAUGRUPPE = /^Build_(SmelterMk1|ConstructorMk1|AssemblerMk1|FoundryMk1|ManufacturerMk1|OilRefinery|Blender|Packager|HadronCollider|QuantumEncoder|Converter|ConveyorBeltMk\d|ConveyorLiftMk\d|ConveyorAttachmentSplitter|ConveyorAttachmentMerger|PowerPoleMk\d|PowerLine|Pipeline(MK2)?(_NoIndicator)?|PipelineJunction_Cross|PipelinePump(Mk2)?|ResourceSink)_C$/;
+const BAUGRUPPE = /^Build_(SmelterMk1|ConstructorMk1|AssemblerMk1|FoundryMk1|ManufacturerMk1|OilRefinery|Blender|Packager|HadronCollider|QuantumEncoder|Converter|ConveyorBeltMk\d|ConveyorLiftMk\d|ConveyorAttachmentSplitter|ConveyorAttachmentMerger|PowerPoleMk\d|PowerLine|Pipeline(MK2)?(_NoIndicator)?|PipelineJunction_Cross|PipelinePump(Mk2)?|PipeStorageTank|WaterPump|ResourceSink)_C$/;
 
 // ------------------------------------------------------------------ Bytes
 export const i32 = (v) => { const b = Buffer.alloc(4); b.writeInt32LE(v); return b; };
@@ -103,13 +104,15 @@ export async function buildLibrary({ bpRoot, saveDir, cacheFile, log = () => {} 
   const saves = await newestSaves(saveDir);
   // Schlüssel aus Dateiname + Änderungszeit (nicht Pfad): Verschieben zwischen Ablage und Spielstand ändert den Inhalt nicht
   // und soll keinen Neuaufbau (bei vielen Blaupausen ~20 s) auslösen
-  const key = JSON.stringify({ v: VERSION, b: bpFiles.map((x) => path.basename(x.p) + x.t).sort(), s: saves.map((x) => x.p + x.t) });
+  const key = JSON.stringify({ v: VERSION, g: BAUGRUPPE.source, b: bpFiles.map((x) => path.basename(x.p) + x.t).sort(), s: saves.map((x) => x.p + x.t) });
   try { const c = JSON.parse(await fsp.readFile(cacheFile, 'utf8')); if (c.key === key) return c; } catch { /* neu */ }
 
   const t0 = Date.now();
   const lib = { key, version: VERSION, erzeugt: new Date().toISOString(), pfade: {}, vorlagen: {}, basis: null };
-  let best = null;
+  let best = null, planerAusgaben = 0;
   for (const { p } of bpFiles) {
+    // Vom Planer erzeugte Blaupausen (Vermerk „Plan #…“ in der .sbpcfg) nie als Vorlage – sonst vererben sich eigene Fehler
+    try { if (PLANER_AUSGABE.test(readCfg(await fsp.readFile(p + 'cfg')).description || '')) { planerAusgaben++; continue; } } catch { /* keine .sbpcfg */ }
     let bp;
     try { bp = readBlueprint(await fsp.readFile(p), { props: false }); } catch { continue; }
     const v = String(bp.header.saveVersion);
@@ -144,7 +147,7 @@ export async function buildLibrary({ bpRoot, saveDir, cacheFile, log = () => {} 
   }
   lib.basis = best;
   for (const s of saves) { try { scanSaveForPaths(s.p, lib.pfade); } catch (e) { log('Spielstand nicht lesbar:', path.basename(s.p), e.message); } }
-  log(`Vorlagen: ${Object.keys(lib.pfade).length} Bauteilpfade, ${Object.entries(lib.vorlagen).map(([v, m]) => `v${v}: ${Object.keys(m).length}`).join(', ')} (${Date.now() - t0} ms)`);
+  log(`Vorlagen: ${Object.keys(lib.pfade).length} Bauteilpfade, ${Object.entries(lib.vorlagen).map(([v, m]) => `v${v}: ${Object.keys(m).length}`).join(', ')}, ${planerAusgaben} Planer-Blaupausen übersprungen (${Date.now() - t0} ms)`);
   await fsp.mkdir(path.dirname(cacheFile), { recursive: true });
   await fsp.writeFile(cacheFile, JSON.stringify(lib));
   return lib;

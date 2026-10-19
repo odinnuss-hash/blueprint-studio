@@ -37,7 +37,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 
@@ -982,13 +982,13 @@ async function planerBauen(body) {
       if (i < 0) throw Object.assign(new Error('Die gewählte Stufe gibt es im Plan nicht (mehr).'), { status: 400 });
       nur = vorstufen(ergebnis, i); nur.max = i; bisName = ergebnis.schritte[i].name;
     }
-    const r = baueKette({ kat: k, lib: l, ver: basis.saveVersion, hasFlags: basis.hasFlags, ergebnis, bandMax, fundament: body.fundament, nur });
+    const r = baueKette({ kat: k, lib: l, ver: basis.saveVersion, hasFlags: basis.hasFlags, ergebnis, bandMax, fundament: body.fundament, nur, wasser: !!body.wasser });
     r.info.bis = bisName;
     const datei = createBlueprint(basis, r.objs, r.kopf);
     return { datei, info: { ...r.info, objekte: r.objs.length, rezept: bisName ? `bis ${bisName}` : 'ganze Kette' }, basis, ergebnis, kette: true, bis: bisName };
   }
   const schritt = planerSchritt(k, body.schritt);
-  const r = baueReihe({ kat: k, lib: l, ver: basis.saveVersion, hasFlags: basis.hasFlags, schritt, bandMax, fundament: body.fundament });
+  const r = baueReihe({ kat: k, lib: l, ver: basis.saveVersion, hasFlags: basis.hasFlags, schritt, bandMax, fundament: body.fundament, wasser: !!body.wasser });
   const datei = createBlueprint(basis, r.objs, r.kopf);
   return { datei, info: { ...r.info, objekte: r.objs.length, rezept: schritt.name }, basis, schritt };
 }
@@ -1006,7 +1006,7 @@ async function planerSpeichern(body) {
   readBlueprint(r.datei); // Selbstprüfung
   // Grundlage (Plan + gebaute Stufe) merken – die Blaupause trägt nur die Kennung „Plan #…“ in der Beschreibung
   const planId = crypto.randomBytes(4).toString('hex');
-  const herkunft = { id: planId, datum: new Date().toISOString(), name, session, bandMax: +body.bandMax || 6, kette: !!r.kette, bis: typeof body.bis === 'string' ? body.bis : null,
+  const herkunft = { id: planId, datum: new Date().toISOString(), name, session, bandMax: +body.bandMax || 6, wasser: !!body.wasser, kette: !!r.kette, bis: typeof body.bis === 'string' ? body.bis : null,
     schritt: r.schritt ? { rezept: r.schritt.rezept, maschinen: r.schritt.maschinen } : null, plan: planerPlan(body.plan) };
   await fsp.mkdir(path.join(DATA_DIR, 'planer'), { recursive: true });
   await fsp.writeFile(path.join(DATA_DIR, 'planer', planId + '.json'), JSON.stringify(herkunft, null, 1));

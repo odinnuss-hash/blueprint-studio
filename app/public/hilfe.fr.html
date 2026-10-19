@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">À propos de l'app</h2>
 <table>
   <tr><th style="width:200px">Programme</th><td><b>Blueprint Studio</b> – outil de plans pour Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">1.0.0</td></tr>
+  <tr><th>Version</th><td id="za-version">1.1.0</td></tr>
   <tr><th>Auteur</th><td><b>ODINnuss</b> – idée, concept et conception</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Tous droits réservés.</td></tr>
   <tr><th>Réalisation</th><td>Programmé pour le compte de l'auteur avec l'aide de l'IA (Claude, Anthropic).</td></tr>
@@ -269,7 +269,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Graphe / liste :</b> le graphe montre la chaîne sous forme de cases. Glisser = déplacer, clic = choisir la recette (recettes alternatives aussi – à débloquer dans le jeu), glisser le fond / molette = vue. <b>Ajuster</b> et <b>Réorganiser</b> aident pour les grandes chaînes ; <b>Recettes standard</b> réinitialise toutes les recettes.</li>
   <li><b>Créer un plan …</b> (ou ▣ sur une case) : l’<b>usine entière</b> (rangées superposées, reliées par convoyeurs et ascenseurs), une <b>usine partielle</b> jusqu’à une étape ou une <b>étape unique</b> en rangée de machines avec répartiteurs, fusionneurs, fondation, électricité et panneaux. Choisir le nom, la sauvegarde et le niveau de convoyeur maximal, regarder en 3D, puis <b>Enregistrer comme plan</b>.</li>
   <li><b>Base :</b> en ouvrant un plan construit par le planificateur, celui-ci affiche son plan (« Base du plan ») – <b>Reprendre comme mon plan</b> ou <b>Retour à mon plan</b>.</li>
-  <li><b>Limites :</b> les étapes avec fluides/tuyaux ou sous-produits ne peuvent pas encore être construites en rangée (grisées, survoler pour la raison). Toutes les machines tournent à 100 % – l’approvisionnement limite la quantité.</li>
+  <li><b>Disposition :</b> compacte, mesurée sur tes propres plans – machines côte à côte, diviseurs/fusionneurs à 2 m du raccord, chaque ligne suivante 4 m plus loin et 2 m plus haut, tuyaux toujours au-dessus des convoyeurs. Devant chaque machine, en dehors des lignes, se trouve un pylône électrique. Convoyeurs, ascenseurs et tuyaux sont dimensionnés pour <b>toutes les machines à 100 %</b> (pas seulement la part prévue) ; les liaisons entre rangées portent la quantité totale de la rangée fournisseuse.</li>
+  <li><b>Tuyaux et fluides :</b> les tracés avec angles forment un seul tuyau avec des courbes (comme dans le jeu). Si deux rangées sont voisines, le tuyau va directement de l’une à l’autre, sinon par la colonne de tuyaux à droite. Si un tuyau monte à plus de 9 m, le planificateur ajoute une <b>pompe</b> (avec électricité ; Mk.2 si c’est très haut). Les <b>sous-produits</b> liquides vont dans un <b>réservoir de fluide</b>, les solides dans un broyeur AWESOME.</li>
+  <li><b>Eau et sources multiples :</b> si un élément vient de plusieurs rangées, toutes sont raccordées (convoyeurs via un fusionneur chacun, tuyaux via une jonction chacun, par le haut). Ce que l’usine produit elle-même (p. ex. l’eau de la chaîne d’aluminium) est utilisé en premier ; seul le <b>reste</b> vient de l’extérieur – pour les tuyaux via une jonction dont un raccord pointe <b>vers le haut</b> (panneau « ZULAUF VON OBEN »). Avec <b>Construire aussi les extracteurs d’eau</b> dans la fenêtre, le planificateur place des extracteurs avec électricité pour l’eau manquante (120 m³/min chacun ; le jeu ne l’autorise que via les plans).</li>
+  <li><b>Limites :</b> certains bâtiments n’ont pas encore de plan de rangée (grisés, survoler pour la raison) – des entrées/sorties libres avec panneau y sont créées. Les plans créés par le planificateur ne servent jamais de modèles ; si un modèle contient des objets dans son inventaire, enregistre dans le jeu un plan avec le bâtiment vide.</li>
 </ul>
 <h2 class="sec" id="masterclass">Master Class – usines modèles prêtes</h2>
 <p><b>Master Class …</b> dans le planificateur montre des usines modèles bien construites par palier (jalon le plus élevé requis) et par thème. Source : les dossiers Master Class (par défaut <code>blueprints\Sortieren\Tschukki</code> et la réserve « 10 Master Class »).</p>
@@ -363,7 +366,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ul>
 <h3>Publier (p. ex. GitHub)</h3>
 <p>Le fichier <code>.gitignore</code> dans le dossier du programme exclut tout ce qui ne doit pas être publié ou qui est personnel : <code>userdata</code>, modèles, icônes, image de carte, FModel, l'éditeur 3D et les plans/sauvegardes. L'aide ne contient aucun chemin fixe – elle affiche toujours les dossiers de vos propres paramètres.</p>
-<p><b>Publier une mise à jour :</b> augmenter le numéro de version dans <code>app\server.mjs</code> (<code>VERSION</code>) et <code>app\public\js\main.js</code> (<code>APP_VERSION</code>), envoyer (GitHub Desktop : <i>Commit</i> → <i>Push</i>) puis publier sur GitHub sous <i>Releases → Draft a new release</i> une release avec le tag <code>v</code> + numéro de version (p. ex. <code>v1.0.0</code>) et une courte description des nouveautés. Toutes les apps installées proposent alors la mise à jour au prochain démarrage.</p>
+<p><b>Publier une mise à jour :</b> augmenter le numéro de version dans <code>app\server.mjs</code> (<code>VERSION</code>) et <code>app\public\js\main.js</code> (<code>APP_VERSION</code>), envoyer (GitHub Desktop : <i>Commit</i> → <i>Push</i>) puis publier sur GitHub sous <i>Releases → Draft a new release</i> une release avec le tag <code>v</code> + numéro de version (p. ex. <code>v1.1.0</code>) et une courte description des nouveautés. Toutes les apps installées proposent alors la mise à jour au prochain démarrage.</p>
 
 <h2 class="sec" id="einstellungen">Paramètres</h2>
 <ul>
@@ -589,7 +592,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Les modèles sont tournés/décalés dans l'app</td><td>Le format de mesh de FModel doit être <code>glTF 2.0 (binary)</code> ; relancez l'outil.</td></tr>
   <tr><td>Boîtes grises au lieu des modèles</td><td>Il manque un modèle pour cet élément (voir le message de l'outil) – ou il s'agit d'un convoyeur/tuyau/rail/ascenseur (volontairement sans modèle).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.0.0 · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
+<p class="muted">Blueprint Studio 1.1.0 · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

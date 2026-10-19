@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">About the app</h2>
 <table>
   <tr><th style="width:200px">Program</th><td><b>Blueprint Studio</b> – blueprint tool for Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">1.0.0</td></tr>
+  <tr><th>Version</th><td id="za-version">1.1.0</td></tr>
   <tr><th>Author</th><td><b>ODINnuss</b> – idea, concept and design</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. All rights reserved.</td></tr>
   <tr><th>Implementation</th><td>Programmed on behalf of the author with AI assistance (Claude, Anthropic).</td></tr>
@@ -269,7 +269,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Graph / list:</b> the graph shows the chain as boxes. Drag boxes = move, click = choose recipe (alternate recipes too – they must be unlocked in the game), drag background / mouse wheel = view. <b>Fit</b> and <b>Rearrange</b> help with large chains; <b>Default recipes</b> resets all recipes.</li>
   <li><b>Create blueprint …</b> (or ▣ on a box): either the <b>whole factory</b> (rows stacked, connected with belts and conveyor lifts), a <b>partial factory</b> up to one stage or a <b>single stage</b> as a machine row with splitters, mergers, foundation, power and signs. Choose name, save and the highest belt tier, look at it in 3D first, then <b>Save as blueprint</b>.</li>
   <li><b>Basis:</b> when you open a blueprint built in the planner, the planner shows its plan (“Basis of the blueprint”) – <b>Use as my plan</b> or <b>Back to my plan</b>.</li>
-  <li><b>Limits:</b> stages with fluids/pipes or by-products cannot be built as a row yet (greyed out, hover to see why). All machines run at 100 % – the supply limits the amount.</li>
+  <li><b>Layout:</b> compact, as measured in your own blueprints – machines right next to each other, splitters/mergers 2 m in front of the connector, each further line 4 m farther out and 2 m higher, pipes always above the belts. In front of each machine, outside the lines, stands a power pole. Belts, lifts and pipes are sized for <b>all machines at 100 %</b> (not just the planned share); connections between rows carry the full amount of the supplying row.</li>
+  <li><b>Pipes & fluids:</b> pipe routes with corners are one pipe with bends (as the game builds them). If two rows are next to each other the pipe goes straight across, otherwise through the pipe column on the right. If a pipe rises higher than 9 m, the planner adds a <b>pump</b> (with power; Mk.2 if it goes very high). Fluid <b>by-products</b> run into a <b>fluid buffer</b>, solid ones into an AWESOME Sink.</li>
+  <li><b>Water & several sources:</b> if an item comes from several rows, all of them are connected (belts via one merger each, pipes via one junction each from above). Whatever the factory produces itself (e.g. water from the aluminium chain) is used first; only the <b>remainder</b> comes from outside – for pipes via a junction with one connector pointing <b>up</b> (sign “ZULAUF VON OBEN”). With <b>Build water extractors too</b> in the dialog, the planner places extractors with power for the missing water (120 m³/min each; the game only allows this via blueprints).</li>
+  <li><b>Limits:</b> some buildings have no row plan yet (greyed out, hover to see why) – free inputs/outputs with signs are created there. Blueprints made by the planner are never used as part templates; if a template has items in its inventory, save a blueprint with the empty building in the game.</li>
 </ul>
 <h2 class="sec" id="masterclass">Master Class – ready-made textbook factories</h2>
 <p><b>Master Class …</b> in the planner shows cleanly built template factories by tier (highest milestone needed) and topic. The source are the Master Class folders (default: <code>blueprints\Sortieren\Tschukki</code> and the archive “10 Master Class”).</p>
@@ -363,7 +366,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ul>
 <h3>Publishing (e.g. GitHub)</h3>
 <p>The file <code>.gitignore</code> in the program folder excludes everything that must not be published or is personal: <code>userdata</code>, models, icons, map image, FModel, the 3D editor and blueprints/saves. The help contains no fixed paths – it always shows the folders from your own settings.</p>
-<p><b>Releasing an update:</b> increase the version number in <code>app\server.mjs</code> (<code>VERSION</code>) and <code>app\public\js\main.js</code> (<code>APP_VERSION</code>), upload (GitHub Desktop: <i>Commit</i> → <i>Push</i>) and publish a release on GitHub under <i>Releases → Draft a new release</i> with the tag <code>v</code> + version number (e.g. <code>v1.0.0</code>) and a short description of what is new. All installed apps then offer the update on their next start.</p>
+<p><b>Releasing an update:</b> increase the version number in <code>app\server.mjs</code> (<code>VERSION</code>) and <code>app\public\js\main.js</code> (<code>APP_VERSION</code>), upload (GitHub Desktop: <i>Commit</i> → <i>Push</i>) and publish a release on GitHub under <i>Releases → Draft a new release</i> with the tag <code>v</code> + version number (e.g. <code>v1.1.0</code>) and a short description of what is new. All installed apps then offer the update on their next start.</p>
 
 <h2 class="sec" id="einstellungen">Settings</h2>
 <ul>
@@ -589,7 +592,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Models are rotated/offset in the app</td><td>The FModel mesh format must be <code>glTF 2.0 (binary)</code>; run the tool again.</td></tr>
   <tr><td>Gray boxes instead of models</td><td>A model is missing for this part (see the tool's message) – or it is a belt/pipeline/railway/lift (intentionally without a model).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.0.0 · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
+<p class="muted">Blueprint Studio 1.1.0 · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

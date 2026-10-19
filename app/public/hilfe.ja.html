@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">アプリについて</h2>
 <table>
   <tr><th style="width:200px">プログラム</th><td><b>Blueprint Studio</b> – Satisfactory 用の設計図ツール</td></tr>
-  <tr><th>バージョン</th><td id="za-version">1.0.0</td></tr>
+  <tr><th>バージョン</th><td id="za-version">1.1.0</td></tr>
   <tr><th>作者</th><td><b>ODINnuss</b>– アイデア、コンセプト、デザイン</td></tr>
   <tr><th>著作権</th><td>© 2026 ODINnuss. 無断複製・転載を禁じます。</td></tr>
   <tr><th>実装</th><td>作者の依頼により AI の支援(Claude、Anthropic)を受けてプログラミングされました。</td></tr>
@@ -269,7 +269,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>グラフ／リスト：</b>グラフはチェーンをボックスで表示します。ボックスをドラッグ＝移動、クリック＝レシピ選択（代替レシピも可。ゲーム内で解放が必要）、背景ドラッグ／ホイール＝表示。大きなチェーンには<b>合わせる</b>と<b>並べ直す</b>が便利です。<b>標準レシピに戻す</b>ですべてのレシピをリセットします。</li>
   <li><b>設計図を作成 …</b>（またはボックスの ▣）：<b>工場全体</b>（列を上下に重ね、ベルトとコンベアリフトで接続）、ある段階までの<b>部分工場</b>、またはスプリッター・マージャー・基礎・電力・看板付きの機械列としての<b>単一の段階</b>を選べます。名前・セーブデータ・ベルトの上限を選び、先に3Dで確認してから<b>設計図として保存</b>します。</li>
   <li><b>基データ：</b>プランナーで作った設計図を開くと、そのプラン（「設計図の基データ」）が表示されます – <b>自分のプランとして採用</b>または<b>自分のプランに戻る</b>。</li>
-  <li><b>制限：</b>液体・パイプや副産物のある段階はまだ列として作れません（グレー表示。マウスを重ねると理由を表示）。全機械 100 % で稼働し、供給量が生産量を決めます。</li>
+  <li><b>配置：</b>自分の設計図で測った通りのコンパクト配置 – 機械は隣接、スプリッター／マージャーは接続口の2 m手前、追加ラインは4 m外側・2 m高く、パイプは常にコンベアの上。各機械の前、ラインの外側に電柱。コンベア・リフト・パイプは<b>全機械100 %</b>（計画分だけでなく）に合わせて選ばれ、列間の接続は供給側の全量を運べます。</li>
+  <li><b>パイプと液体：</b>角のあるパイプ経路はゲームと同じく曲がり付きの1本のパイプ。2つの列が隣り合っていれば直接つなぎ、そうでなければ右側のパイプ列を通ります。パイプが9 mより高く上がる場合はプランナーが<b>ポンプ</b>（電力付き、非常に高い場合はMk.2）を設置。液体の<b>副産物</b>は<b>流体バッファー</b>へ、固体はAWESOMEシンクへ。</li>
+  <li><b>水と複数の供給元：</b>同じ素材が複数の列から来る場合はすべて接続（コンベアはそれぞれマージャー、パイプはそれぞれ上からジャンクション）。工場内で生じるもの（例：アルミチェーンの水）を先に使い、<b>不足分</b>だけ外部から – パイプでは接続口が<b>上向き</b>のジャンクション経由（看板「ZULAUF VON OBEN」）。ダイアログの<b>水抽出機も建設</b>をオンにすると、不足する水のために電力付きの水抽出機を横に配置（各120 m³/分、ゲームでは設計図経由でのみ可能）。</li>
+  <li><b>制限：</b>一部の建物にはまだ列の設計がありません（グレー表示、マウスで理由を表示）– そこには看板付きの自由な入出力ができます。プランナーが作った設計図は部品テンプレートに使われません。テンプレートのインベントリにアイテムがある場合は、ゲームで空の建物の設計図を保存してください。</li>
 </ul>
 <h2 class="sec" id="masterclass">マスタークラス – 完成済みの手本工場</h2>
 <p>プランナーの<b>マスタークラス …</b>は、きれいに組まれたテンプレート工場をティア（必要な最上位マイルストーン）とテーマ別に表示します。元データはマスタークラスのフォルダー（既定：<code>blueprints\Sortieren\Tschukki</code> と保管庫「10 Master Class」）です。</p>
@@ -363,7 +366,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ul>
 <h3>公開(例: GitHub)</h3>
 <p>プログラムフォルダー内のファイル <code>.gitignore</code> は、公開してはならないものや個人的なものをすべて除外します: <code>userdata</code>、モデル、アイコン、マップ画像、FModel、3D エディター、設計図/セーブデータ。ヘルプには固定のパスは含まれておらず、常にあなた自身の設定にあるフォルダーを表示します。</p>
-<p><b>アップデートの公開:</b> <code>app\server.mjs</code>(<code>VERSION</code>)と <code>app\public\js\main.js</code>(<code>APP_VERSION</code>)のバージョン番号を上げてアップロードし(GitHub Desktop: <i>Commit</i> → <i>Push</i>)、GitHub の <i>Releases → Draft a new release</i> でタグ <code>v</code> + バージョン番号(例: <code>v1.0.0</code>)と新機能の短い説明を付けてリリースを公開します。インストール済みのすべてのアプリが次回起動時にアップデートを提案します。</p>
+<p><b>アップデートの公開:</b> <code>app\server.mjs</code>(<code>VERSION</code>)と <code>app\public\js\main.js</code>(<code>APP_VERSION</code>)のバージョン番号を上げてアップロードし(GitHub Desktop: <i>Commit</i> → <i>Push</i>)、GitHub の <i>Releases → Draft a new release</i> でタグ <code>v</code> + バージョン番号(例: <code>v1.1.0</code>)と新機能の短い説明を付けてリリースを公開します。インストール済みのすべてのアプリが次回起動時にアップデートを提案します。</p>
 
 <h2 class="sec" id="einstellungen">設定</h2>
 <ul>
@@ -589,7 +592,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>アプリ内でモデルが回転/ずれている</td><td>FModel の Mesh Format は <code>glTF 2.0 (binary)</code> である必要があります。ツールを再度実行してください。</td></tr>
   <tr><td>モデルの代わりに灰色の箱が表示される</td><td>このパーツのモデルがありません(ツールのメッセージ参照)– またはベルト/パイプ/線路/リフトです(意図的にモデルなし)。</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.0.0 · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
+<p class="muted">Blueprint Studio 1.1.0 · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

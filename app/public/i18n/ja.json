@@ -1607,5 +1607,9 @@
  "Paket speichern": "パッケージを保存",
  "Paket laden": "パッケージを読み込む",
  "vom {0} – die gebaute Stufe ist markiert. Änderungen hier werden nicht gespeichert.": "（{0}）– 作成した段階に印が付いています。ここでの変更は保存されません。",
- "– die gebaute Stufe ist markiert. Änderungen hier werden nicht gespeichert.": "– 作成した段階に印が付いています。ここでの変更は保存されません。"
+ "– die gebaute Stufe ist markiert. Änderungen hier werden nicht gespeichert.": "– 作成した段階に印が付いています。ここでの変更は保存されません。",
+ "Wasser": "水",
+ "Wasserextraktoren mitbauen (je 120 m³/min, mit Strom – stehen dann auf dem Fundament, das geht im Spiel nur über Blaupausen)": "水抽出機も建設（各120 m³/分、電力付き – 土台の上に置かれます。ゲームでは設計図経由でのみ可能）",
+ "Ausgegraut = geht noch nicht – Maus darüber zeigt den Grund.": "グレー表示＝まだ不可 – マウスを重ねると理由を表示。",
+ "Aufbau: Maschinen direkt nebeneinander, Verteiler (Splitter) vor jeder Maschine – bei mehreren Zutaten je Zutat eine eigene Leitung, jede weitere 4 m weiter außen und 2 m höher (Rohre immer über den Bändern), die Zuführungen laufen darüber hinweg –, Sammler (Merger) dahinter, Förderbänder verbunden, 8×1-Fundamente, je ein Schild am Eingang und am Ausgang. Vor jeder Maschine steht außerhalb der Leitungen ein Strommast, alles ist verkabelt – du musst nur noch einen Mast an dein Netz anschließen. Höher liegende Verteiler schweben (Stützen setzt du bei Bedarf selbst).": "構成：機械は隣接して配置、各機械の前に分配器（スプリッター）– 材料が複数ある場合は材料ごとに1ライン、追加ラインは4 m外側・2 m高く（パイプは常にコンベアの上）、供給はその上を通る –、後ろに合流器（マージャー）、コンベア接続済み、8×1土台、入口と出口に看板を1枚ずつ。各機械の前、ラインの外側に電柱があり、すべて配線済み – 電柱1本を電力網につなぐだけ。高い位置の分配器は浮いています（必要なら支柱を自分で設置）。"
 }

@@ -1,9 +1,10 @@
 // Fabrikplaner → Blaupause: Fertigungsstufen als Maschinenreihen, ganze/teilweise Fabriken als verbundene Reihen.
 //
 // Reihe (Blick von oben, Fluss von −Y nach +Y durch die Maschinen):
-//   Eingang ─▶ [S]──▶[S]──▶[S]   je Zutat eine Leitung (Band: Splitter, Rohr: Kreuzung); weitere Leitungen 8 m
-//               │     │     │      weiter außen und 3 m höher, Zuführung als S-Kurve darüber hinweg
-//              [M]   [M]   [M]    Maschinen, je Maschine ein Strommast daneben
+//                *     *     *    je Maschine ein Strommast außerhalb der Eingangsleitungen
+//   Eingang ─▶ [S]──▶[S]──▶[S]   je Zutat eine Leitung (Band: Splitter, Rohr: Kreuzung); weitere Leitungen 4 m
+//               │     │     │      weiter außen und 2 m höher (Rohre über den Bändern), Zuführung darüber hinweg
+//              [M][M][M]          Maschinen direkt nebeneinander (Abstände wie in den eigenen Blaupausen gemessen)
 //               │     │     │
 //              [V]──▶[V]──▶[V] ─▶ je Produkt eine Sammelleitung (Band: Merger, Rohr: Kreuzung), Nebenprodukt fest
 //                                  und unbenutzt → AWESOME-Schredder
@@ -37,10 +38,25 @@ const BAND = [0, 60, 120, 270, 480, 780, 1200];
 const ROHR = [0, 300, 600];
 const Z_BODEN = 100;            // Oberkante Fundament
 const Z_BAND = Z_BODEN + 100;   // Anschlusshöhe von Bändern, Splittern, Kreuzungen
+const ROHR_MAX = 5000;          // Höchstlänge je Rohr (Spiel: 56 m), darüber Stoß in Linie
+const ROHR_BOGEN = 130;         // Abstand Ecke → Bogenanfang wie bei den im Spiel gebauten Rohren
 const FUNDAMENTE = ['Build_Foundation_ConcretePolished_8x1_C', 'Build_Foundation_8x1_01_C', 'Build_Foundation_Concrete_8x1_C', 'Build_Foundation_Asphalt_8x1_C', 'Build_Foundation_Metal_8x1_C'];
 const SCHILDER = ['Build_StandaloneWidgetSign_SmallVeryWide_C', 'Build_StandaloneWidgetSign_SmallWide_C', 'Build_StandaloneWidgetSign_Small_C'];
+const SPEICHER = { cls: 'Build_PipeStorageTank_C', r: 200, z: 175 }; // Anschlüsse gemessen: ConnectionAny0/1 bei (0, ±200, 175)
+// Wasserextraktor (gemessen): Rohranschluss (0, −460, 240) nach −Y, Strom (−595, 320, 1045), Grundfläche ±1000 × ±900, 120 m³/min
+const EXTRAKTOR = { cls: 'Build_WaterPump_C', aus: ['FGPipeConnectionFactory', 0, -460, 240], strom: ['PowerConnection', -595, 320, 1045], rate: 120, abstand: 2200, mitte: 1100 };
+// Rohrpumpe (gemessen an 339 Pumpen): Connection0 (Eingang) und Connection1 (Ausgang) in der Mitte, Durchfluss lokal +X,
+// Strom PowerInput (115, −140, 50). Förderhöhe (Wiki): Maschinen/Extraktoren 10 m, Pumpe Mk.1 20 m, Mk.2 50 m – ab Pumpe neu.
+const PUMPE = { mk1: 'Build_PipelinePump_C', mk2: 'Build_PipelinePumpMk2_C', strom: ['PowerInput', 115, -140, 50], hubMk1: 1800 };
+const HUB_FREI = 900;   // so hoch (über Boden) kommt eine Flüssigkeit sicher ohne Pumpe (10 m empfohlen, 1 m Reserve)
+const MAST_PLAETZE = { Build_PowerPoleMk1_C: 4, Build_PowerPoleMk2_C: 7, Build_PowerPoleMk3_C: 10 };
 const SCHREDDER = { cls: 'Build_ResourceSink_C', ein: ['Input0', 0, 500, 100], strom: ['FGPowerConnection', -361, -321, 898] };
 
+/** Vektor v mit Quaternion q = [x, y, z, w] drehen */
+const qDreh = ([x, y, z, w], [vx, vy, vz]) => {
+  const ix = w * vx + y * vz - z * vy, iy = w * vy + z * vx - x * vz, iz = w * vz + x * vy - y * vx, iw = -x * vx - y * vy - z * vz;
+  return [ix * w - iw * x - iy * z + iz * y, iy * w - iw * y - iz * x + ix * z, iz * w - iw * z - ix * y + iy * x];
+};
 const quatYaw = (deg) => { const a = deg * Math.PI / 360; return [0, 0, Math.sin(a), Math.cos(a)]; };
 const zahl = (v) => (Math.round(v * 100) / 100).toLocaleString('de-DE', { maximumFractionDigits: 2 });
 const istFluessig = (kat, it) => /Flüssig|Gas/.test(kat?.items?.[it]?.form || '');
@@ -76,12 +92,66 @@ function umgebung({ kat, lib, ver, bandMax, strom }) {
   const band = (mk, von, nach, kurve = false) => neu({ cls: `Build_ConveyorBeltMk${mk}_C`, pos: von, yaw: 0, conn: {}, spline: [von, nach], kurve });
   const rohrCls = (mk) => { const w = mk >= 2 ? ['Build_PipelineMK2_C', 'Build_PipelineMK2_NoIndicator_C', 'Build_Pipeline_C', 'Build_Pipeline_NoIndicator_C'] : ['Build_Pipeline_C', 'Build_Pipeline_NoIndicator_C', 'Build_PipelineMK2_C', 'Build_PipelineMK2_NoIndicator_C']; return w.find((c) => bg[c]) || w[0]; };
   const rohr = (mk, von, nach, kurve = false) => neu({ cls: rohrCls(mk), pos: von, yaw: 0, conn: {}, spline: [von, nach], kurve, rohr: true });
+  /**
+   * Rohrverlauf durch die Punkte `pts` wie das Spiel ihn baut: ein Rohr, Ecken als Bogen (Spline-Punkte vor und nach der
+   * Ecke), gerade Stücke dazwischen. Über ROHR_MAX lang → mehrere Rohre, Stoß immer in Linie. start/ende = [teil, komp].
+   * Liefert das freie Ende [teil, 'PipelineConnection1'].
+   */
+  const rohrPfad = (mk, pts, start, ende) => {
+    const sub = (a, b) => a.map((v, i) => v - b[i]), len = (d) => Math.hypot(...d), mul = (d, f) => d.map((v) => v * f), add = (a, b) => a.map((v, i) => v + b[i]);
+    const p = [];
+    for (const q of pts) if (!p.length || len(sub(q, p[p.length - 1])) > 1) p.push(q);
+    for (let i = 1; i + 1 < p.length;) { // gerade durchlaufende Punkte entfernen
+      const a = sub(p[i], p[i - 1]), b = sub(p[i + 1], p[i]);
+      if (Math.abs(a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (len(a) * len(b)) > 0.9998) p.splice(i, 1); else i++;
+    }
+    const dir = (i) => { const d = sub(p[i + 1], p[i]); return mul(d, 1 / len(d)); };
+    // Abschnitte {a, b, ta, tb, l}: gerade (Tangente = Strecke) oder Bogen (Tangente nach Kreisnäherung)
+    const ab = [];
+    let von = p[0];
+    for (let i = 1; i < p.length; i++) {
+      const dIn = dir(i - 1);
+      if (i === p.length - 1) { const d = sub(p[i], von); ab.push({ a: von, b: p[i], ta: d, tb: d, l: len(d) }); break; }
+      const dOut = dir(i), th = Math.acos(Math.max(-1, Math.min(1, dIn[0] * dOut[0] + dIn[1] * dOut[1] + dIn[2] * dOut[2])));
+      const r = Math.min(ROHR_BOGEN, 0.45 * len(sub(p[i], p[i - 1])), 0.45 * len(sub(p[i + 1], p[i])));
+      const R = r / Math.tan(th / 2), tl = 4 * Math.tan(th / 4) * R;
+      const A = sub(p[i], mul(dIn, r)), B = add(p[i], mul(dOut, r));
+      const d = sub(A, von);
+      if (len(d) > 1) ab.push({ a: von, b: A, ta: d, tb: d, l: len(d) });
+      ab.push({ a: A, b: B, ta: mul(dIn, tl), tb: mul(dOut, tl), l: R * th });
+      von = B;
+    }
+    // in Rohre bis ROHR_MAX aufteilen (nur in geraden Abschnitten schneiden)
+    const rohre = [[]];
+    let summe = 0;
+    for (let s of ab) {
+      while (summe + s.l > ROHR_MAX && s.ta === s.tb && s.l > 200) {
+        const rest = Math.max(100, Math.min(s.l - 100, ROHR_MAX - summe)), u = mul(s.ta, 1 / s.l), m = add(s.a, mul(u, rest));
+        rohre[rohre.length - 1].push({ a: s.a, b: m, ta: mul(u, rest), tb: mul(u, rest), l: rest });
+        rohre.push([]); summe = 0;
+        const d = sub(s.b, m); s = { a: m, b: s.b, ta: d, tb: d, l: len(d) };
+      }
+      if (summe + s.l > ROHR_MAX && rohre[rohre.length - 1].length) { rohre.push([]); summe = 0; }
+      rohre[rohre.length - 1].push(s); summe += s.l;
+    }
+    let vorher = start;
+    for (const liste of rohre) {
+      const einh = (v) => mul(v, 1 / (len(v) || 1));
+      const punkte = [{ loc: liste[0].a, arrive: einh(liste[0].ta), leave: liste[0].ta }];
+      for (let k = 0; k < liste.length; k++) punkte.push({ loc: liste[k].b, arrive: liste[k].tb, leave: k + 1 < liste.length ? liste[k + 1].ta : einh(liste[k].tb) });
+      const t = neu({ cls: rohrCls(mk), pos: punkte[0].loc, yaw: 0, conn: {}, spline: punkte.map((q) => q.loc), punkte, rohr: true });
+      if (vorher) verbinde(vorher[0], vorher[1], t, 'PipelineConnection0');
+      vorher = [t, 'PipelineConnection1'];
+    }
+    if (ende) verbinde(vorher[0], vorher[1], ende[0], ende[1]);
+    return vorher;
+  };
   const mkFuer = (menge) => { let mk = BAND.findIndex((c, k) => k > 0 && c >= menge - 1e-6); if (mk < 0) mk = 6; return Math.min(mk, bandMax); };
   const rohrMk = (menge) => (menge > ROHR[1] + 1e-6 ? 2 : 1);
   const name = (it) => kat.items[it]?.name || it;
   const mastCls = ['Build_PowerPoleMk1_C', 'Build_PowerPoleMk2_C', 'Build_PowerPoleMk3_C'].find((c) => bg[c]?.komp?.some((k) => /PowerConnection/i.test(k.name)));
   const kabelOk = !!templateFor(lib, kat, ver, 'Build_PowerLine_C');
-  const zaehler = { masten: 0, kabel: 0, schredder: 0 };
+  const zaehler = { masten: 0, kabel: 0, schredder: 0, speicher: 0, extraktoren: 0, pumpen: 0 };
   // Kabel von Ende A (a.ka bei pa) nach Ende B (b2.kb bei pb). Lage = Ende B, Gier zeigt nach A.
   const draht = (a, ka, pa, b2, kb, pb) => {
     const d = [pa[0] - pb[0], pa[1] - pb[1], pa[2] - pb[2]];
@@ -112,8 +182,76 @@ function umgebung({ kat, lib, ver, bandMax, strom }) {
     s.box = [s.pos[0] - 800, s.pos[0] + 800, s.pos[1] - 800, s.pos[1] + 800];
     return s;
   };
+  /** Flüssigkeitsspeicher am Ende eines Rohrs: Rohr beginnt bei p (Richtung +X), senkt sich auf Anschlusshöhe, Speicher auf dem Boden */
+  const speicher = (mk, p, quelle, xT = p[0] + 800) => {
+    if (!bg[SPEICHER.cls]) { if (!zaehler.speicherGewarnt) { zaehler.speicherGewarnt = true; warnungen.push('Kein Flüssigkeitsspeicher an flüssigen Nebenprodukten: keine Vorlage aus deinen Blaupausen (eine Blaupause mit Flüssigkeitsspeicher speichern).'); } return null; }
+    // Anschluss ConnectionAny0 lokal (0, 200) liegt bei Drehung 90° auf der −X-Seite, dem Rohr zugewandt
+    const zA = Z_BODEN + SPEICHER.z;
+    const s = neu({ cls: SPEICHER.cls, pos: [xT, p[1], Z_BODEN], yaw: 90, conn: {} });
+    rohrPfad(mk, [p, [xT - 600, p[1], p[2]], [xT - 400, p[1], zA], [xT - SPEICHER.r, p[1], zA]], quelle, [s, 'ConnectionAny0']);
+    s.box = [xT - 300, xT + 300, p[1] - 300, p[1] + 300];
+    zaehler.speicher++;
+    return s;
+  };
+  /**
+   * Wasserextraktoren für einen freien Wasser-Eingang e: Reihe entlang +X ab xStart, Mitte 11 m auf der −Y-Seite (von der Reihe weg, um 180° gedreht),
+   * Sammelleitung mit Kreuzungen auf Höhe der Eingangsleitung, Ende −X zum Eingang. Strom: Mast zwischen den Extraktoren,
+   * erster Mast am Mast `netz`. Liefert das linke Ende x der Sammelleitung oder null (dann freier Eingang wie bisher).
+   */
+  const wasserBelegt = [];
+  const wasser = (e, xStart, netz) => {
+    if (!bg[EXTRAKTOR.cls]) { if (!zaehler.extraktorGewarnt) { zaehler.extraktorGewarnt = true; warnungen.push('Keine Wasserextraktoren gebaut: keine Vorlage aus deinen Blaupausen (eine Blaupause mit Wasserextraktor speichern).'); } return null; }
+    const n = Math.max(1, Math.ceil(e.menge / EXTRAKTOR.rate - 1e-6));
+    const cy = e.y - EXTRAKTOR.mitte, breite = n * EXTRAKTOR.abstand;
+    let x0 = xStart + EXTRAKTOR.abstand / 2; // Mitte des ersten Extraktors
+    for (const b of wasserBelegt) if (Math.abs(b.cy - cy) < 2000 && x0 - 1100 < b.x1) x0 = b.x1 + 1100;
+    wasserBelegt.push({ cy, x1: x0 + breite - 1100 });
+    const [an, ax, ay, az] = EXTRAKTOR.aus, [sn, sx, sy, sz] = EXTRAKTOR.strom;
+    let vorher = null, erste = null, mastVorher = netz;
+    for (let i = 0; i < n; i++) {
+      const x = x0 + i * EXTRAKTOR.abstand;
+      const w = neu({ cls: EXTRAKTOR.cls, pos: [x, cy, Z_BODEN], yaw: 180, conn: {} });
+      w.box = [x - 1000, x + 1000, cy - 900, cy + 900];
+      const kr = neu({ cls: 'Build_PipelineJunction_Cross_C', pos: [x, e.y, e.z], yaw: 0, conn: {} });
+      const f = rohr(e.mk, [x, e.y - 100, e.z], [x - ax, cy - ay, Z_BODEN + az], true);
+      verbinde(kr, 'Connection3', f, 'PipelineConnection0'); verbinde(f, 'PipelineConnection1', w, an);
+      if (vorher) { const g = rohr(e.mk, [vorher.pos[0] + 100, e.y, e.z], [x - 100, e.y, e.z]); verbinde(vorher, 'Connection1', g, 'PipelineConnection0'); verbinde(g, 'PipelineConnection1', kr, 'Connection0'); }
+      else erste = kr;
+      vorher = kr;
+      if (ctxStrom()) {
+        const mast = neu({ cls: mastCls, pos: [x + EXTRAKTOR.abstand / 2, cy, Z_BODEN], yaw: 0, conn: {} });
+        mast.anschluss = [mast.pos[0], cy, Z_BODEN + 700];
+        zaehler.masten++;
+        draht(w, sn, [x - sx, cy - sy, Z_BODEN + sz], mast, 'PowerConnection', mast.anschluss);
+        if (mastVorher) draht(mastVorher, 'PowerConnection', mastVorher.anschluss, mast, 'PowerConnection', mast.anschluss);
+        mastVorher = mast;
+      }
+      zaehler.extraktoren++;
+    }
+    return { x: x0 - 100, anker: [erste, 'Connection0'], n };
+  };
+  /** Verbraucher an den nächsten Strommast mit freiem Platz (höchstens 90 m entfernt) anschließen */
+  const anNetz = (teil, komp, p) => {
+    if (!ctxStrom()) return false;
+    const frei = teile.filter((t) => t.cls === mastCls && t.anschluss && Object.values(t.draehte || {}).reduce((s, l) => s + l.length, 0) < (MAST_PLAETZE[mastCls] || 4))
+      .map((t) => ({ t, d: Math.hypot(t.anschluss[0] - p[0], t.anschluss[1] - p[1]) })).filter((x) => x.d < 9000).sort((a, b) => a.d - b.d)[0];
+    if (!frei) { warnungen.push('Eine Pumpe hat keinen Strom bekommen (kein Strommast mit freiem Platz in der Nähe) – bitte im Spiel anschließen.'); return false; }
+    draht(teil, komp, p, frei.t, 'PowerConnection', frei.t.anschluss);
+    return true;
+  };
+  /** Rohrpumpe bei pos, Durchfluss entlang der Drehung rot (lokal +X); mk 1/2 (Ersatz: die andere Stufe). Strom vom nächsten Mast. */
+  const pumpe = (mk, pos, rot) => {
+    const cls = [mk >= 2 ? PUMPE.mk2 : PUMPE.mk1, mk >= 2 ? PUMPE.mk1 : PUMPE.mk2].find((c) => bg[c]);
+    if (!cls) { if (!zaehler.pumpeGewarnt) { zaehler.pumpeGewarnt = true; warnungen.push('Rohre steigen höher als 9 m, aber es gibt keine Pumpen-Vorlage aus deinen Blaupausen (eine Blaupause mit Rohrpumpe speichern) – Pumpen bitte selbst setzen.'); } return null; }
+    if (mk >= 2 && cls === PUMPE.mk1) warnungen.push('Für eine hohe Rohrspur wäre eine Pumpe Mk.2 nötig, es gibt aber nur eine Vorlage für Mk.1.');
+    const p = neu({ cls, pos, rot, conn: {} });
+    const [sn, ...s] = PUMPE.strom;
+    anNetz(p, sn, qDreh(rot, s).map((v, i) => v + pos[i]));
+    zaehler.pumpen++;
+    return p;
+  };
   const ctxStrom = () => strom && mastCls && kabelOk;
-  return { kat, lib, ver, bg, teile, warnungen, neu, verbinde, band, rohr, stueck, mkFuer, rohrMk, name, mastCls, kabelOk, strom, draht, zaehler, schild, schildCls, schredder };
+  return { kat, lib, ver, bg, teile, warnungen, neu, verbinde, band, rohr, rohrPfad, stueck, mkFuer, rohrMk, name, mastCls, kabelOk, strom, draht, zaehler, schild, schildCls, schredder, speicher, wasser, pumpe };
 }
 
 function vorlagenPruefen(ctx, klassen, mitRohr) {
@@ -125,12 +263,25 @@ function vorlagenPruefen(ctx, klassen, mitRohr) {
   if (fehlt.length) throw Object.assign(new Error(`Für die Blaupause fehlen Vorlagen aus deinen eigenen Blaupausen (Spielversion ${ver}): ${fehlt.map((c) => kat.gebaeude[c]?.name || c).join(', ')}. Bitte eine Blaupause speichern, in der diese Bauteile vorkommen.`), { status: 422 });
 }
 
-/** Maße einer Reihe relativ zu ihrer Mitte (für das Stapeln mehrerer Reihen) */
-function reiheMasse(schritt, kat) {
+// Maße wie in den eigenen Blaupausen gemessen (19.10.2026, 182 Blaupausen): Maschinen direkt nebeneinander (Mitte–Mitte),
+// Splitter/Merger/Kreuzung 3 m vor dem Anschluss (2 m Zuleitung), weitere Leitungen 4 m weiter außen und 2 m höher
+// (Zuführband ≤ ~33°, Bänder in Blaupausen nie steiler als 40°), Strommast je Maschine 3 m außerhalb der äußersten Eingangsleitung.
+const ABSTAND = { Build_SmelterMk1_C: 500, Build_ConstructorMk1_C: 800, Build_AssemblerMk1_C: 1000, Build_FoundryMk1_C: 1000, Build_ManufacturerMk1_C: 1800, Build_OilRefinery_C: 1000, Build_Blender_C: 1800, Build_Packager_C: 800 };
+const ZULEITUNG = 300, LEIT_DY = 400, LEIT_DZ = 200, MAST_AUSSEN = 300;
+const REIHEN_LUECKE = 400; // freier Raum zwischen den äußersten Teilen benachbarter Reihen (gemessen meist 2–8 m)
+
+/** Lage der Leitungen einer Reihe (relativ zur Mitte) */
+function reiheLage(schritt, kat) {
   const g = GEO[schritt.gebaeude], z = zuordnen(kat, schritt);
   const inY = Math.min(...z.ein.map((e) => e.port.y)), outY = Math.max(...z.aus.map((a) => a.port.y));
-  const y0 = z.ein.length > 1 ? inY - 600 : inY - 400, yA = z.aus.length > 1 ? outY + 600 : outY + 400;
-  return { yMin: Math.min(g.box[2], y0 - (z.ein.length - 1) * 800) - 100, yMax: Math.max(g.box[3], yA + (z.aus.length - 1) * 800) + 100 };
+  const y0 = inY - ZULEITUNG, yA = outY + ZULEITUNG;
+  const yMast = y0 - (z.ein.length - 1) * LEIT_DY - MAST_AUSSEN;
+  return { g, z, inY, outY, y0, yA, yMast, yMin: Math.min(g.box[2], yMast) - 100, yMax: Math.max(g.box[3], yA + (z.aus.length - 1) * LEIT_DY) + 100 };
+}
+/** Maße einer Reihe relativ zu ihrer Mitte (für das Stapeln mehrerer Reihen) */
+function reiheMasse(schritt, kat) {
+  const l = reiheLage(schritt, kat);
+  return { yMin: l.yMin, yMax: l.yMax };
 }
 
 /**
@@ -143,16 +294,20 @@ function reihe(ctx, schritt, { oy = 0, ausgangLinks = false, rohrSeite = null } 
   const { neu, verbinde, stueck, mkFuer, rohrMk, name, warnungen, kat } = ctx;
   const cls = schritt.gebaeude, g = GEO[cls], n = schritt.anzahl;
   const zu = zuordnen(kat, schritt);
-  const breite = g.box[1] - g.box[0];
-  const abstand = Math.ceil((breite + 200) / 400) * 400;
+  const abstand = ABSTAND[cls] || g.box[1] - g.box[0];
   const x0 = -((n - 1) * abstand) / 2;
-  const inY = Math.min(...zu.ein.map((e) => e.port.y)), outY = Math.max(...zu.aus.map((a) => a.port.y));
-  const y0 = zu.ein.length > 1 ? inY - 600 : inY - 400;
-  const yA = zu.aus.length > 1 ? outY + 600 : outY + 400;
+  const { inY, outY, y0, yA, yMast } = reiheLage(schritt, kat);
   const kap = (art, menge) => (art === 'r' ? { mk: rohrMk(menge), max: ROHR[rohrMk(menge)] } : { mk: mkFuer(menge), max: BAND[mkFuer(menge)] });
-  const ein = zu.ein.map((z, k) => ({ ...z, y: oy + y0 - k * 800, z: Z_BAND + k * 300, ...kap(z.art, z.proMin), knoten: [] }));
-  const aus = zu.aus.map((z, k) => ({ ...z, y: oy + yA + k * 800, z: Z_BAND + k * 300, ...kap(z.art, z.proMin), knoten: [] }));
-  for (const L of [...ein, ...aus]) if (L.max < L.proMin - 1e-6) warnungen.push(`${schritt.name}: ${name(L.item)} ${zahl(L.proMin)}/min passt nicht auf ${L.art === 'r' ? 'ein Rohr' : 'ein Förderband'} Mk.${L.mk} (${L.max}/min).`);
+  // Bänder innen und unten, Rohre außen und höher (Rohre laufen über die Bänder hinweg, nie hindurch)
+  const bandZuerst = (l) => [...l.filter((z) => z.art === 'b'), ...l.filter((z) => z.art !== 'b')];
+  // Leitungen für Volllast auslegen: alle gebauten Maschinen mit 100 % (nicht nur die geplante Teilmenge)
+  const voll = schritt.anzahl / (schritt.maschinen || schritt.anzahl);
+  const ein = bandZuerst(zu.ein).map((z, k) => ({ ...z, k, y: oy + y0 - k * LEIT_DY, z: Z_BAND + k * LEIT_DZ, voll: z.proMin * voll, ...kap(z.art, z.proMin * voll), knoten: [] }));
+  const aus = bandZuerst(zu.aus).map((z, k) => ({ ...z, k, y: oy + yA + k * LEIT_DY, z: Z_BAND + k * LEIT_DZ, voll: z.proMin * voll, ...kap(z.art, z.proMin * voll), knoten: [] }));
+  // Rohr-Zuführung über tiefere Leitungen: am Anschluss kurz gerade, steil auf Leitungshöhe, dann flach darüber
+  const rohrZu = (L, xp, yp, zp, s) => [[xp, yp, zp], [xp, yp + 100 * s, zp], [xp, yp + 250 * s, L.z], [xp, L.y - 100 * s, L.z]];
+  for (const L of [...ein, ...aus]) if (L.max < L.voll - 1e-6) warnungen.push(`${schritt.name}: ${name(L.item)} ${zahl(L.voll)}/min (alle Maschinen bei 100 %) passt nicht auf ${L.art === 'r' ? 'ein Rohr' : 'ein Förderband'} Mk.${L.mk} (${L.max}/min).`);
+  for (const L of [...ein, ...aus]) if (L.art === 'r' && L.z - Z_BODEN > HUB_FREI) warnungen.push(`${schritt.name}: Rohrleitung ${name(L.item)} liegt ${zahl((L.z - Z_BODEN) / 100)} m hoch – mehr als die Förderhöhe einer Maschine (10 m), ggf. eine Pumpe einsetzen.`);
   const rs = rohrSeite ?? (ausgangLinks ? -1 : 1);
   const maschinen = [];
   for (let i = 0; i < n; i++) {
@@ -163,8 +318,8 @@ function reihe(ctx, schritt, { oy = 0, ausgangLinks = false, rohrSeite = null } 
       const k = L.art === 'r'
         ? { t: neu({ cls: 'Build_PipelineJunction_Cross_C', pos: [x + p.x, L.y, L.z], yaw: 0, conn: {} }), zu: 'Connection2', rein: 'Connection0', weiter: 'Connection1' }
         : { t: neu({ cls: 'Build_ConveyorAttachmentSplitter_C', pos: [x + p.x, L.y, L.z], yaw: 0, conn: {} }), zu: 'Output2', rein: 'Input1', weiter: 'Output1' };
-      const f = stueck(L.art, L.mk, [x + p.x, L.y + 100, L.z], ziel, Math.abs(L.z - ziel[2]) > 1);
-      verbinde(k.t, k.zu, f.t, f.a); verbinde(f.t, f.e, m, p.name);
+      if (L.art === 'r' && L.k > 0) ctx.rohrPfad(L.mk, rohrZu(L, ...ziel, -1).reverse(), [k.t, k.zu], [m, p.name]);
+      else { const f = stueck(L.art, L.mk, [x + p.x, L.y + 100, L.z], ziel, Math.abs(L.z - ziel[2]) > 1); verbinde(k.t, k.zu, f.t, f.a); verbinde(f.t, f.e, m, p.name); }
       L.knoten.push(k);
     }
     for (const L of aus) {
@@ -175,17 +330,17 @@ function reihe(ctx, schritt, { oy = 0, ausgangLinks = false, rohrSeite = null } 
         : (ausgangLinks
           ? { t: neu({ cls: 'Build_ConveyorAttachmentMerger_C', pos: [x + p.x, L.y, L.z], yaw: 180, conn: {} }), von: 'Input2', rein: 'Input1', raus: 'Output1' }
           : { t: neu({ cls: 'Build_ConveyorAttachmentMerger_C', pos: [x + p.x, L.y, L.z], yaw: 0, conn: {} }), von: 'Input3', rein: 'Input1', raus: 'Output1' });
-      const f = stueck(L.art, L.mk, von, [x + p.x, L.y - 100, L.z], Math.abs(L.z - von[2]) > 1);
-      verbinde(m, p.name, f.t, f.a); verbinde(f.t, f.e, k.t, k.von);
+      if (L.art === 'r' && L.k > 0) ctx.rohrPfad(L.mk, rohrZu(L, ...von, 1), [m, p.name], [k.t, k.von]);
+      else { const f = stueck(L.art, L.mk, von, [x + p.x, L.y - 100, L.z], Math.abs(L.z - von[2]) > 1); verbinde(m, p.name, f.t, f.a); verbinde(f.t, f.e, k.t, k.von); }
       L.knoten.push(k);
     }
     maschinen.push(m);
   }
   // Abstände der S-Kurven über tiefere Leitungen prüfen
   const pruefe = (liste, yMasch) => {
-    for (const [k, L] of liste.entries()) for (const J of liste.slice(0, k)) {
+    for (const [k, L] of liste.entries()) if (L.art !== 'r') for (const J of liste.slice(0, k)) {
       const ys = L.y + Math.sign(yMasch - L.y) * 100, t = (J.y - ys) / (yMasch - ys), hz = L.z + (Z_BAND - L.z) * (3 * t * t - 2 * t * t * t);
-      if (hz - J.z < 90) warnungen.push(`${schritt.name}: Leitung ${name(L.item)} kreuzt ${name(J.item)} nur ${Math.round(hz - J.z)} cm darüber.`);
+      if (hz - J.z < 60) warnungen.push(`${schritt.name}: Leitung ${name(L.item)} kreuzt ${name(J.item)} nur ${Math.round(hz - J.z)} cm darüber.`);
     }
   };
   pruefe(ein, oy + inY); pruefe(aus, oy + outY);
@@ -201,13 +356,13 @@ function reihe(ctx, schritt, { oy = 0, ausgangLinks = false, rohrSeite = null } 
     else if (ausgangLinks) { const f = stueck('b', L.mk, [b.t.pos[0] - 100, L.y, L.z], [a.t.pos[0] + 100, L.y, L.z]); verbinde(b.t, b.raus, f.t, f.a); verbinde(f.t, f.e, a.t, a.rein); }
     else { const f = stueck('b', L.mk, [a.t.pos[0] + 100, L.y, L.z], [b.t.pos[0] - 100, L.y, L.z]); verbinde(a.t, a.raus, f.t, f.a); verbinde(f.t, f.e, b.t, b.rein); }
   }
-  // Strom: je Maschine ein Mast in der Lücke rechts daneben, Maschine → Mast, Mast → nächster Mast
+  // Strom: je Maschine ein Mast außerhalb der äußersten Eingangsleitung, Maschine → Mast, Mast → nächster Mast
   const masten = [];
   if (ctx.strom && ctx.mastCls && ctx.kabelOk) {
     const [sk, sx, sy, sz] = g.strom;
     for (const m of maschinen) {
-      const mast = neu({ cls: ctx.mastCls, pos: [m.pos[0] + abstand / 2, oy, Z_BODEN], yaw: 0, conn: {} });
-      mast.anschluss = [mast.pos[0], oy, Z_BODEN + 700];
+      const mast = neu({ cls: ctx.mastCls, pos: [m.pos[0], oy + yMast, Z_BODEN], yaw: 0, conn: {} });
+      mast.anschluss = [mast.pos[0], oy + yMast, Z_BODEN + 700];
       ctx.zaehler.masten++;
       ctx.draht(m, sk, [m.pos[0] + sx, oy + sy, Z_BODEN + sz], mast, 'PowerConnection', mast.anschluss);
       const vorher = masten[masten.length - 1];
@@ -218,14 +373,14 @@ function reihe(ctx, schritt, { oy = 0, ausgangLinks = false, rohrSeite = null } 
   const eingaenge = ein.map((L) => {
     const k0 = L.knoten[0], kn = L.knoten[n - 1];
     const links = L.art === 'b' || rs < 0;
-    return { item: L.item, menge: L.proMin, art: L.art, mk: L.mk, y: L.y, z: L.z, seite: links ? -1 : 1,
+    return { item: L.item, menge: L.proMin, voll: L.voll, art: L.art, mk: L.mk, y: L.y, z: L.z, seite: links ? -1 : 1,
       anker: links ? [k0.t, k0.rein] : [kn.t, kn.weiter], x: links ? k0.t.pos[0] - 100 : kn.t.pos[0] + 100 };
   });
   const ausgaenge = aus.map((L) => {
     const k0 = L.knoten[0], kn = L.knoten[n - 1];
-    if (L.art === 'r') { const links = rs < 0; return { item: L.item, menge: L.proMin, art: 'r', mk: L.mk, y: L.y, z: L.z, seite: links ? -1 : 1, anker: links ? [k0.t, k0.links] : [kn.t, kn.rechts], x: links ? k0.t.pos[0] - 100 : kn.t.pos[0] + 100 }; }
+    if (L.art === 'r') { const links = rs < 0; return { item: L.item, menge: L.proMin, voll: L.voll, art: 'r', mk: L.mk, y: L.y, z: L.z, seite: links ? -1 : 1, anker: links ? [k0.t, k0.links] : [kn.t, kn.rechts], x: links ? k0.t.pos[0] - 100 : kn.t.pos[0] + 100 }; }
     const e = ausgangLinks ? k0 : kn;
-    return { item: L.item, menge: L.proMin, art: 'b', mk: L.mk, y: L.y, z: L.z, seite: ausgangLinks ? -1 : 1, anker: [e.t, e.raus], x: e.t.pos[0] + (ausgangLinks ? -100 : 100) };
+    return { item: L.item, menge: L.proMin, voll: L.voll, art: 'b', mk: L.mk, y: L.y, z: L.z, seite: ausgangLinks ? -1 : 1, anker: [e.t, e.raus], x: e.t.pos[0] + (ausgangLinks ? -100 : 100) };
   });
   const xs = [...maschinen.map((m) => m.pos[0] + g.box[0]), ...maschinen.map((m) => m.pos[0] + g.box[1]), ...eingaenge.map((e) => e.x), ...ausgaenge.map((a) => a.x)];
   const mm = reiheMasse(schritt, kat);
@@ -268,7 +423,7 @@ const brauchtRohr = (kat, schritte) => schritte.some((s) => [...s.zutaten, ...s.
  * Eine Fertigungsstufe als Reihe (mit freien Ein-/Ausgängen und Schildern).
  * Ausgang 0 = Hauptprodukt (frei mit Schild); weitere feste Produkte (Nebenprodukte) → Schredder, flüssige → freies Rohr.
  */
-export function baueReihe({ kat, lib, ver, hasFlags, schritt, bandMax = 6, fundament, strom = true, nebenprodukt = 'schredder' }) {
+export function baueReihe({ kat, lib, ver, hasFlags, schritt, bandMax = 6, fundament, strom = true, nebenprodukt = 'schredder', wasser = false }) {
   const b = baubar(schritt, kat);
   if (!b.ok) throw Object.assign(new Error(b.grund), { status: 422 });
   if (schritt.anzahl > 200) throw Object.assign(new Error(`Das wären ${schritt.anzahl} Maschinen in einer Reihe – bitte kleinere Mengen wählen.`), { status: 422 });
@@ -278,13 +433,25 @@ export function baueReihe({ kat, lib, ver, hasFlags, schritt, bandMax = 6, funda
   const { stueck, verbinde, name, schild } = ctx;
   const xEin = Math.min(...r.eingaenge.map((e) => e.x)) - 400;
   r.eingaenge.forEach((e, k) => {
-    const f = stueck(e.art, e.mk, [xEin, e.y, e.z], [e.x, e.y, e.z]);
+    // Eingang auf der Seite seines freien Endes (Rohr-Eingänge liegen rechts)
+    const xe = e.seite > 0 ? Math.max(...r.eingaenge.map((q) => q.x)) + 400 : xEin;
+    const w = wasser && e.item === 'Desc_Water_C' && e.seite > 0 && ctx.wasser(e, xe, r.masten[r.masten.length - 1]);
+    if (w) {
+      ctx.rohrPfad(e.mk, [[w.x, e.y, e.z], [e.x, e.y, e.z]], w.anker, e.anker);
+      schild([xe, e.y - 250, e.z + 50], -90, `WASSER: ${zahl(e.menge)} m³/min aus ${w.n}× Wasserextraktor`, 'W');
+      return;
+    }
+    const f = stueck(e.art, e.mk, [xe, e.y, e.z], [e.x, e.y, e.z]);
     verbinde(f.t, f.e, e.anker[0], e.anker[1]);
-    schild([xEin, e.y - 250, e.z + 50], 90, `EINGANG${r.eingaenge.length > 1 ? ' ' + (k + 1) : ''}: ${zahl(e.menge)}/min ${name(e.item)}`, r.eingaenge.length > 1 ? `E${k + 1}` : 'E');
+    schild([xe, e.y - 250, e.z + 50], e.seite > 0 ? -90 : 90, `EINGANG${r.eingaenge.length > 1 ? ' ' + (k + 1) : ''}: ${zahl(e.menge)}/min ${name(e.item)}`, r.eingaenge.length > 1 ? `E${k + 1}` : 'E');
   });
   const haupt = kat.rezepte[schritt.rezept]?.produkte?.[0]?.item;
   r.ausgaenge.forEach((a, k) => {
     const xAus = a.x + 400;
+    if (a.art === 'r' && a.item !== haupt && nebenprodukt === 'schredder' && ctx.speicher(a.mk, [a.x, a.y, a.z], a.anker)) {
+      schild([xAus, a.y + 250, a.z + 50], -90, `NEBENPRODUKT: ${zahl(a.menge)} m³/min ${name(a.item)}`, 'N');
+      return;
+    }
     const f = stueck(a.art, a.mk, [a.x, a.y, a.z], [xAus, a.y, a.z]);
     verbinde(a.anker[0], a.anker[1], f.t, f.a);
     if (a.item !== haupt && a.art === 'b' && nebenprodukt === 'schredder' && ctx.schredder([xAus, a.y, a.z], 1, [f.t, f.e], r.masten[r.masten.length - 1])) return;
@@ -297,7 +464,7 @@ export function baueReihe({ kat, lib, ver, hasFlags, schritt, bandMax = 6, funda
     objs: f.objs, kopf: f.kopf,
     info: {
       maschinen: schritt.anzahl, abstand: r.abstand, splitter: schritt.anzahl, merger: schritt.anzahl, baender: ctx.teile.filter((t) => t.spline && !t.rohr).length, rohre: ctx.teile.filter((t) => t.rohr).length, fundamente: f.fundamente,
-      schilder: ctx.teile.filter((t) => t.schild).length, bandEin: r.eingaenge[0].mk, bandAus: a0.mk, leitungen: r.leitungen, masten: ctx.zaehler.masten, kabel: ctx.zaehler.kabel, schredder: ctx.zaehler.schredder,
+      schilder: ctx.teile.filter((t) => t.schild).length, bandEin: r.eingaenge[0].mk, bandAus: a0.mk, leitungen: r.leitungen, masten: ctx.zaehler.masten, kabel: ctx.zaehler.kabel, schredder: ctx.zaehler.schredder, speicher: ctx.zaehler.speicher, extraktoren: ctx.zaehler.extraktoren, pumpen: ctx.zaehler.pumpen,
       groesse: f.groesse, warnungen: ctx.warnungen,
     },
   };
@@ -313,7 +480,7 @@ const Z_ROHRSPUR = 650;   // unterste Rohrspur rechts (zwischen den Leitungshöh
  * je Verbindung eine Spur auf eigener Höhe (äußere höher), Steigrohre direkt neben der Reihe.
  * Feste Nebenprodukte ohne Abnehmer → AWESOME-Schredder; flüssige → freies Rohr mit Schild.
  */
-export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fundament, strom = true, nur = null }) {
+export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fundament, strom = true, nur = null, wasser = false }) {
   const ctx = umgebung({ kat, lib, ver, bandMax, strom });
   const { band, stueck, verbinde, name, schild, neu, warnungen, mkFuer, rohrMk } = ctx;
   const alle = ergebnis.schritte.map((s, i) => ({ s, i, ok: baubar(s, kat).ok })).filter((x) => !nur || nur.has(x.i));
@@ -334,7 +501,7 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
     const r = reihe(ctx, x.s, { oy, ausgangLinks: true, rohrSeite: 1 });
     r.index = x.i;
     reihen.push(r);
-    cursor = oy + m.yMax + 1400;
+    cursor = oy + m.yMax + REIHEN_LUECKE;
   }
   for (let k = 0; k + 1 < reihen.length; k++) {
     const a = reihen[k].masten[reihen[k].masten.length - 1], b = reihen[k + 1].masten[0];
@@ -344,37 +511,59 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
   const reiheVon = new Map(reihen.map((r) => [r.index, r]));
   const verb = [];
   for (const r of reihen) for (const e of r.eingaenge) {
-    const intern = ergebnis.kanten.filter((k) => k.nach === r.index && k.item === e.item && reiheVon.has(k.von));
-    if (!intern.length) continue;
-    const k = intern.sort((a, b) => b.menge - a.menge)[0];
-    const von = reiheVon.get(k.von), a = von.ausgaenge.find((x) => x.item === e.item);
-    if (!a) continue;
-    verb.push({ von, nach: r, eingang: e, ausgang: a, item: e.item, art: e.art, menge: intern.reduce((s, q) => s + q.menge, 0) });
-    if (intern.length > 1) warnungen.push(`${name(e.item)} für „${r.schritt.name}“ kommt aus mehreren Reihen – verbunden ist nur die größte.`);
+    // jede liefernde Reihe wird angeschlossen (nicht nur die größte)
+    const quellen = [];
+    for (const k of ergebnis.kanten.filter((q) => q.nach === r.index && q.item === e.item && reiheVon.has(q.von)).sort((p, q) => q.menge - p.menge)) {
+      const von = reiheVon.get(k.von), a = von.ausgaenge.find((x) => x.item === e.item);
+      if (!a) continue;
+      const v = { von, nach: r, eingang: e, ausgang: a, item: e.item, art: e.art, menge: k.menge, voll: a.voll }; // Verbindung trägt die volle Menge der Quelle (Tim: lieber Mk.4 durchgehend)
+      verb.push(v); quellen.push(v);
+    }
+    if (!quellen.length) continue;
     e.verbunden = true;
+    // Rest von außen (Rohstoff, nicht gebaute Stufe): intern geht vor, der Zulauf kommt nur für das, was fehlt
+    e.aussen = ergebnis.kanten.filter((q) => q.nach === r.index && q.item === e.item && !reiheVon.has(q.von)).reduce((s, q) => s + q.menge, 0);
+    if (e.aussen < 1e-6) e.aussen = 0;
+    if (quellen.length < 2 && !e.aussen) continue;
+    e.mehrfach = true; // mehrere Zuflüsse: Band über Merger, Rohr über Kreuzungen mit Anschluss nach oben
+    if (e.art === 'b') continue;
+    // Rohr: Kreuzungen vor dem Leitungsende (erste = Zulauf von außen, falls nötig), je Quelle eine; Zufluss jeweils von oben
+    const js = [];
+    for (let i = 0; i < quellen.length + (e.aussen ? 1 : 0); i++) {
+      const xJ = e.x + 200 + 300 * i;
+      const J = neu({ cls: 'Build_PipelineJunction_Cross_C', pos: [xJ, e.y, e.z], rot: [Math.SQRT1_2, 0, 0, Math.SQRT1_2], conn: {} });
+      ctx.rohrPfad(e.mk, [[xJ - 100, e.y, e.z], [i ? xJ - 200 : e.x, e.y, e.z]], [J, 'Connection0'], i ? [js[i - 1], 'Connection1'] : e.anker);
+      js.push(J);
+    }
+    e.x = js[js.length - 1].pos[0] + 100;
+    if (e.aussen) e.zulauf = { J: js[0], x: js[0].pos[0], menge: e.aussen };
+    e.quellJ = js.slice(e.aussen ? 1 : 0);
   }
   const vb = verb.filter((v) => v.art === 'b'), vr = verb.filter((v) => v.art === 'r');
   const X0 = Math.min(...reihen.map((r) => r.xMin)) - 600;
   vb.forEach((v, k) => { v.x = X0 - 400 * k; });
   const xFrei = X0 - 400 * vb.length - 400;
   // Rohr-Spalte rechts: Abzweig-Kreuzungen und Steigrohre zwischen Reihe und XR, Spuren dahinter (äußere höher)
+  // Direkt verbinden, wenn zwischen Ausgangs- und Eingangsleitung nichts liegt (benachbarte Reihen, beide außen)
+  for (const v of vr) {
+    const a = v.ausgang, e = v.eingang, lo = Math.min(a.y, e.y), hi = Math.max(a.y, e.y);
+    const frei = (l) => l === a || l === e || l.y < lo || l.y > hi;
+    v.direkt = !e.mehrfach && e.x + 300 <= Math.max(a.x + 300, v.von.xMax + 400) && reihen.every((q) => (q === v.von || q === v.nach)
+      ? [...q.eingaenge, ...q.ausgaenge].every(frei) : q.yMax < lo || q.yMin > hi);
+  }
   const maxAb = Math.max(1, ...reihen.flatMap((r) => r.ausgaenge.map((a) => vr.filter((v) => v.ausgang === a).length)));
   const XR = Math.max(...reihen.map((r) => r.xMax)) + 600 + 300 * maxAb;
-  vr.forEach((v, k) => { v.x = XR + 400 + 400 * k; v.h = Z_ROHRSPUR + 300 * k; });
-  const xFreiR = XR + 400 + 400 * vr.length + 400;
-  if (vr.some((v) => v.h > 1000)) warnungen.push('Rohrspuren liegen höher als 10 m – ggf. eine Pumpe einsetzen (Förderhöhe).');
+  // Spuren mindestens 4 m über der höchsten Leitung (freie Rohre kreuzen die Spalte darunter)
+  const zSpur = Math.max(Z_ROHRSPUR, ...reihen.flatMap((r) => [...r.eingaenge, ...r.ausgaenge].filter((l) => l.art === 'r').map((l) => l.z + 400)));
+  const spur = vr.filter((v) => !v.direkt);
+  spur.forEach((v, k) => { v.x = XR + 400 + 400 * k; v.h = zSpur + 300 * k; });
+  vr.filter((v) => v.direkt).forEach((v) => { v.h = Infinity; });
+  // mehrere Rohr-Zuflüsse: die höchste Spur fällt in die Kreuzung nächst der Reihe (überquert die übrigen oberhalb)
+  for (const e of new Set(vr.filter((v) => v.eingang.quellJ).map((v) => v.eingang))) vr.filter((v) => v.eingang === e).sort((p, q) => q.h - p.h).forEach((v, i) => { v.J = e.quellJ[i]; });
+  const xFreiR = XR + 400 + 400 * spur.length + 400;
   const lift = (mk, pos, yawDeg, hoch, relYaw) => neu({ cls: `Build_ConveyorLiftMk${mk}_C`, pos, yaw: yawDeg, conn: {}, lift: { hoch, relYaw } });
-  // Rohrzug aus Stücken (je Stück eigenes Rohr, Enden verbunden)
-  const rohrzug = (mk, punkte, start, ende) => {
-    let vorher = start;
-    for (let k = 0; k + 1 < punkte.length; k++) {
-      const f = stueck('r', mk, punkte[k], punkte[k + 1]);
-      if (vorher) verbinde(vorher[0], vorher[1], f.t, f.a);
-      vorher = [f.t, f.e];
-    }
-    if (ende) verbinde(vorher[0], vorher[1], ende[0], ende[1]);
-    return vorher;
-  };
+  // Rohrzug: ein Rohr mit Bögen an den Ecken (über 50 m in Linie gestoßen)
+  const rohrzug = ctx.rohrPfad;
   const extern = (r, a) => (ergebnis.ziele.find((z) => z.item === a.item)?.menge || 0) > 1e-6 || (nur && nur.max === r.index && a.item === kat.rezepte[r.schritt.rezept]?.produkte?.[0]?.item);
   const istHaupt = (r, a) => a.item === kat.rezepte[r.schritt.rezept]?.produkte?.[0]?.item;
 
@@ -382,7 +571,8 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
     const abgaenge = verb.filter((v) => v.von === r && v.ausgang === a).sort((p, q) => (a.art === 'b' ? q.x - p.x : p.x - q.x));
     const intern = abgaenge.reduce((s, v) => s + v.menge, 0);
     const restMenge = Math.max(0, a.menge - intern);
-    const nachAussen = extern(r, a) || ergebnis.kanten.some((k) => k.von === r.index && k.item === a.item && !reiheVon.has(k.nach));
+    // „rest:…“ = Überschuss ohne Abnehmer (Nebenprodukt) – kein Ausgang nach außen
+    const nachAussen = extern(r, a) || ergebnis.kanten.some((k) => k.von === r.index && k.item === a.item && !reiheVon.has(k.nach) && !String(k.nach).startsWith('rest:'));
     let von = a.anker, x = a.x;
     if (a.art === 'b') {
       for (const v of abgaenge) {
@@ -390,16 +580,27 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
         const b0 = band(a.mk, [x, a.y, a.z], [v.x + 100, a.y, a.z]);
         verbinde(von[0], von[1], b0, 'ConveyorAny0'); verbinde(b0, 'ConveyorAny1', sp, 'Input1');
         von = [sp, 'Output1']; x = v.x - 100;
-        const e = v.eingang, sgn = Math.sign(e.y - a.y) || 1, mk = mkFuer(v.menge);
-        const b1 = band(mk, [v.x, a.y + 100 * sgn, a.z], [v.x, a.y + 300 * sgn, a.z]);
+        const e = v.eingang, sgn = Math.sign(e.y - a.y) || 1, mk = mkFuer(v.voll);
+        const b1 = band(mk, [v.x, a.y + 100 * sgn, a.z], [v.x, a.y + 200 * sgn, a.z]); // Lift mittig zwischen zwei Leitungen
         verbinde(sp, sgn > 0 ? 'Output3' : 'Output2', b1, 'ConveyorAny0');
-        const l1 = lift(mk, [v.x, a.y + 300 * sgn, a.z], 90 * sgn + 180, Z_SPUR - a.z, 180);
+        const l1 = lift(mk, [v.x, a.y + 200 * sgn, a.z], 90 * sgn + 180, Z_SPUR - a.z, 180);
         verbinde(b1, 'ConveyorAny1', l1, 'ConveyorAny0');
-        const b2 = band(mk, [v.x, a.y + 300 * sgn, Z_SPUR], [v.x, e.y, Z_SPUR]);
+        if (e.mehrfach) { // Lift neben der Leitung, von der Seite in einen Merger auf der Leitung (Kette der Merger unten)
+          const yl = e.y - 200 * sgn;
+          const b2 = band(mk, [v.x, a.y + 200 * sgn, Z_SPUR], [v.x, yl, Z_SPUR]);
+          verbinde(l1, 'ConveyorAny1', b2, 'ConveyorAny0');
+          const l2 = lift(mk, [v.x, yl, Z_SPUR], 90 * sgn + 180, e.z - Z_SPUR, 180);
+          verbinde(b2, 'ConveyorAny1', l2, 'ConveyorAny0');
+          v.merger = neu({ cls: 'Build_ConveyorAttachmentMerger_C', pos: [v.x, e.y, e.z], yaw: 0, conn: {} });
+          const b3 = band(mk, [v.x, yl, e.z], [v.x, e.y - 100 * sgn, e.z]);
+          verbinde(l2, 'ConveyorAny1', b3, 'ConveyorAny0'); verbinde(b3, 'ConveyorAny1', v.merger, sgn > 0 ? 'Input3' : 'Input2');
+          continue;
+        }
+        const b2 = band(mk, [v.x, a.y + 200 * sgn, Z_SPUR], [v.x, e.y, Z_SPUR]);
         verbinde(l1, 'ConveyorAny1', b2, 'ConveyorAny0');
         const l2 = lift(mk, [v.x, e.y, Z_SPUR], 90 * sgn + 180, e.z - Z_SPUR, -(90 * sgn + 180));
         verbinde(b2, 'ConveyorAny1', l2, 'ConveyorAny0');
-        const b3 = band(e.mk, [v.x, e.y, e.z], [e.x, e.y, e.z]);
+        const b3 = band(Math.max(mk, e.mk), [v.x, e.y, e.z], [e.x, e.y, e.z]);
         verbinde(l2, 'ConveyorAny1', b3, 'ConveyorAny0'); verbinde(b3, 'ConveyorAny1', e.anker[0], e.anker[1]);
       }
       if (nachAussen || !abgaenge.length) {
@@ -419,12 +620,27 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
         const kr = neu({ cls: 'Build_PipelineJunction_Cross_C', pos: [v.xk, a.y, a.z], yaw: 0, conn: {} });
         rohrzug(a.mk, [[x, a.y, a.z], [v.xk - 100, a.y, a.z]], von, [kr, 'Connection0']);
         von = [kr, 'Connection1']; x = v.xk + 100;
-        const e = v.eingang, sgn = Math.sign(e.y - a.y) || 1, mk = rohrMk(v.menge), ys = a.y + 200 * sgn;
-        rohrzug(mk, [[v.xk, a.y + 100 * sgn, a.z], [v.xk, ys, a.z], [v.xk, ys, v.h], [v.x, ys, v.h], [v.x, e.y, v.h], [XR, e.y, v.h], [XR, e.y, e.z], [e.x, e.y, e.z]], [kr, sgn > 0 ? 'Connection2' : 'Connection3'], e.anker);
+        const e = v.eingang, sgn = Math.sign(e.y - a.y) || 1, mk = rohrMk(v.voll), ys = a.y + (LEIT_DY / 2) * sgn; // Steigrohr mittig zwischen zwei Leitungen
+        if (v.direkt) { // geradeaus zur Eingangsleitung, Höhenwechsel kurz vor dem Ziel
+          rohrzug(mk, [[v.xk, a.y + 100 * sgn, a.z], [v.xk, e.y - 600 * sgn, a.z], [v.xk, e.y - 300 * sgn, e.z], [v.xk, e.y, e.z], [e.x, e.y, e.z]], [kr, sgn > 0 ? 'Connection2' : 'Connection3'], e.anker);
+          continue;
+        }
+        let start = [kr, sgn > 0 ? 'Connection2' : 'Connection3'], weg = [[v.xk, a.y + 100 * sgn, a.z], [v.xk, ys, a.z]];
+        if (v.h - Z_BODEN > HUB_FREI) { // Spur zu hoch für die Förderhöhe der Maschine: Pumpe senkrecht unten im Steigrohr
+          const pp = [v.xk, ys, a.z + 350];
+          const pu = ctx.pumpe(v.h - pp[2] > PUMPE.hubMk1 ? 2 : 1, pp, [0, -Math.SQRT1_2, 0, Math.SQRT1_2]); // lokal +X → nach oben
+          if (pu) { rohrzug(mk, [...weg, pp], start, [pu, 'Connection0']); start = [pu, 'Connection1']; weg = [pp]; }
+        }
+        const ende = v.J ? [[v.J.pos[0], e.y, v.h], [v.J.pos[0], e.y, e.z + 100]] : [[XR, e.y, v.h], [XR, e.y, e.z], [e.x, e.y, e.z]];
+        rohrzug(mk, [...weg, [v.xk, ys, v.h], [v.x, ys, v.h], [v.x, e.y, v.h], ...ende], start, v.J ? [v.J, 'Connection2'] : e.anker);
       }
       if (nachAussen || !abgaenge.length) {
-        rohrzug(a.mk, [[x, a.y, a.z], [xFreiR, a.y, a.z]], von, null); // kreuzt die Spuren unterhalb (Spuren ab 5 m)
         const menge = abgaenge.length ? restMenge : a.menge;
+        if (!nachAussen && !istHaupt(r, a) && ctx.speicher(a.mk, [x, a.y, a.z], von, xFreiR + 400)) {
+          schild([xFreiR, a.y + 250, a.z + 50], -90, `NEBENPRODUKT: ${zahl(menge)} m³/min ${name(a.item)}`, 'N');
+          continue;
+        }
+        rohrzug(a.mk, [[x, a.y, a.z], [xFreiR, a.y, a.z]], von, null); // kreuzt die Spuren unterhalb
         schild([xFreiR, a.y + 250, a.z + 50], -90, `${nachAussen || istHaupt(r, a) ? 'AUSGANG' : 'NEBENPRODUKT'}: ${zahl(menge)} m³/min ${name(a.item)}`, 'A');
       }
     }
@@ -432,12 +648,48 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
   // Freie Eingänge (Rohstoffe, Zulieferungen, nicht gebaute Stufen)
   const freieEin = [];
   for (const r of reihen) for (const e of r.eingaenge) {
+    if (e.mehrfach && e.art === 'b') { // Merger der Zuflüsse verketten (links → rechts), Rest von außen in den ersten
+      const ms = verb.filter((v) => v.eingang === e && v.merger).map((v) => v.merger).sort((p, q) => p.pos[0] - q.pos[0]);
+      for (let i = 0; i < ms.length; i++) {
+        const x1 = i + 1 < ms.length ? ms[i + 1].pos[0] - 100 : e.x;
+        const b = band(Math.max(e.mk, mkFuer(verb.filter((v) => v.eingang === e && v.merger && v.merger.pos[0] <= ms[i].pos[0]).reduce((s, v) => s + v.voll, 0))), [ms[i].pos[0] + 100, e.y, e.z], [x1, e.y, e.z]);
+        verbinde(ms[i], 'Output1', b, 'ConveyorAny0');
+        verbinde(b, 'ConveyorAny1', ...(i + 1 < ms.length ? [ms[i + 1], 'Input1'] : e.anker));
+      }
+      if (e.aussen) {
+        const b = band(e.mk, [xFrei, e.y, e.z], [ms[0].pos[0] - 100, e.y, e.z]);
+        verbinde(b, 'ConveyorAny1', ms[0], 'Input1');
+        schild([xFrei, e.y - 250, e.z + 50], 90, `EINGANG: ${zahl(e.aussen)}/min ${name(e.item)} (Rest – intern geht vor)`, 'E');
+        freieEin.push(e);
+      }
+      continue;
+    }
+    if (e.zulauf) { // teilweise intern versorgt: Rest über den nach oben zeigenden Anschluss
+      const z = e.zulauf, oben = [z.x, e.y, e.z + 100], ye = e.y - 400;
+      const w = wasser && e.item === 'Desc_Water_C' && ctx.wasser({ ...e, y: ye, menge: z.menge }, xFreiR + 800, r.masten[r.masten.length - 1]);
+      if (w) { // Sammelleitung der Extraktoren parallel daneben, dann über die Kreuzung und von oben hinein
+        rohrzug(e.mk, [[w.x, ye, e.z], [z.x, ye, e.z], [z.x, ye, e.z + 400], [z.x, e.y, e.z + 400], oben], w.anker, [z.J, 'Connection2']);
+        schild([z.x + 300, ye - 250, e.z + 50], -90, `WASSER: ${zahl(z.menge)} m³/min aus ${w.n}× Wasserextraktor (Rest, Nebenprodukt-Wasser geht vor)`, 'W');
+      } else {
+        rohrzug(e.mk, [oben, [z.x, e.y, e.z + 300]], [z.J, 'Connection2'], null);
+        schild([z.x + 250, e.y - 250, e.z + 200], -90, `ZULAUF VON OBEN: ${zahl(z.menge)} m³/min ${name(e.item)} (Rest – intern geht vor)`, 'Z');
+      }
+      freieEin.push(e);
+      continue;
+    }
     if (e.verbunden) continue;
     if (e.art === 'b') {
       const be = band(e.mk, [xFrei, e.y, e.z], [e.x, e.y, e.z]);
       verbinde(be, 'ConveyorAny1', e.anker[0], e.anker[1]);
       schild([xFrei, e.y - 250, e.z + 50], 90, `EINGANG: ${zahl(e.menge)}/min ${name(e.item)}`, 'E');
     } else {
+      const w = wasser && e.item === 'Desc_Water_C' && ctx.wasser(e, xFreiR + 800, r.masten[r.masten.length - 1]);
+      if (w) {
+        rohrzug(e.mk, [[w.x, e.y, e.z], [e.x, e.y, e.z]], w.anker, e.anker);
+        schild([xFreiR, e.y - 250, e.z + 50], -90, `WASSER: ${zahl(e.menge)} m³/min aus ${w.n}× Wasserextraktor`, 'W');
+        freieEin.push(e);
+        continue;
+      }
       rohrzug(e.mk, [[xFreiR, e.y, e.z], [e.x, e.y, e.z]], null, e.anker);
       schild([xFreiR, e.y - 250, e.z + 50], -90, `EINGANG: ${zahl(e.menge)} m³/min ${name(e.item)}`, 'E');
     }
@@ -452,7 +704,7 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
     info: {
       reihen: reihen.length, maschinen: reihen.reduce((s, r) => s + r.schritt.anzahl, 0), verbindungen: verb.length, eingaenge: freieEin.length,
       baender: ctx.teile.filter((t) => t.spline && !t.rohr).length, rohre: ctx.teile.filter((t) => t.rohr).length, lifte: ctx.teile.filter((t) => t.lift).length, fundamente: f.fundamente,
-      masten: ctx.zaehler.masten, kabel: ctx.zaehler.kabel, schredder: ctx.zaehler.schredder, groesse: f.groesse, warnungen, nichtGebaut: alle.filter((x) => !x.ok).map((x) => x.s.name),
+      masten: ctx.zaehler.masten, kabel: ctx.zaehler.kabel, schredder: ctx.zaehler.schredder, speicher: ctx.zaehler.speicher, extraktoren: ctx.zaehler.extraktoren, pumpen: ctx.zaehler.pumpen, groesse: f.groesse, warnungen, nichtGebaut: alle.filter((x) => !x.ok).map((x) => x.s.name),
     },
   };
 }
@@ -522,6 +774,17 @@ function baueLift(data, { hoch, relYaw }) {
   return Buffer.concat([data.subarray(0, z.propsStart), w, data.subarray(z.propsStart)]);
 }
 
+/** Schildfarben fest setzen (weiße Schrift auf dunklem Grund) – Vorlagen aus fremden Blaupausen haben teils Schrift = Hintergrund */
+const SCHILD_FARBEN = { mForegroundColor: [1, 1, 1, 1], mBackgroundColor: [0.02, 0.02, 0.025, 1] };
+function schildFarben(data) {
+  const out = Buffer.from(data);
+  for (const p of zerlege(out, true).props) {
+    const f = SCHILD_FARBEN[p.name];
+    if (f && p.size === 16) f.forEach((v, i) => out.writeFloatLE(v, p.valStart + i * 4));
+  }
+  return out;
+}
+
 function baueObjekte({ kat, lib, ver, hasFlags, teile }) {
   const vergeben = new Set();
   // 1. Namen vergeben (für Verweise zwischen den Teilen)
@@ -557,7 +820,7 @@ function baueObjekte({ kat, lib, ver, hasFlags, teile }) {
     const rot = t.rot || quatYaw(t.yaw || 0);
     if (t.einfach || t.schild) {
       let data = Buffer.from(t.tpl.data, 'base64');
-      if (t.schild) data = setzeSchildTexte(data, t.schild);
+      if (t.schild) data = schildFarben(setzeSchildTexte(data, t.schild));
       if (t.kabel) data = baueKabel(data, t.kabel);
       objs.push({ head: makeHead({ typePath: t.tpl.typePath, instance: t.inst, flags: t.tpl.flags, hasFlags, rot, pos: t.pos, placed: t.tpl.placed }), data: Buffer.concat([i32(data.length), data]) });
       continue;
@@ -568,7 +831,10 @@ function baueObjekte({ kat, lib, ver, hasFlags, teile }) {
     let pos = t.pos;
     if (t.lift) data = baueLift(data, t.lift);
     if (t.rohr) data = entferne(data, true, 'mSnappedPassthroughs');
-    if (t.spline) {
+    if (t.punkte) {
+      pos = t.punkte[0].loc;
+      data = baueSpline(data, t.punkte.map((q) => ({ loc: q.loc.map((v, i) => v - pos[i]), arrive: q.arrive, leave: q.leave })));
+    } else if (t.spline) {
       const [a, e] = t.spline;
       const d = [e[0] - a[0], e[1] - a[1], e[2] - a[2]];
       const len = Math.hypot(...d) || 1, u = d.map((v) => v / len), h = d.map((v) => v / 2);

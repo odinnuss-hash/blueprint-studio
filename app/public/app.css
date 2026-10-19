@@ -584,6 +584,8 @@ details.as-manuell > summary { cursor: pointer; font-weight: 600; margin: 6px 0;
 .pl-tab td:nth-child(3), .pl-tab td:nth-child(4) { white-space: nowrap; }
 .pl-bp-grid { display: grid; grid-template-columns: max-content 1fr; gap: 8px 12px; align-items: center; margin: 10px 0; }
 .pl-bp-grid input, .pl-bp-grid select { width: 100%; }
+.pl-bp-grid .pl-bp-check { display: flex; gap: 8px; align-items: flex-start; }
+.pl-bp-grid .pl-bp-check input { width: auto; margin-top: 3px; }
 
 /* ===================== Bildauswahl (breites Fenster mit Kacheln) ===================== */
 dialog.bw-dlg { width: min(1180px, 96vw); height: min(86vh, 900px); max-height: 86vh; }
