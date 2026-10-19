@@ -57,6 +57,11 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <a href="#katalog">建物カタログ</a>
   <a href="#ordnen">整理(名前の変更)</a>
   <a href="#ablage">保管庫と名前の提案</a>
+  <a href="#ablage-fenster">大きなウィンドウとタイル</a>
+  <a href="#spiel-kategorien">ゲーム内のカテゴリ</a>
+  <a href="#planer">プランナー</a>
+  <a href="#masterclass">マスタークラス</a>
+  <a href="#sprachen">言語</a>
   <a href="#karte">マップ(セーブデータ)</a>
   <a href="#megaprints">Megaprint</a>
   <a href="#papierkorb">重複とごみ箱</a>
@@ -86,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">アプリについて</h2>
 <table>
   <tr><th style="width:200px">プログラム</th><td><b>Blueprint Studio</b> – Satisfactory 用の設計図ツール</td></tr>
-  <tr><th>バージョン</th><td id="za-version">0.9.1</td></tr>
+  <tr><th>バージョン</th><td id="za-version">1.0.0</td></tr>
   <tr><th>作者</th><td><b>ODINnuss</b>– アイデア、コンセプト、デザイン</td></tr>
   <tr><th>著作権</th><td>© 2026 ODINnuss. 無断複製・転載を禁じます。</td></tr>
   <tr><th>実装</th><td>作者の依頼により AI の支援(Claude、Anthropic)を受けてプログラミングされました。</td></tr>
@@ -206,6 +211,16 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ol>
 <div class="box warn"><p>適用する前にゲームを閉じるか、メインメニューにしておいてください。ヒント: 段階的に作業しましょう – 例えばまずフィルター「場所: ライブラリ」、次にグループを 1 つずつ。</p></div>
 
+<!-- neu-2026-10-19 -->
+<h3 id="ordnen-aktionen">アクション・事前振り分け・保管庫への移動</h3>
+<ul>
+  <li><b>行ごとのアクション：</b><i>名前を変更</i>（または<i>変更不要</i>）、<i>振り分け</i>（名前はそのまま、フォルダーだけ変更）、<i>重複 → _Duplikate</i>、<i>削除 → ごみ箱</i>（Windows のごみ箱へ。そこから復元可能）。フィルター「振り分けのみ」「削除のみ」でこれらだけを表示します。</li>
+  <li><b>重複</b>は、<b>パーツが同一</b>（種類と数が同じ）で形が 99 % 以上一致する場合だけ提案されます。パーツが少し多い大型建築の途中段階は「類似」扱いです。</li>
+  <li><b>ライブラリでの事前振り分け：</b>ライブラリの受信フォルダー（名前が「_」で始まるもの。例：<code>_sortieren</code>）の設計図は、適用時にそのフォルダーの<i>中に</i>保管庫と同じ構成で振り分けられます（例：<code>_sortieren\1 Bauen\1_3 …</code>）。振り分け先は新しい名前の下に表示されます。重複はすべて <code>_sortieren\_Duplikate</code> へ（同名は「(2)」付き）、空になったフォルダーは Windows のごみ箱へ移ります。</li>
+  <li><b>保管庫へ移す（<i>n</i>）：</b>振り分け済みのものを同じフォルダー構成のままゲームフォルダーの保管庫へ移動します。同じ名前が既にある場合、その設計図はライブラリに残り、報告されます。</li>
+  <li>名前変更・振り分け・重複は<b>履歴／元に戻す</b>から、削除は Windows のごみ箱から元に戻せます。</li>
+</ul>
+
 <h2 class="sec" id="ablage">保管庫 – 設計図の振り分けとオン/オフ</h2>
 <p><b>設計図</b>領域の下部に<b>保管庫</b>があります(矢印で開閉)。左には命名規則に沿ったフォルダー(1 建設 … 9 特殊 とそのサブグループ)と、あなたの独自フォルダー(◆)が並びます。</p>
 <ul>
@@ -232,6 +247,39 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>それ以外の場合は、「整理」領域の固定ルールが適用されます。</li>
 </ol>
 <p>ここや「整理」で行ったすべての名前変更は、次回以降の提案に反映されます(<code>userdata\namen-gelernt.json</code>)。</p>
+
+<h3 id="ablage-fenster">大きなウィンドウ・タイル・表示／非表示</h3>
+<ul>
+  <li><b>大きなウィンドウ：</b>保管庫の上部にある<b>大きなウィンドウ</b>ボタン – 小さな画面で便利です。左にフォルダー、右に中身。操作はいつもどおりです。✕、<kbd>Esc</kbd>、または外側のクリックで閉じます。</li>
+  <li><b>リストかタイル：</b>大きなウィンドウの上部で切り替えます。<i>タイル</i>では各設計図を小さな<b>3Dプレビュー</b>（有効なら実際のモデル）で表示します。タイルをクリックすると設計図が開き、ウィンドウは閉じます – 再表示は「大きなウィンドウ」から。選択は記憶されます。</li>
+  <li><b>保管庫を隠す：</b>「フォルダー」の横の<b>保管庫を隠す</b>ボタンでフォルダーバー全体を隠せます（2D/3D の表示領域が広がります）。同じボタン（<b>保管庫を表示</b>）で戻ります。</li>
+  <li>上部の<b>フォルダー</b>は常に設計図のメインフォルダー <code>…\SaveGames\blueprints</code> をエクスプローラーで開きます。</li>
+</ul>
+<h3 id="spiel-kategorien">ゲーム内のカテゴリ（設計図メニュー）</h3>
+<p>保管庫から設計図をゲームへ戻すと、アプリは<b>ゲームの設計図メニュー</b>でもすぐに振り分けます：メイングループ → <b>カテゴリ</b>、サブグループ → <b>サブカテゴリ</b>。保管庫のテーマ別サブフォルダーはゲームにはありません。ゲームはこの分類を<b>セーブデータの中</b>に保存するため、アプリはそのセッションの<b>最新のセーブデータ</b>（多くはオートセーブ）を変更し、事前に<b>一度だけ元のファイル</b>を <code>userdata\sicherungen\spielstaende</code> にバックアップします。</p>
+<ul>
+  <li><b>ゲームは閉じておく：</b>ゲームの起動中は変更を記憶し、終了したらすぐに反映します（アプリは開いたままにしてください）。その後、最新のセーブデータを読み込みます。</li>
+  <li><b>アイコン：</b>ゲーム内でカテゴリごとに一度アイコンを設定してください（「変更」）。アプリは次回それを読み取り、新しいセーブデータにも使います。既定は家のアイコンです。</li>
+  <li>ゲーム内で自分で作ったカテゴリはそのまま残ります。グループのない設計図は「未分類」に入ります。</li>
+</ul>
+
+<h2 class="sec" id="planer">プランナー – 生産チェーンの計算と作成</h2>
+<p><b>プランナー</b>では左側で、作りたいもの（<b>+ 目標</b>、毎分の数量）と既に完成品で届くもの（<b>+ 供給</b>、例：隣のベルトから鉄インゴット 120/分）を入力します。アプリがすべての生産段階・機械・原料・必要電力を計算します。</p>
+<ul>
+  <li><b>グラフ／リスト：</b>グラフはチェーンをボックスで表示します。ボックスをドラッグ＝移動、クリック＝レシピ選択（代替レシピも可。ゲーム内で解放が必要）、背景ドラッグ／ホイール＝表示。大きなチェーンには<b>合わせる</b>と<b>並べ直す</b>が便利です。<b>標準レシピに戻す</b>ですべてのレシピをリセットします。</li>
+  <li><b>設計図を作成 …</b>（またはボックスの ▣）：<b>工場全体</b>（列を上下に重ね、ベルトとコンベアリフトで接続）、ある段階までの<b>部分工場</b>、またはスプリッター・マージャー・基礎・電力・看板付きの機械列としての<b>単一の段階</b>を選べます。名前・セーブデータ・ベルトの上限を選び、先に3Dで確認してから<b>設計図として保存</b>します。</li>
+  <li><b>基データ：</b>プランナーで作った設計図を開くと、そのプラン（「設計図の基データ」）が表示されます – <b>自分のプランとして採用</b>または<b>自分のプランに戻る</b>。</li>
+  <li><b>制限：</b>液体・パイプや副産物のある段階はまだ列として作れません（グレー表示。マウスを重ねると理由を表示）。全機械 100 % で稼働し、供給量が生産量を決めます。</li>
+</ul>
+<h2 class="sec" id="masterclass">マスタークラス – 完成済みの手本工場</h2>
+<p>プランナーの<b>マスタークラス …</b>は、きれいに組まれたテンプレート工場をティア（必要な最上位マイルストーン）とテーマ別に表示します。元データはマスタークラスのフォルダー（既定：<code>blueprints\Sortieren\Tschukki</code> と保管庫「10 Master Class」）です。</p>
+<ul>
+  <li>テンプレートをクリック：最終製品・供給・機械を表示。<b>3D で表示</b>、<b>ゲームへコピー</b>（セーブデータへ）、<b>目標として使う</b>（最終製品がプランナーの目標になります）。</li>
+  <li><b>保管庫へ振り分け</b>で、すべてのテンプレートを「10 Master Class」の下にテーマ別・名前にティア付きで整理します。</li>
+  <li><b>パッケージを保存／パッケージを読み込む</b>：すべてのテンプレートを1つのファイル（<code>.bsmc</code>）に保存し、別のPCで読み込めます。</li>
+</ul>
+<h2 class="sec" id="sprachen">言語</h2>
+<p><b>設定 → 言語</b>で Deutsch、English、Français、日本語 を選べます。アプリはその後再読み込みされ、このヘルプも4言語すべてにあります。設計図やフォルダーの名前はそのままです。保管庫フォルダーの名前、つまり<a href="#spiel-kategorien">ゲーム内のカテゴリ</a>の名前は、保管庫の構成（設定 →「構成を編集 …」）で選んだ言語になります。カテゴリのアイコンはグループ番号ごとに記憶されるため、言語を変えても残ります。</p>
 
 <h2 class="sec" id="karte">マップ – セーブデータを見る</h2>
 <p><b>マップ</b>領域は、<code>…\FactoryGame\Saved\SaveGames\&lt;番号&gt;</code> にあるセーブデータ(<code>.sav</code>、Update 8 からバージョン 1.2 まで – 非常に大きな古いセーブは開くときに多くのメモリが必要です)を読み込み、建設したものすべてを上面図で表示します: 建物、基礎、壁、柱(ゲームがまとめて保存する「軽量」パーツも含む)、コンベアベルト、パイプ、線路、ハイパーチューブは線として、さらに電線とあなたのキャラクター(赤い十字)。</p>
@@ -315,7 +363,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ul>
 <h3>公開(例: GitHub)</h3>
 <p>プログラムフォルダー内のファイル <code>.gitignore</code> は、公開してはならないものや個人的なものをすべて除外します: <code>userdata</code>、モデル、アイコン、マップ画像、FModel、3D エディター、設計図/セーブデータ。ヘルプには固定のパスは含まれておらず、常にあなた自身の設定にあるフォルダーを表示します。</p>
-<p><b>アップデートの公開:</b> <code>app\server.mjs</code>(<code>VERSION</code>)と <code>app\public\js\main.js</code>(<code>APP_VERSION</code>)のバージョン番号を上げてアップロードし(GitHub Desktop: <i>Commit</i> → <i>Push</i>)、GitHub の <i>Releases → Draft a new release</i> でタグ <code>v</code> + バージョン番号(例: <code>v0.9.1</code>)と新機能の短い説明を付けてリリースを公開します。インストール済みのすべてのアプリが次回起動時にアップデートを提案します。</p>
+<p><b>アップデートの公開:</b> <code>app\server.mjs</code>(<code>VERSION</code>)と <code>app\public\js\main.js</code>(<code>APP_VERSION</code>)のバージョン番号を上げてアップロードし(GitHub Desktop: <i>Commit</i> → <i>Push</i>)、GitHub の <i>Releases → Draft a new release</i> でタグ <code>v</code> + バージョン番号(例: <code>v1.0.0</code>)と新機能の短い説明を付けてリリースを公開します。インストール済みのすべてのアプリが次回起動時にアップデートを提案します。</p>
 
 <h2 class="sec" id="einstellungen">設定</h2>
 <ul>
@@ -541,7 +589,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>アプリ内でモデルが回転/ずれている</td><td>FModel の Mesh Format は <code>glTF 2.0 (binary)</code> である必要があります。ツールを再度実行してください。</td></tr>
   <tr><td>モデルの代わりに灰色の箱が表示される</td><td>このパーツのモデルがありません(ツールのメッセージ参照)– またはベルト/パイプ/線路/リフトです(意図的にモデルなし)。</td></tr>
 </table>
-<p class="muted">Blueprint Studio 0.9.1 · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
+<p class="muted">Blueprint Studio 1.0.0 · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

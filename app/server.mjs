@@ -21,8 +21,9 @@ import { readSavHeader } from './lib/sav.mjs';
 import { kartenDaten, packen } from './lib/karte.mjs';
 import { megaprintKarte } from './lib/megaprint.mjs';
 import { bereichAlsBlaupause } from './lib/extrahieren.mjs';
-import { scannen, planen, anwenden, rueckgaengig, vorschau, GRUPPEN, GRUPPEN_STANDARD, GRUPPEN_NEU, setGruppen, setPraefixe, setThemenUebersetzung, MAXLEN, pass, merkmale, lernen, vorschlagGelernt, ablageOrdner, strukturOrdner } from './lib/ordnen.mjs';
+import { scannen, planen, anwenden, rueckgaengig, vorschau, GRUPPEN, GRUPPE_NAME, GRUPPEN_STANDARD, GRUPPEN_NEU, setGruppen, setPraefixe, setThemenUebersetzung, MAXLEN, pass, merkmale, lernen, vorschlagGelernt, ablageOrdner, strukturOrdner } from './lib/ordnen.mjs';
 import { Ablage } from './lib/ablage.mjs';
+import { kategorienSchreiben, SYMBOL_STANDARD } from './lib/spielkategorien.mjs';
 import { Einrichtung, findeSpielOrdner, ordnerWaehlen } from './lib/einrichtung.mjs';
 import { Updater } from './lib/update.mjs';
 
@@ -36,7 +37,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '0.9.1';
+const VERSION = '1.0.0';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 
@@ -708,6 +709,84 @@ async function spielstaende() {
   }
   return out.sort((a, b) => b.geaendert - a.geaendert);
 }
+// ------------------------------------------------------------------ Kategorien im Bauplan-Menü des Spiels
+// Das Spiel speichert die Einteilung je Spielstand. Beim Holen ins Spiel wird der neueste Spielstand der Sitzung angepasst
+// (vorher einmalig als Original in userdata\sicherungen\spielstaende gesichert); Hauptgruppe → Kategorie, Untergruppe →
+// Unterkategorie, Namen ohne Nummer. Symbole: im Spiel einmal einstellen – die App merkt sie sich (settings.spielSymbole).
+const SPIEL_SICHERUNG = () => path.join(DATA_DIR, 'sicherungen', 'spielstaende');
+function spielLaeuft() {
+  if (process.platform !== 'win32') return Promise.resolve(false);
+  return new Promise((res) => {
+    const c = spawn('tasklist', ['/FO', 'CSV', '/NH'], { windowsHide: true });
+    let t = ''; c.stdout.on('data', (d) => { t += d; }); c.on('close', () => res(/"FactoryGame[^"]*\.exe"/i.test(t))); c.on('error', () => res(false));
+  });
+}
+const ohneNummer = (s) => String(s || '').replace(/^\d+(_\d+)?\s+/, '');
+/** Zuordnung für alle Blaupausen im Sitzungsordner: Herkunft aus der Ablage, sonst Gruppencode im Namen */
+function spielZuordnung(session) {
+  const dir = sessionDir(session);
+  const namen = fs.existsSync(dir) ? fs.readdirSync(dir).filter((f) => /\.sbp$/i.test(f)).map((f) => f.slice(0, -4)) : [];
+  const aktiv = new Map((ablage.index().aktiv || []).filter((a) => a.session === session).map((a) => [a.name, a.ordner]));
+  const zahl = (s) => { const m = /^(\d+)(?:_(\d+))?/.exec(s || ''); return m ? +m[1] * 1000 + +(m[2] || 0) : 99999; };
+  const zuordnung = [];
+  for (const n of namen) {
+    let hgOrdner, ugOrdner;
+    const herkunft = aktiv.get(n);
+    if (herkunft) [hgOrdner, ugOrdner] = herkunft.split('/');
+    else {
+      const code = (/^(\d+_\d+)_/.exec(n) || [])[1];
+      if (!code || !GRUPPE_NAME[code]) continue;
+      [hgOrdner, ugOrdner] = ablageOrdner(code).split('/');
+    }
+    if (!hgOrdner) continue;
+    zuordnung.push({ name: n, kategorie: ohneNummer(hgOrdner), unterkategorie: ohneNummer(ugOrdner || hgOrdner), kSort: zahl(hgOrdner), uSort: zahl(ugOrdner) });
+  }
+  return { namen, zuordnung };
+}
+/** gemerkte Symbole (je Hauptgruppen-Nummer) → { Kategoriename in der aktuellen Struktur: IconID } */
+const symboleNachName = () => Object.fromEntries(Object.entries(settings.spielSymbole || {}).map(([c, id]) => [GRUPPE_NAME[c] ?? c, id]));
+let spielKatLauf = null, spielKatNochmal = new Set();
+// Läuft das Spiel, wird gewartet: alle 20 s prüfen, dann für die vorgemerkten Sitzungen nachholen
+const spielKatWartet = new Set();
+setInterval(async () => {
+  if (!spielKatWartet.size || spielKatLauf || (await spielLaeuft())) return;
+  const l = [...spielKatWartet]; spielKatWartet.clear();
+  for (const s of l) await spielKategorienSetzen(s).catch((e) => log('Kategorien: ' + e.message));
+}, 20000).unref();
+async function spielKategorienSetzen(session) {
+  if (spielKatLauf) { spielKatNochmal.add(session); return { laeuft: true }; }
+  spielKatLauf = (async () => {
+    if (await spielLaeuft()) { spielKatWartet.add(session); log(`Kategorien für „${session}“ vorgemerkt – Spiel läuft.`); return { wartet: true }; }
+    const stand = (await spielstaende()).find((s) => s.sitzung === session);
+    if (!stand) throw Object.assign(new Error(`Kein Spielstand der Sitzung „${session}“ gefunden.`), { status: 404 });
+    const datei = path.join(settings.saveDir, ...stand.id.split('/'));
+    // einmalig das Original sichern (je Spielstand-Datei)
+    const sich = path.join(SPIEL_SICHERUNG(), stand.id.replace(/[\\/]/g, '__'));
+    if (!fs.existsSync(sich)) { await fsp.mkdir(SPIEL_SICHERUNG(), { recursive: true }); await fsp.copyFile(datei, sich); log(`Spielstand gesichert: ${sich}`); }
+    const { namen, zuordnung } = spielZuordnung(session);
+    const rang = {};
+    for (const [c, n] of GRUPPEN) { const o = ablageOrdner(c).split('/'); if (c.includes('_')) rang[`${ohneNummer(o[0])}/${n}`] = +c.split('_')[1]; else rang[n] = +c; }
+    const buf = await fsp.readFile(datei);
+    const header = readSavHeader(buf);
+    const r = kategorienSchreiben(buf, header, { zuordnung, vorhanden: new Set(namen), leerWeg: new Set(GRUPPEN.filter(([c]) => !c.includes('_')).map(([, n]) => n)), symbole: symboleNachName(), rang, unbestimmtName: { en: 'Undefined', fr: 'Non défini', ja: '未分類' }[settings.sprache] || 'Unbestimmt' });
+    // im Spiel eingestellte Symbole merken (nur eigene Gruppen, Haus = Vorgabe zählt nicht)
+    // je Hauptgruppen-Nummer gemerkt (sprachunabhängig)
+    const neu = {};
+    for (const [n, id] of Object.entries(r.symbole)) { const g = GRUPPEN.find(([c, gn]) => !c.includes('_') && gn === n); if (g && id !== SYMBOL_STANDARD) neu[g[0]] = id; }
+    if (Object.keys(neu).some((c) => settings.spielSymbole?.[c] !== neu[c])) { settings.spielSymbole = { ...(settings.spielSymbole || {}), ...neu }; await saveSettings(); }
+    // erst in eine Nachbardatei schreiben, dann ersetzen
+    const tmp = datei + '.bs-neu';
+    await fsp.writeFile(tmp, r.ausgabe); await fsp.rename(tmp, datei);
+    log(`Kategorien gesetzt in ${stand.id}: ${r.kategorien.filter((c) => !c.undef).map((c) => `${c.name} (${c.subs.length})`).join(', ')}`);
+    return { ok: true, spielstand: stand.name, zugeordnet: zuordnung.length, kategorien: r.kategorien };
+  })();
+  try { return await spielKatLauf; }
+  finally {
+    spielKatLauf = null;
+    const weiter = [...spielKatNochmal]; spielKatNochmal.clear();
+    for (const s of weiter) spielKategorienSetzen(s).catch((e) => log('Kategorien: ' + e.message));
+  }
+}
 /** Assistent: Pfade prüfen, ohne sie zu speichern */
 async function pfadePruefen({ saveDir, gameDir }) {
   const out = { spiele: findeSpielOrdner(), standardSave: defaultSaveDir() };
@@ -1162,6 +1241,7 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/ablage/ablegen' && req.method === 'POST') { const b = await readJsonBody(req); const r = b.von ? ablage.umordnen(b.von, b.name, b.nach) : ablage.ablegen(b.session, b.name, b.nach); bpCache.clear(); letzterPlan = null; return sendJson(res, 200, r); }
       if (p === '/api/ablage/schalten' && req.method === 'POST') { const b = await readJsonBody(req);
         if (b.aktiv && !(await spielSitzungen()).some((x) => x.name === b.session)) throw Object.assign(new Error(`„${b.session || '–'}“ ist kein Spielstand – das Spiel liest nur die Blaupausen-Ordner seiner Spielstände. Bitte einen Spielstand wählen.`), { status: 400 }); const r = ablage.schalten(b.ordner, b.namen || [], !!b.aktiv, b.session); bpCache.clear(); letzterPlan = null; return sendJson(res, 200, r); }
+      if (p === '/api/spielkategorien' && req.method === 'POST') return sendJson(res, 200, await spielKategorienSetzen(String((await readJsonBody(req)).session || '')));
       if (p === '/api/ablage/struktur' && req.method === 'POST') { let n = 0; for (const rel of strukturOrdner()) { if (!fs.existsSync(ablage.ordnerPfad(rel))) { ablage.ordnerAnlegen(rel); n++; } } return sendJson(res, 200, { ok: true, angelegt: n, root: ablage.root }); }
       if (p === '/api/ablage/ordner' && req.method === 'POST') { const b = await readJsonBody(req); return sendJson(res, 200, b.entfernen ? ablage.ordnerEntfernen(b.ordner) : ablage.ordnerAnlegen(b.ordner)); }
       if (p === '/api/vorschlag') return sendJson(res, 200, await namensVorschlag({ session: url.searchParams.get('session'), ordner: url.searchParams.get('ordner'), name: url.searchParams.get('name') }));

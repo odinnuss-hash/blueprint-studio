@@ -57,6 +57,11 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <a href="#katalog">Gebäude-Katalog</a>
   <a href="#ordnen">Ordnen (Umbenennen)</a>
   <a href="#ablage">Ablage &amp; Namensvorschlag</a>
+  <a href="#ablage-fenster">Großes Fenster &amp; Kacheln</a>
+  <a href="#spiel-kategorien">Kategorien im Spiel</a>
+  <a href="#planer">Planer</a>
+  <a href="#masterclass">Master Class</a>
+  <a href="#sprachen">Sprachen</a>
   <a href="#karte">Karte (Spielstände)</a>
   <a href="#megaprints">Megaprints</a>
   <a href="#papierkorb">Duplikate &amp; Papierkorb</a>
@@ -86,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">Zur App</h2>
 <table>
   <tr><th style="width:200px">Programm</th><td><b>Blueprint Studio</b> – Blaupausen-Werkzeug für Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">0.9.1</td></tr>
+  <tr><th>Version</th><td id="za-version">1.0.0</td></tr>
   <tr><th>Urheber</th><td><b>ODINnuss</b> – Idee, Konzept und Gestaltung</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Alle Rechte vorbehalten.</td></tr>
   <tr><th>Umsetzung</th><td>Programmiert im Auftrag des Urhebers mit KI-Unterstützung (Claude, Anthropic).</td></tr>
@@ -206,6 +211,16 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ol>
 <div class="box warn"><p>Vor dem Anwenden das Spiel schließen oder im Hauptmenü lassen. Tipp: in Etappen arbeiten – z. B. erst Filter „Ort: Bibliothek“, dann eine Gruppe nach der anderen.</p></div>
 
+<!-- neu-2026-10-19 -->
+<h3 id="ordnen-aktionen">Aktionen, Vorsortierung &amp; Übernehmen</h3>
+<ul>
+  <li><b>Aktionen je Zeile:</b> <i>Umbenennen</i> (bzw. <i>passt schon</i>), <i>Einsortieren</i> (Name passt, nur der Ordner ändert sich), <i>Duplikat → _Duplikate</i> und <i>Löschen → Papierkorb</i> (in den Windows-Papierkorb, von dort wiederherstellbar). Filter „Nur Einsortieren“ / „Nur Löschen“ zeigen genau diese.</li>
+  <li><b>Duplikate</b> werden nur vorgeschlagen, wenn die <b>Bauteile gleich</b> sind (gleiche Art und Anzahl) und die Form zu ≥ 99 % übereinstimmt. Zwischenstände großer Bauten mit ein paar Teilen mehr gelten nur als „ähnlich“.</li>
+  <li><b>Vorsortierung in der Bibliothek:</b> Blaupausen aus einem Eingangsordner der Bibliothek (Name beginnt mit „_“, z. B. <code>_sortieren</code>) landen beim Anwenden gleich in der Ablage-Struktur <i>innerhalb</i> dieses Ordners, z. B. <code>_sortieren\1 Bauen\1_3 Böden, Fundamente &amp; Dächer</code>. Der Zielordner steht klein unter dem neuen Namen. Duplikate kommen alle in <code>_sortieren\_Duplikate</code> (gleiche Namen bekommen „(2)“), Ordner, die dabei leer werden, wandern in den Windows-Papierkorb.</li>
+  <li><b>In Ablage übernehmen (<i>n</i>):</b> verschiebt alles Vorsortierte mit gleichem Ordnerpfad in die Ablage im Spielordner. Gibt es einen Namen dort schon, bleibt die Blaupause in der Bibliothek liegen und wird gemeldet.</li>
+  <li>Umbenennen, Einsortieren und Duplikate lassen sich über <b>Protokoll / Rückgängig</b> zurücknehmen, Gelöschtes über den Windows-Papierkorb.</li>
+</ul>
+
 <h2 class="sec" id="ablage">Ablage – Blaupausen einsortieren und ein-/ausschalten</h2>
 <p>Unten im Bereich <b>Blaupause</b> liegt die <b>Ablage</b> (mit dem Pfeil auf- und zuklappen). Links stehen die Ordner nach dem Namensschema (1 Bauen … 9 Spezial mit ihren Untergruppen) und deine eigenen Ordner (◆).</p>
 <ul>
@@ -232,6 +247,39 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>Sonst gelten die festen Regeln aus dem Bereich „Ordnen“.</li>
 </ol>
 <p>Jede Umbenennung, die du hier oder in „Ordnen“ vornimmst, fließt in die nächsten Vorschläge ein (<code>userdata\namen-gelernt.json</code>).</p>
+
+<h3 id="ablage-fenster">Großes Fenster, Kacheln &amp; Ein-/Ausblenden</h3>
+<ul>
+  <li><b>Großes Fenster:</b> Knopf <b>Großes Fenster</b> oben in der Ablage – praktisch auf kleinen Bildschirmen. Links stehen die Ordner, rechts der Inhalt; alles funktioniert wie gewohnt. Schließen mit ✕, <kbd>Esc</kbd> oder Klick daneben.</li>
+  <li><b>Liste oder Kacheln:</b> Im großen Fenster oben umschalten. <i>Kacheln</i> zeigen jede Blaupause mit einer kleinen <b>3D-Vorschau</b> (echte Modelle, falls eingeschaltet). Klick auf eine Kachel öffnet die Blaupause und schließt das Fenster – wieder öffnen über „Großes Fenster“. Die Wahl merkt sich die App.</li>
+  <li><b>Ablage ausblenden:</b> Knopf <b>Ablage ausblenden</b> oben neben „Ordner“ blendet die Ordnerleiste ganz aus (mehr Platz für 2D/3D); derselbe Knopf (<b>Ablage einblenden</b>) holt sie zurück.</li>
+  <li><b>Ordner</b> (oben) öffnet immer den Blaupausen-Hauptordner <code>…\SaveGames\blueprints</code> im Explorer.</li>
+</ul>
+<h3 id="spiel-kategorien">Kategorien im Spiel (Bauplan-Menü)</h3>
+<p>Holst du Blaupausen aus der Ablage ins Spiel, sortiert die App sie im <b>Bauplan-Menü des Spiels</b> gleich passend ein: Hauptgruppe → <b>Kategorie</b> (z. B. „Bauen“), Untergruppe → <b>Unterkategorie</b> (z. B. „Gebäude &amp; Hallen“); die Themen-Unterordner der Ablage gibt es im Spiel nicht. Das Spiel speichert diese Einteilung <b>im Spielstand</b> – die App ändert deshalb den <b>neuesten Spielstand</b> der Sitzung (oft ein Autosave) und sichert vorher <b>einmalig das Original</b> nach <code>userdata\sicherungen\spielstaende</code>.</p>
+<ul>
+  <li><b>Spiel geschlossen halten:</b> Läuft das Spiel, merkt sich die App die Änderung und setzt sie, sobald es geschlossen ist (App dabei offen lassen). Danach den neuesten Spielstand laden.</li>
+  <li><b>Symbole:</b> Stelle im Spiel je Kategorie einmal ein Symbol ein („Ändern“) – die App liest es beim nächsten Mal aus und verwendet es künftig auch für neue Spielstände. Vorgabe ist das Haus.</li>
+  <li>Eigene Kategorien, die du im Spiel angelegt hast, bleiben erhalten. Blaupausen ohne Gruppe stehen unter „Unbestimmt“.</li>
+</ul>
+
+<h2 class="sec" id="planer">Planer – Produktionsketten berechnen und bauen</h2>
+<p>Im Bereich <b>Planer</b> gibst du links ein, was herauskommen soll (<b>+ Ziel</b>, Menge pro Minute) und was schon fertig ankommt (<b>+ Zulieferung</b>, z. B. 120 Eisenbarren/min vom Band nebenan). Die App rechnet alle Fertigungsstufen, Maschinen, Rohstoffe und den Strombedarf aus.</p>
+<ul>
+  <li><b>Graph / Liste:</b> Der Graph zeigt die Kette als Kästen. Kästen ziehen = verschieben, Klick = Rezept wählen (auch Alternativrezepte – die müssen im Spiel freigeschaltet sein), Hintergrund ziehen / Mausrad = Ansicht. <b>Einpassen</b> und <b>Neu anordnen</b> helfen bei großen Ketten; <b>Rezepte auf Standard</b> setzt alle Rezepte zurück.</li>
+  <li><b>Blaupause erstellen …</b> (oder ▣ an einem Kasten): wahlweise die <b>ganze Fabrik</b> (Reihen übereinander, mit Bändern und Förderliften verbunden), eine <b>Teilfabrik</b> bis zu einer Stufe oder eine <b>einzelne Stufe</b> als Maschinenreihe mit Verteilern, Sammlern, Fundament, Strom und Schildern. Name, Spielstand und höchste Förderband-Stufe wählen, vorher in 3D ansehen, dann <b>Als Blaupause speichern</b>.</li>
+  <li><b>Grundlage:</b> Öffnest du eine im Planer gebaute Blaupause, zeigt der Planer ihren Plan („Grundlage der Blaupause“) – <b>Als meinen Plan übernehmen</b> oder <b>Zurück zu meinem Plan</b>.</li>
+  <li><b>Grenzen:</b> Stufen mit Flüssigkeiten/Rohren oder Nebenprodukten lassen sich noch nicht als Reihe bauen (ausgegraut, die Maus zeigt den Grund). Alle Maschinen laufen mit 100 % – die Zulieferung begrenzt die Menge.</li>
+</ul>
+<h2 class="sec" id="masterclass">Master Class – fertige Lehrbuch-Fabriken</h2>
+<p><b>Master Class …</b> im Planer zeigt sauber aufgebaute Vorlagen-Fabriken nach Stufe (höchster nötiger Meilenstein) und Thema. Quelle sind die Master-Class-Ordner (Standard: <code>blueprints\Sortieren\Tschukki</code> und die Ablage „10 Master Class“).</p>
+<ul>
+  <li>Klick auf eine Vorlage: Endprodukte, Zulieferung und Maschinen; <b>In 3D ansehen</b>, <b>Ins Spiel kopieren</b> (in einen Spielstand) oder <b>Als Ziel übernehmen</b> (die Endprodukte werden Ziele im Planer).</li>
+  <li><b>In Ablage einsortieren</b> legt alle Vorlagen unter „10 Master Class“ nach Thema ab, mit der Stufe im Namen.</li>
+  <li><b>Paket speichern / Paket laden</b>: alle Vorlagen als eine Datei (<code>.bsmc</code>) speichern und auf einem anderen Rechner wieder laden.</li>
+</ul>
+<h2 class="sec" id="sprachen">Sprachen</h2>
+<p>Unter <b>Einstellungen → Sprache</b>: Deutsch, English, Français, 日本語 – die App lädt danach neu, auch diese Hilfe gibt es in allen vier Sprachen. Namen deiner Blaupausen und Ordner bleiben, wie sie sind. Die Namen der Ablage-Ordner und damit der <a href="#spiel-kategorien">Kategorien im Spiel</a> kommen aus der Ablage-Struktur (Einstellungen → „Struktur bearbeiten …“) in der dort gewählten Sprache; die Kategorie-Symbole merkt sich die App je Gruppen-Nummer, sie bleiben bei einem Sprachwechsel erhalten.</p>
 
 <h2 class="sec" id="karte">Karte – Spielstände ansehen</h2>
 <p>Der Bereich <b>Karte</b> liest deine Spielstände (<code>.sav</code>, ab Update 8 bis Version 1.2 – sehr große alte Spielstände brauchen beim Öffnen viel Arbeitsspeicher) aus <code>…\FactoryGame\Saved\SaveGames\&lt;Nummer&gt;</code> und zeigt alles Gebaute als Draufsicht: Gebäude, Fundamente, Wände und Säulen (auch die „Leichtbau“-Teile, die das Spiel gesammelt speichert), Förderbänder, Rohre, Schienen und Hypertubes als Linien, Stromleitungen und deine Spielfigur (rotes Kreuz).</p>
@@ -315,7 +363,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ul>
 <h3>Veröffentlichen (z. B. GitHub)</h3>
 <p>Die Datei <code>.gitignore</code> im Programmordner schließt alles aus, was nicht veröffentlicht werden darf oder persönlich ist: <code>userdata</code>, Modelle, Icons, Kartenbild, FModel, den 3D-Editor und Blaupausen/Spielstände. Die Hilfe enthält keine festen Pfade – sie zeigt immer die Ordner aus deinen eigenen Einstellungen.</p>
-<p><b>Ein Update herausgeben:</b> Versionsnummer in <code>app\server.mjs</code> (<code>VERSION</code>) und <code>app\public\js\main.js</code> (<code>APP_VERSION</code>) erhöhen, hochladen (GitHub Desktop: <i>Commit</i> → <i>Push</i>) und auf GitHub unter <i>Releases → Draft a new release</i> ein Release mit dem Tag <code>v</code> + Versionsnummer (z. B. <code>v0.9.1</code>) und einer kurzen Beschreibung der Neuerungen veröffentlichen. Alle installierten Apps bieten das Update dann beim nächsten Start an.</p>
+<p><b>Ein Update herausgeben:</b> Versionsnummer in <code>app\server.mjs</code> (<code>VERSION</code>) und <code>app\public\js\main.js</code> (<code>APP_VERSION</code>) erhöhen, hochladen (GitHub Desktop: <i>Commit</i> → <i>Push</i>) und auf GitHub unter <i>Releases → Draft a new release</i> ein Release mit dem Tag <code>v</code> + Versionsnummer (z. B. <code>v1.0.0</code>) und einer kurzen Beschreibung der Neuerungen veröffentlichen. Alle installierten Apps bieten das Update dann beim nächsten Start an.</p>
 
 <h2 class="sec" id="einstellungen">Einstellungen</h2>
 <ul>
@@ -541,7 +589,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Modelle liegen in der App verdreht/versetzt</td><td>FModel-Mesh-Format muss <code>glTF 2.0 (binary)</code> sein; Werkzeug erneut laufen lassen.</td></tr>
   <tr><td>Graue Kästen statt Modellen</td><td>Für dieses Bauteil fehlt ein Modell (siehe Meldung des Werkzeugs) – oder es ist ein Band/Rohr/Schiene/Lift (bewusst ohne Modell).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 0.9.1 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
+<p class="muted">Blueprint Studio 1.0.0 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

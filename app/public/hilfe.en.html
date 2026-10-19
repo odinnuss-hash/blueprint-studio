@@ -57,6 +57,11 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <a href="#katalog">Building catalog</a>
   <a href="#ordnen">Organize (renaming)</a>
   <a href="#ablage">Archive &amp; name suggestion</a>
+  <a href="#ablage-fenster">Large window &amp; tiles</a>
+  <a href="#spiel-kategorien">Categories in the game</a>
+  <a href="#planer">Planner</a>
+  <a href="#masterclass">Master Class</a>
+  <a href="#sprachen">Languages</a>
   <a href="#karte">Map (saves)</a>
   <a href="#megaprints">Megaprints</a>
   <a href="#papierkorb">Duplicates &amp; Recycle Bin</a>
@@ -86,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">About the app</h2>
 <table>
   <tr><th style="width:200px">Program</th><td><b>Blueprint Studio</b> – blueprint tool for Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">0.9.1</td></tr>
+  <tr><th>Version</th><td id="za-version">1.0.0</td></tr>
   <tr><th>Author</th><td><b>ODINnuss</b> – idea, concept and design</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. All rights reserved.</td></tr>
   <tr><th>Implementation</th><td>Programmed on behalf of the author with AI assistance (Claude, Anthropic).</td></tr>
@@ -206,6 +211,16 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ol>
 <div class="box warn"><p>Close the game or leave it in the main menu before applying. Tip: work in stages – e.g. first the filter “Location: Library”, then one group after the other.</p></div>
 
+<!-- neu-2026-10-19 -->
+<h3 id="ordnen-aktionen">Actions, pre-sorting &amp; moving to the archive</h3>
+<ul>
+  <li><b>Actions per row:</b> <i>Rename</i> (or <i>already fits</i>), <i>Sort in</i> (the name fits, only the folder changes), <i>Duplicate → _Duplikate</i> and <i>Delete → recycle bin</i> (into the Windows Recycle Bin, restorable from there). The filters “Sort in only” / “Delete only” show exactly these.</li>
+  <li><b>Duplicates</b> are only suggested when the <b>parts are identical</b> (same type and count) and the shape matches ≥ 99 %. Intermediate states of large builds with a few extra parts only count as “similar”.</li>
+  <li><b>Pre-sorting in the library:</b> blueprints from an inbox folder of the library (name starts with “_”, e.g. <code>_sortieren</code>) are placed straight into the archive structure <i>inside</i> that folder when applied, e.g. <code>_sortieren\1 Bauen\1_3 …</code>. The target folder is shown below the new name. All duplicates go to <code>_sortieren\_Duplikate</code> (equal names get “(2)”), folders that become empty go to the Windows Recycle Bin.</li>
+  <li><b>Move to archive (<i>n</i>):</b> moves everything pre-sorted with the same folder path into the archive in the game folder. If a name already exists there, the blueprint stays in the library and is reported.</li>
+  <li>Renaming, sorting in and duplicates can be undone via <b>Log / Undo</b>, deleted ones via the Windows Recycle Bin.</li>
+</ul>
+
 <h2 class="sec" id="ablage">Archive – sort blueprints in and switch them on/off</h2>
 <p>At the bottom of the <b>Blueprint</b> area is the <b>Archive</b> (expand and collapse it with the arrow). On the left are the folders according to the naming scheme (1 Building … 9 Special with their subgroups) and your own folders (◆).</p>
 <ul>
@@ -232,6 +247,39 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>Otherwise the fixed rules from the “Organize” area apply.</li>
 </ol>
 <p>Every renaming you do here or in “Organize” feeds into the next suggestions (<code>userdata\namen-gelernt.json</code>).</p>
+
+<h3 id="ablage-fenster">Large window, tiles &amp; show/hide</h3>
+<ul>
+  <li><b>Large window:</b> button <b>Large window</b> at the top of the archive – handy on small screens. Folders on the left, contents on the right; everything works as usual. Close with ✕, <kbd>Esc</kbd> or a click outside.</li>
+  <li><b>List or tiles:</b> switch at the top of the large window. <i>Tiles</i> show each blueprint with a small <b>3D preview</b> (real models if enabled). Clicking a tile opens the blueprint and closes the window – reopen it via “Large window”. The app remembers your choice.</li>
+  <li><b>Hide archive:</b> the button <b>Hide archive</b> next to “Folder” hides the folder bar completely (more room for 2D/3D); the same button (<b>Show archive</b>) brings it back.</li>
+  <li><b>Folder</b> (top) always opens the main blueprints folder <code>…\SaveGames\blueprints</code> in Explorer.</li>
+</ul>
+<h3 id="spiel-kategorien">Categories in the game (blueprint menu)</h3>
+<p>When you bring blueprints from the archive into the game, the app sorts them into the <b>game’s blueprint menu</b> right away: main group → <b>category</b> (e.g. “Building”), subgroup → <b>subcategory</b> (e.g. “Buildings &amp; halls”); the topic subfolders of the archive do not exist in the game. The game stores this layout <b>in the save</b> – so the app changes the <b>newest save</b> of the session (often an autosave) and backs up <b>the original once</b> to <code>userdata\sicherungen\spielstaende</code> beforehand.</p>
+<ul>
+  <li><b>Keep the game closed:</b> if the game is running, the app remembers the change and applies it as soon as the game is closed (keep the app open). Then load the newest save.</li>
+  <li><b>Icons:</b> set an icon once per category in the game (“Change”) – the app reads it next time and uses it for new saves as well. The default is the house.</li>
+  <li>Categories you created yourself in the game are kept. Blueprints without a group are listed under “Undefined”.</li>
+</ul>
+
+<h2 class="sec" id="planer">Planner – calculate and build production chains</h2>
+<p>In the <b>Planner</b> you enter on the left what should come out (<b>+ Target</b>, amount per minute) and what already arrives finished (<b>+ Supply</b>, e.g. 120 iron ingots/min from the belt next door). The app calculates all production stages, machines, raw materials and the power demand.</p>
+<ul>
+  <li><b>Graph / list:</b> the graph shows the chain as boxes. Drag boxes = move, click = choose recipe (alternate recipes too – they must be unlocked in the game), drag background / mouse wheel = view. <b>Fit</b> and <b>Rearrange</b> help with large chains; <b>Default recipes</b> resets all recipes.</li>
+  <li><b>Create blueprint …</b> (or ▣ on a box): either the <b>whole factory</b> (rows stacked, connected with belts and conveyor lifts), a <b>partial factory</b> up to one stage or a <b>single stage</b> as a machine row with splitters, mergers, foundation, power and signs. Choose name, save and the highest belt tier, look at it in 3D first, then <b>Save as blueprint</b>.</li>
+  <li><b>Basis:</b> when you open a blueprint built in the planner, the planner shows its plan (“Basis of the blueprint”) – <b>Use as my plan</b> or <b>Back to my plan</b>.</li>
+  <li><b>Limits:</b> stages with fluids/pipes or by-products cannot be built as a row yet (greyed out, hover to see why). All machines run at 100 % – the supply limits the amount.</li>
+</ul>
+<h2 class="sec" id="masterclass">Master Class – ready-made textbook factories</h2>
+<p><b>Master Class …</b> in the planner shows cleanly built template factories by tier (highest milestone needed) and topic. The source are the Master Class folders (default: <code>blueprints\Sortieren\Tschukki</code> and the archive “10 Master Class”).</p>
+<ul>
+  <li>Click a template: end products, supply and machines; <b>View in 3D</b>, <b>Copy into the game</b> (into a save) or <b>Use as target</b> (the end products become targets in the planner).</li>
+  <li><b>Sort into archive</b> files all templates under “10 Master Class” by topic, with the tier in the name.</li>
+  <li><b>Save package / Load package</b>: save all templates as one file (<code>.bsmc</code>) and load it again on another computer.</li>
+</ul>
+<h2 class="sec" id="sprachen">Languages</h2>
+<p>Under <b>Settings → Language</b>: Deutsch, English, Français, 日本語 – the app then reloads; this help exists in all four languages too. The names of your blueprints and folders stay as they are. The names of the archive folders, and therefore of the <a href="#spiel-kategorien">categories in the game</a>, come from the archive structure (Settings → “Edit structure …”) in the language chosen there; the app remembers the category icons per group number, so they are kept when the language changes.</p>
 
 <h2 class="sec" id="karte">Map – viewing saves</h2>
 <p>The <b>Map</b> area reads your saves (<code>.sav</code>, from Update 8 up to version 1.2 – very large old saves need a lot of memory when opened) from <code>…\FactoryGame\Saved\SaveGames\&lt;number&gt;</code> and shows everything built as a top view: buildings, foundations, walls and pillars (including the “lightweight” parts that the game stores collectively), conveyor belts, pipelines, railways and hypertubes as lines, power lines and your character (red cross).</p>
@@ -315,7 +363,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </ul>
 <h3>Publishing (e.g. GitHub)</h3>
 <p>The file <code>.gitignore</code> in the program folder excludes everything that must not be published or is personal: <code>userdata</code>, models, icons, map image, FModel, the 3D editor and blueprints/saves. The help contains no fixed paths – it always shows the folders from your own settings.</p>
-<p><b>Releasing an update:</b> increase the version number in <code>app\server.mjs</code> (<code>VERSION</code>) and <code>app\public\js\main.js</code> (<code>APP_VERSION</code>), upload (GitHub Desktop: <i>Commit</i> → <i>Push</i>) and publish a release on GitHub under <i>Releases → Draft a new release</i> with the tag <code>v</code> + version number (e.g. <code>v0.9.1</code>) and a short description of what is new. All installed apps then offer the update on their next start.</p>
+<p><b>Releasing an update:</b> increase the version number in <code>app\server.mjs</code> (<code>VERSION</code>) and <code>app\public\js\main.js</code> (<code>APP_VERSION</code>), upload (GitHub Desktop: <i>Commit</i> → <i>Push</i>) and publish a release on GitHub under <i>Releases → Draft a new release</i> with the tag <code>v</code> + version number (e.g. <code>v1.0.0</code>) and a short description of what is new. All installed apps then offer the update on their next start.</p>
 
 <h2 class="sec" id="einstellungen">Settings</h2>
 <ul>
@@ -541,7 +589,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Models are rotated/offset in the app</td><td>The FModel mesh format must be <code>glTF 2.0 (binary)</code>; run the tool again.</td></tr>
   <tr><td>Gray boxes instead of models</td><td>A model is missing for this part (see the tool's message) – or it is a belt/pipeline/railway/lift (intentionally without a model).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 0.9.1 · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
+<p class="muted">Blueprint Studio 1.0.0 · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

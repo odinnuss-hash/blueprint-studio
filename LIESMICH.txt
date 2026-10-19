@@ -18,6 +18,12 @@ ORDNER (im Assistenten bzw. unter "Einstellungen" aenderbar)
   Blaupausen:  %LOCALAPPDATA%\FactoryGame\Saved\SaveGames\blueprints\<Spielstand>
   Spieldaten:  <Satisfactory-Installation>\CommunityResources\Docs\*.json  (wird automatisch gesucht)
 
+KATEGORIEN IM SPIEL
+  Holst du Blaupausen aus der Ablage ins Spiel, sortiert die App sie auch im Bauplan-Menue des
+  Spiels ein (Kategorie/Unterkategorie). Dafuer aendert sie den NEUESTEN Spielstand der Sitzung;
+  das Original wird vorher einmalig nach userdata\sicherungen\spielstaende gesichert.
+  Laeuft das Spiel, wartet die App, bis es geschlossen ist (App dabei offen lassen).
+
 HILFE
   In der App oben auf "Hilfe": Handbuch, Namensschema, Checkliste bei Spiel-Updates,
   FModel-Anleitung. Als Datei: app\public\hilfe.html (Englisch: hilfe.en.html usw.)
@@ -33,5 +39,6 @@ DATEIEN
   app\server.mjs             lokaler Server (Node.js, ohne Fremdpakete)
   app\lib\                   Blaupausen/Spielstaende lesen und schreiben, Katalog, Ordnen, Ablage
   app\public\                Oberflaeche, Hilfe, Uebersetzungen (i18n\)
-  werkzeuge\                 icons-uebernehmen, modelle-aufbereiten, kartenbild-uebernehmen
+  werkzeuge\                 icons-uebernehmen, modelle-aufbereiten, kartenbild-uebernehmen, Extraktor,
+                             Pruefwerkzeuge (Duplikate, Kategorien, Uebersetzungen)
   userdata\                  Einstellungen, Zwischenspeicher, Sicherungen (persoenlich, nicht weitergeben)

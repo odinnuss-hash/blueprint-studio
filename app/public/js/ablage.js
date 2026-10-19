@@ -1,4 +1,5 @@
 import { frage, eingabe, ungespeichert } from './dialog.js';
+import { Kacheln3D } from './kacheln3d.js';
 // Ablage-Leiste (unten im Bereich „Blaupause“) und Namensvorschlag (rechts oben).
 //  - Blaupause aus der Liste links auf einen Ordner ziehen  -> aus dem Spiel nehmen, im Ordner ablegen
 //  - Schalter bei einer Blaupause / beim Ordner              -> ins Spiel holen (aktiv) bzw. wieder ablegen
@@ -29,13 +30,39 @@ export class AblageUI {
     this.offen = new Set(JSON.parse(lsGet('ablage-offen') || '[]'));
     this.aktuell = lsGet('ablage-ordner') || null;
     this.zu = lsGet('ablage-zu') === '1';
+    this.ansichtArt = lsGet('ablage-ansicht') === 'kacheln' ? 'kacheln' : 'liste'; // nur im großen Fenster
+    this.k3d = new Kacheln3D(app);
     this.vorschlag = null;
+  }
+
+  /** Ablage in ein großes Fenster verschieben (gleiche Elemente – alles funktioniert dort wie gewohnt) */
+  grossesFenster() {
+    const d = $('dlg-ablage'), ab = $('ablage');
+    if (d.open) return;
+    this.platzhalter = document.createComment('ablage');
+    ab.replaceWith(this.platzhalter);
+    $('ab-gross-inhalt').appendChild(ab);
+    d.showModal();
+    this.render?.();
+  }
+  grossesFensterZu() {
+    if (!this.platzhalter) return;
+    this.platzhalter.replaceWith($('ablage'));
+    this.platzhalter = null;
+    this.layout?.();
+    this.render?.(); // wieder als Liste
   }
 
   init() {
     $('ab-toggle').addEventListener('click', () => { this.zu = !this.zu; lsSet('ablage-zu', this.zu ? '1' : '0'); this.layout(); });
-    $('ab-reload').addEventListener('click', () => this.laden());
+    $('ab-reload').addEventListener('click', () => { this.k3d.vergessen(); this.laden(); });
     $('ab-neu').addEventListener('click', () => this.neuerOrdner());
+    $('ab-gross').addEventListener('click', () => this.grossesFenster());
+    $('ab-gross-zu').addEventListener('click', () => $('dlg-ablage').close());
+    for (const [id, art] of [['ab-ansicht-liste', 'liste'], ['ab-ansicht-kacheln', 'kacheln']]) $(id).addEventListener('click', () => { this.ansichtArt = art; lsSet('ablage-ansicht', art); this.render(); });
+    // Klick daneben (auf den abgedunkelten Hintergrund) schließt
+    $('dlg-ablage').addEventListener('click', (e) => { if (e.target === $('dlg-ablage')) $('dlg-ablage').close(); });
+    $('dlg-ablage').addEventListener('close', () => this.grossesFensterZu());
     $('ab-auf').addEventListener('click', () => this.alleKlappen(true));
     $('ab-zu').addEventListener('click', () => this.alleKlappen(false));
     $('nv-ok').addEventListener('click', () => this.umbenennen());
@@ -200,11 +227,13 @@ export class AblageUI {
     const L = this.daten.ordner[this.aktuell] || [];
     const unter = k.kinder.filter((c) => c.n).map((c) => `<button type="button" class="ab-chip" data-rel="${esc(c.rel)}">${esc(c.titel)} <span>${c.a}/${c.n}</span></button>`).join('');
     const kannWeg = !k.code && !k.thema && !L.length && !k.kinder.length;
+    const kacheln = !!this.platzhalter && this.ansichtArt === 'kacheln';
+    $('ab-ansicht-liste')?.setAttribute('aria-pressed', String(!kacheln)); $('ab-ansicht-kacheln')?.setAttribute('aria-pressed', String(kacheln));
     F.innerHTML = `<div class="ab-fhead"><b>${esc(this.aktuell)}</b><span class="muted">${L.filter((x) => x.aktiv).length} von ${L.length} im Spiel</span><span class="grow"></span>
       ${L.length ? `<button type="button" class="btn small" data-alle="1">Alle ins Spiel</button><button type="button" class="btn small" data-alle="0">Alle ablegen</button>` : ''}
       <button type="button" class="btn small" id="ab-unter">+ Unterordner</button>${kannWeg ? '<button type="button" class="btn small" id="ab-weg">Ordner entfernen</button>' : ''}</div>
       ${unter ? `<div class="ab-chips">${unter}</div>` : ''}
-      <div class="ab-list">${L.map((x) => { const falsch = x.aktiv && !(this.daten.spielSitzungen || []).includes(x.session); return `<div class="ab-file${x.aktiv ? ' aktiv' : ''}${falsch ? ' falsch' : ''}" draggable="true" data-name="${esc(x.name)}">
+      <div class="ab-list${kacheln ? ' ab-kacheln' : ''}">${L.map((x) => { const falsch = x.aktiv && !(this.daten.spielSitzungen || []).includes(x.session); return `<div class="ab-file${x.aktiv ? ' aktiv' : ''}${falsch ? ' falsch' : ''}" draggable="true" data-name="${esc(x.name)}">${kacheln ? `<button type="button" class="ab-bild" data-open="1" title="Öffnen" aria-label="${esc(x.name)} öffnen"><canvas class="ab-k3d" width="320" height="210" data-quelle="${esc(x.aktiv ? `session=${encodeURIComponent(x.session)}&name=${encodeURIComponent(x.name)}` : `ablage=${encodeURIComponent(this.aktuell)}&name=${encodeURIComponent(x.name)}`)}"></canvas></button>` : ''}
         <label class="ab-schalter" title="${falsch ? `Liegt im Ordner „${esc(x.session)}“ – das ist kein Spielstand, das Spiel sieht sie dort nicht. Klick: zurück in die Ablage, dann neu ins Spiel holen.` : x.aktiv ? 'Im Spiel (Spielstand ' + esc(x.session) + ') – Klick: ablegen' : 'Abgelegt – Klick: ins Spiel holen'}"><input type="checkbox" ${x.aktiv ? 'checked' : ''} aria-label="${esc(x.name)} im Spiel"><span class="sl"></span></label>
         <span class="n" title="${esc(x.name)}">${esc(x.name)}</span><span class="m">${falsch ? '⚠ nicht im Spiel · ' + esc(x.session) : x.aktiv ? 'im Spiel · ' + esc(x.session) : 'abgelegt'}</span>
         <button type="button" class="linkbtn" data-open="1">ansehen</button><button type="button" class="ab-del" data-del="1" title="Löschen (in den Papierkorb)" aria-label="${esc(x.name)} löschen">${ICON_DEL}</button></div>`; }).join('') || '<div class="muted pad">Leer – Blaupausen hierher ziehen.</div>'}</div>`;
@@ -215,9 +244,9 @@ export class AblageUI {
     F.querySelectorAll('.ab-file').forEach((row) => {
       const name = row.dataset.name, x = L.find((y) => y.name === name);
       row.querySelector('input').addEventListener('change', (e) => this.schalten(this.aktuell, [name], e.target.checked));
-      row.querySelector('[data-open]').addEventListener('click', () => this.ansehen(this.aktuell, x));
+      row.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => this.ansehenAusFenster(x)));
       row.querySelector('[data-del]').addEventListener('click', () => this.loeschen(x.aktiv ? { session: x.session, name } : { ordner: this.aktuell, name }));
-      row.addEventListener('dblclick', () => this.ansehen(this.aktuell, x));
+      row.addEventListener('dblclick', () => this.ansehenAusFenster(x));
       row.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData(TYP, JSON.stringify({ von: this.aktuell, name }));
         e.dataTransfer.effectAllowed = 'move';
@@ -225,6 +254,13 @@ export class AblageUI {
       });
       row.addEventListener('dragend', () => document.body.classList.remove('ab-von-ablage'));
     });
+    if (kacheln) this.k3d.beobachten(F.querySelectorAll('canvas.ab-k3d'));
+  }
+  /** Öffnen; im großen Fenster schließt es sich dabei (wieder öffnen über „Großes Fenster“) */
+  async ansehenAusFenster(x) {
+    const ordner = this.aktuell;
+    if (this.platzhalter) $('dlg-ablage').close();
+    await this.ansehen(ordner, x);
   }
 
   // ------------------------------------------------------------ Aktionen
@@ -254,7 +290,17 @@ export class AblageUI {
       const f = r.fehler?.length ? ` ${r.fehler.length} nicht möglich: ${r.fehler.map((x) => x.name + ' – ' + x.fehler).join('; ')}` : '';
       await this.nachher(null);
       this.app.toast(`${r.ok} ${aktiv ? `ins Spiel geholt (Spielstand ${session})` : 'abgelegt'}.${f}`, f ? 'err' : 'ok');
+      if (aktiv && r.ok) this.spielKategorien(session);
     } catch (e) { this.app.toast(e.message, 'err'); }
+  }
+  /** Kategorien im Bauplan-Menü des Spiels setzen (neuester Spielstand der Sitzung) */
+  async spielKategorien(session) {
+    try {
+      const r = await post('spielkategorien', { session });
+      if (r.laeuft) return; // läuft schon – wird danach noch einmal gemacht
+      if (r.wartet) { this.app.toast('Das Spiel läuft – die Kategorien im Spiel werden gesetzt, sobald es geschlossen ist (App dabei offen lassen).'); return; }
+      this.app.toast(`Kategorien im Spiel gesetzt (Spielstand „${r.spielstand}“, ${r.zugeordnet} Blaupausen).`, 'ok');
+    } catch (e) { this.app.toast('Kategorien im Spiel: ' + e.message, 'err'); }
   }
   ordnerSchalten(k, aktiv) {
     const namen = [];
@@ -269,6 +315,7 @@ export class AblageUI {
       }
       await this.nachher(null);
       this.app.toast(`${ok} ${aktiv ? `ins Spiel geholt (Spielstand ${session})` : 'abgelegt'}.${fehler.length ? ` ${fehler.length} nicht möglich (z. B. ${fehler[0].name}: ${fehler[0].fehler}).` : ''}`, fehler.length ? 'err' : 'ok');
+      if (aktiv && ok) this.spielKategorien(session);
     })();
   }
   /** Mehrere Blaupausen aus der Liste links auf einen Ablage-Ordner (Spiel: verschieben, Bibliothek: kopieren) */

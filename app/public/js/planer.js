@@ -504,8 +504,8 @@ export class PlanerUI {
       <p class="hint">Die Mengen sind aus Rezepten × Maschinenzahl gerechnet (Übertaktung nicht berücksichtigt). Die Vorlage wird unverändert übernommen.</p>
       <div class="pl-bp-grid"><label for="pl-mc-name">Name</label><input id="pl-mc-name" type="text" value="${esc(('MC_' + e.name).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_'))}" spellcheck="false">
       <label for="pl-mc-ziel">Kopieren nach</label><select id="pl-mc-ziel">${sessions.map((x) => `<option${x === ziel ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
-      <div class="dlg-actions"><button type="button" class="btn" value="nein">Schließen</button>${(e.end || []).length ? '<button type="button" class="btn" id="pl-mc-ziel" title="Die Endprodukte dieser Fabrik als Ziele in den Planer übernehmen">Als Ziel übernehmen</button>' : ''}<button type="button" class="btn" id="pl-mc-3d">In 3D ansehen</button><button type="button" class="btn primary" id="pl-mc-ok">Ins Spiel kopieren</button></div></form>`;
-    $('pl-mc-ziel')?.addEventListener('click', () => {
+      <div class="dlg-actions"><button type="button" class="btn" value="nein">Schließen</button>${(e.end || []).length ? '<button type="button" class="btn" id="pl-mc-alsziel" title="Die Endprodukte dieser Fabrik als Ziele in den Planer übernehmen">Als Ziel übernehmen</button>' : ''}<button type="button" class="btn" id="pl-mc-3d">In 3D ansehen</button><button type="button" class="btn primary" id="pl-mc-ok">Ins Spiel kopieren</button></div></form>`;
+    $('pl-mc-alsziel')?.addEventListener('click', () => {
       if (this.grundlage) { this.app.toast('Erst „Zurück zu meinem Plan“ wählen.', 'err'); return; }
       this.plan.ziele = e.end.map((it) => ({ item: it, menge: Math.round(e.aus[it] * 100) / 100 }));
       this.plan.vorhanden = []; this.speichern(); d.close(); this.app.setMode('planer'); this.zeichneEingaben(); this.rechnen();

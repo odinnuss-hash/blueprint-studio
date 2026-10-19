@@ -32,7 +32,7 @@ async function api(path, body) {
 
 // W/A/S/D: [vor, seitlich] (e.code = Tastenposition, unabhängig vom Tastaturlayout)
 const FAHR = { KeyW: [1, 0], KeyS: [-1, 0], KeyA: [0, -1], KeyD: [0, 1] };
-const APP_VERSION = '0.9.1'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
+const APP_VERSION = '1.0.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
 
 class App {
   constructor() {
@@ -991,7 +991,20 @@ class App {
     $('save-cancel').addEventListener('click', () => $('dlg-save').close());
     $('save-ok').addEventListener('click', () => this.doSave());
     $('save-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); this.doSave(); } });
-    $('btn-folder').addEventListener('click', () => api('open-folder', { session: $('session').value }).catch((e) => this.toast(e.message, 'err')));
+    // immer den Blaupausen-Hauptordner (SaveGames\blueprints) öffnen – nicht den gerade gewählten Spielstand
+    $('btn-folder').addEventListener('click', () => api('open-folder', {}).catch((e) => this.toast(e.message, 'err')));
+    // Ablage (Ordnerleiste) ein-/ausblenden – gemerkt im Browser
+    const ablageSicht = (an) => {
+      $('view-editor').classList.toggle('ab-versteckt', !an);
+      $('btn-ablage').setAttribute('aria-pressed', String(an));
+      $('btn-ablage-t').textContent = an ? 'Ablage ausblenden' : 'Ablage einblenden';
+      $('btn-ablage').title = an ? 'Ablage (Ordnerleiste) ausblenden' : 'Ablage (Ordnerleiste) einblenden';
+      try { localStorage.setItem('bs-ablage-sichtbar', an ? '1' : '0'); } catch { /* egal */ }
+      if (this.area === 'editor') requestAnimationFrame(() => this.render());
+    };
+    let ablageAn = true; try { ablageAn = localStorage.getItem('bs-ablage-sichtbar') !== '0'; } catch { /* egal */ }
+    ablageSicht(ablageAn);
+    $('btn-ablage').addEventListener('click', () => { ablageAn = !ablageAn; ablageSicht(ablageAn); if (ablageAn && this.area !== 'editor') this.setMode('editor'); });
     $('btn-settings').addEventListener('click', () => { $('set-save').value = this.cfg.saveDir; $('set-sprache').value = this.cfg.sprache || 'de'; $('set-game').value = this.cfg.gameDir; $('set-lib').value = (this.cfg.bibliotheken || []).join('\n'); $('set-3d').value = this.cfg.editor3d || ''; $('set-3dm').checked = this.cfg.editor3dModelle !== false; $('set-rutschen').checked = this.cfg.nachrutschen !== false; $('set-einsortieren').checked = this.cfg.umbenennenEinsortieren !== false; $('set-spielstand').innerHTML = '<option value="">Jedes Mal fragen</option>' + (this.cfg.spielSitzungen || []).map((x) => `<option value="${esc(x.name)}">${esc(x.name)} (zuletzt ${new Date(x.zuletzt).toLocaleDateString('de-DE')})</option>`).join(''); $('set-spielstand').value = this.cfg.spielSitzung || ''; $('set-ansicht').value = this.cfg.ansicht || 'zuletzt'; document.querySelectorAll('[name=set-ablage-lage]').forEach((r) => { r.checked = r.value === (this.cfg.ablageLage || 'unten'); }); $('set-ablage-breite').value = this.cfg.ablageBreite || 420; $('set-ablage-hoehe').value = this.cfg.ablageHoehe || 260; this.ablageWerteZeigen(); $('set-mp').value = (this.cfg.megaprints || []).join('\n'); $('set-praefixe').value = (this.cfg.namensPraefixe || []).join(', '); $('set-update-auto').checked = this.cfg.updatePruefen !== false; $('set-update-repo').value = this.cfg.updateRepo || ''; $('set-update-repo').placeholder = this.cfg.updateRepoStandard || 'Besitzer/Repository'; $('set-update-status').textContent = `Installiert: ${this.cfg.version}`; this.einstellungenStruktur(); $('set-status').textContent = `Spieldaten: ${this.cfg.docs || 'nicht gefunden'}`; $('dlg-settings').showModal(); });
     $('set-cancel').addEventListener('click', () => $('dlg-settings').close());
     $('set-struktur').addEventListener('click', () => this.struktur.zeigen());

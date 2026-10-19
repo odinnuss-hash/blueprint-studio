@@ -652,3 +652,39 @@ dialog#dlg-swap { width: min(680px, 94vw); }
 .bw-kopf .bw-zu { margin-left: auto; }
 .pl-mc-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .pl-knoepfe { display: flex; gap: 6px; } .pl-knoepfe .btn { flex: 1; }
+
+/* Ablage im großen Fenster */
+dialog.dlg-ablage { width: 96vw; height: 92vh; max-width: 96vw; max-height: 92vh; padding: 0; display: none; }
+dialog.dlg-ablage[open] { display: flex; flex-direction: column; }
+.dlg-ablage-kopf { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--line2); }
+.dlg-ablage-kopf h2 { margin: 0; font-size: 16px; }
+.dlg-ablage-inhalt { flex: 1; min-height: 0; display: flex; }
+.dlg-ablage .ablage { flex: 1; height: auto; width: auto; border: 0; order: 0; }
+.dlg-ablage .ab-griff, .dlg-ablage .ab-toggle, .dlg-ablage #ab-gross, .dlg-ablage #ab-hint { display: none; }
+.dlg-ablage .ablage.zu .ab-body { display: flex; }
+.dlg-ablage .ab-body { flex-direction: row; }
+.dlg-ablage .ab-tree { width: min(420px, 38%); flex: none; border-right: 1px solid var(--line); border-bottom: 0; }
+.dlg-ablage .ab-files { flex: 1; }
+.dlg-ablage .ab-list { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+@media (max-width: 700px) { .dlg-ablage .ab-body { flex-direction: column; } .dlg-ablage .ab-tree { width: auto; flex: 1 1 45%; border-right: 0; border-bottom: 1px solid var(--line); } }
+
+/* Ablage über den Knopf in der Kopfzeile ausgeblendet */
+#view-editor.ab-versteckt > .ablage { display: none; }
+
+/* Großes Ablage-Fenster: Ansicht Liste/Kacheln */
+.seg { display: inline-flex; border: 1px solid var(--line2); border-radius: 8px; overflow: hidden; }
+.seg-b { background: transparent; color: var(--muted); border: 0; padding: 5px 12px; font: inherit; cursor: pointer; }
+.seg-b[aria-pressed="true"] { background: var(--accent, #e8a33d); color: #111; }
+.seg-b:focus-visible { outline: 2px solid var(--accent, #e8a33d); outline-offset: -2px; }
+.ab-list.ab-kacheln { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.ab-kacheln .ab-file { display: grid; grid-template-columns: auto 1fr auto auto; grid-template-areas: "bild bild bild bild" "sw n open del" "sw m m m"; align-items: center; gap: 4px 8px; padding: 8px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel2, rgba(255,255,255,.02)); }
+.ab-kacheln .ab-file:hover { border-color: var(--line2); }
+.ab-kacheln .ab-bild { grid-area: bild; display: block; padding: 0; border: 0; background: #101215; border-radius: 6px; cursor: pointer; overflow: hidden; aspect-ratio: 320 / 210; width: 100%; }
+.ab-kacheln .ab-bild:focus-visible { outline: 2px solid var(--accent, #e8a33d); }
+.ab-kacheln .ab-k3d { width: 100%; height: 100%; display: block; opacity: 0; transition: opacity .2s; }
+.ab-kacheln .ab-k3d.fertig { opacity: 1; filter: brightness(1.35) contrast(1.05); } /* kleine Vorschau etwas heller als die große 3D-Ansicht */
+.ab-kacheln .ab-schalter { grid-area: sw; }
+.ab-kacheln .n { grid-area: n; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ab-kacheln .m { grid-area: m; font-size: 11px; }
+.ab-kacheln .linkbtn { grid-area: open; }
+.ab-kacheln .ab-del { grid-area: del; }

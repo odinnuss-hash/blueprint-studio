@@ -11,8 +11,11 @@ Blueprint Studio is a free Windows tool for players of [Satisfactory](https://ww
 
 - **2D / 3D viewer & editor** – move, rotate, tilt, delete (lasso pen in 3D), swap materials and Mk tiers, undo/redo, WASD camera.
 - **Shape generator** – round platforms, circles, rings, multi-storey buildings, round towers.
-- **Organise** – reads thousands of blueprints, suggests consistent names (`Group_Subgroup_Topic`), finds duplicates and similar blueprints, everything undoable.
-- **Archive (storage folders)** – drag blueprints into a folder structure, switch them in and out of a save game with one click; the structure is fully editable.
+- **Organise** – reads thousands of blueprints, suggests consistent names (`Group_Subgroup_Topic`), finds duplicates and similar blueprints by their content, pre-sorts a whole library inbox into the archive structure, deletes to the recycle bin – everything undoable.
+- **Archive (storage folders)** – drag blueprints into a folder structure, switch them in and out of a save game with one click; the structure is fully editable. Large window with list or **tiles with 3D previews** for small screens.
+- **Categories in the game** – blueprints you bring into the game are sorted straight into the in-game blueprint menu (category / subcategory, with your own icons); the original save is backed up once.
+- **Production planner** – enter what you want per minute; the app calculates the whole chain (machines, raw materials, power, alternate recipes) and **builds it as a blueprint**: a whole factory, a partial factory or a single machine row with belts, splitters, mergers, power and signs.
+- **Master Class** – a collection of ready-made textbook factories by tier: view in 3D, copy into the game or use their products as planner targets.
 - **Map** – view save games like an interactive map and **cut out any area as a new blueprint**; Megaprints (`.cbp`) from satisfactory-calculator.com are shown too.
 - **Building catalog** – all buildings with costs, power, recipes – in the language of your game.
 - **Setup wizard** – finds the game and your saves automatically, optional download of tools, and **fetches the real 3D models and icons automatically** from *your own* game (built-in extractor based on CUE4Parse; manual FModel guide as fallback).
@@ -47,7 +50,7 @@ Kostenloses Windows-Werkzeug, liest Blaupausen (`.sbp`) und Spielstände (`.sav`
 
 **Start:** Neueste Version unter [Releases](https://github.com/odinnuss-hash/blueprint-studio/releases/latest) herunterladen („Source code (zip)“), entpacken, **`start.bat`** doppelklicken (bei der blauen Windows-Warnung „Weitere Informationen“ → „Trotzdem ausführen“) – der Einrichtungs-Assistent führt durch alles Weitere (Sprache, Ordner, Spielstand, 3D-Darstellung).
 
-Funktionen: 2D/3D-Ansicht und -Bearbeitung (Stift, WASD, Material/Mk-Stufe tauschen), Formen-Generator, Ordnen mit Namensschema und Duplikat-Erkennung, Ablage mit eigener Ordnerstruktur, Karte mit „Bereich als Blaupause speichern“, Gebäude-Katalog, Assistent (holt 3D-Modelle und Icons automatisch aus dem eigenen Spiel, alternativ FModel-Anleitung), Update-Funktion mit einem Klick, Sprachen DE/EN/FR/JA.
+Funktionen: 2D/3D-Ansicht und -Bearbeitung (Stift, WASD, Material/Mk-Stufe tauschen), Formen-Generator, Ordnen mit Namensschema, Duplikat-Erkennung nach Inhalt und Vorsortierung ganzer Bibliotheken, Ablage mit eigener Ordnerstruktur (auch als großes Fenster mit 3D-Kacheln), Kategorien im Bauplan-Menü des Spiels, Produktionsplaner mit Blaupausen-Bau, Master-Class-Sammlung, Karte mit „Bereich als Blaupause speichern“, Gebäude-Katalog, Assistent (holt 3D-Modelle und Icons automatisch aus dem eigenen Spiel, alternativ FModel-Anleitung), Update-Funktion mit einem Klick, Sprachen DE/EN/FR/JA.
 
 Spielinhalte (Modelle, Icons, Kartenbild) gehören Coffee Stain Studios und sind nicht enthalten – der Assistent holt sie einmalig aus deiner eigenen Spielinstallation.
 
