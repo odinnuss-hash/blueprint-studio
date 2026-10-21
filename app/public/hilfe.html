@@ -102,13 +102,13 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Weitergabe und Veränderung:</b> Verkauf, Vermietung, kommerzielle Nutzung sowie das Veröffentlichen veränderter Fassungen oder von Programmteilen außerhalb des offiziellen Repositorys sind nur mit vorheriger ausdrücklicher Zustimmung des Urhebers erlaubt. Ansehen und Forken auf GitHub im Rahmen der GitHub-Nutzungsbedingungen sowie Verbesserungsvorschläge (Issues, Pull Requests) sind ausdrücklich willkommen. Hinweise auf den Urheber und dieses Copyright dürfen nicht entfernt werden. Maßgeblich ist die Datei <code>LICENSE</code>.</li>
   <li><b>Gewährleistung und Haftung:</b> Das Programm wird ohne Gewähr bereitgestellt. Die Nutzung erfolgt auf eigene Verantwortung. Vor dem Bearbeiten, Umbenennen oder Überschreiben von Blaupausen und Spielständen sollten Sicherungen angelegt werden; die App legt beim Überschreiben selbst eine Sicherung an und protokolliert Umbenennungen. Für Datenverlust, beschädigte Spielstände oder sonstige Schäden wird – soweit gesetzlich zulässig – keine Haftung übernommen.</li>
   <li><b>Inhalte Dritter:</b> <i>Satisfactory</i>, die Spieldaten (<code>CommunityResources</code>), Icons, 3D-Modelle und Spielgrafiken sind Eigentum von Coffee Stain Studios. Sie werden ausschließlich aus der eigenen, rechtmäßig erworbenen Spielinstallation für den privaten Gebrauch gelesen bzw. exportiert und dürfen nicht weitergegeben werden. Blueprint Studio ist ein inoffizielles Fan-Werkzeug und steht in keiner Verbindung zu Coffee Stain Studios. Blaupausen anderer Spieler bleiben Werk ihrer jeweiligen Ersteller.</li>
-  <li><b>Fremdprogramme:</b> FModel und „Satisfactory 3D Map“ sind eigenständige Open-Source-Programme ihrer Entwickler und unterliegen deren Lizenzen. Blueprint Studio enthält keinen Programmcode daraus, sondern startet sie nur, wenn sie installiert sind.</li>
+  <li><b>Fremdprogramme:</b> FModel ist ein eigenständiges Open-Source-Programm seiner Entwickler und unterliegt dessen Lizenz. Blueprint Studio enthält keinen Programmcode daraus, sondern startet es nur, wenn es installiert ist.</li>
 </ol>
 <h3>Bestandteile und Lizenzen Dritter</h3>
 <table>
   <tr><th style="width:200px">Spielinhalte</th><td><i>Satisfactory</i>, Spieldaten, Icons, 3D-Modelle und das Kartenbild (Kacheln <code>Map_0-0 … Map_1-1</code>): Copyright © Coffee Stain Studios AB. Nur aus der eigenen Spielinstallation bzw. für den privaten Gebrauch; nicht weitergeben.</td></tr>
   <tr><th>Symbole</th><td><a href="https://fontawesome.com" target="_blank" rel="noopener">Font Awesome Free</a> 6.7.2 von Fonticons, Inc. – Icons unter <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (Lizenz: fontawesome.com/license/free). Das App-Symbol (Sechseck mit Gebäude) ist eine eigene Gestaltung.</td></tr>
-  <tr><th>3D-Editor (optional)</th><td><a href="https://github.com/moritz-h/satisfactory-3d-map" target="_blank" rel="noopener">Satisfactory 3D Map</a> von moritz-h (GitHub) – GPL-3.0. Wird nur als eigenständiges Programm gestartet.</td></tr>
+  <tr><th>Kartenbild-Download (optional)</th><td>Die vier Kacheln lädt der Assistent auf Wunsch aus dem GitHub-Projekt <a href="https://github.com/moritz-h/satisfactory-3d-map" target="_blank" rel="noopener">satisfactory-3d-map</a> von moritz-h; das Bild selbst stammt aus dem Spiel (siehe oben).</td></tr>
   <tr><th>FModel (optional)</th><td><a href="https://github.com/4sval/FModel" target="_blank" rel="noopener">FModel</a> von 4sval – GPL-3.0. Wird bei Bedarf vom Assistenten aus den offiziellen GitHub-Releases geladen und nur als eigenständiges Programm gestartet.</td></tr>
   <tr><th>CUE4Parse (Extraktor)</th><td><a href="https://github.com/FabianFG/CUE4Parse" target="_blank" rel="noopener">CUE4Parse</a> von FabianFG – Apache-2.0. Wird nicht mitgeliefert, sondern bei „Modelle automatisch holen“ als Quelltext von GitHub geladen und auf dem eigenen PC zum Hilfsprogramm <code>werkzeuge\extraktor</code> gebaut. Dabei lädt es selbst die Hilfsbibliotheken Oodle (OodleUE) und zlib-ng.</td></tr>
   <tr><th>.NET 10 SDK</th><td><a href="https://dotnet.microsoft.com" target="_blank" rel="noopener">.NET</a> von Microsoft – MIT-Lizenz. Wird nicht mitgeliefert, sondern bei Bedarf über winget installiert.</td></tr>
@@ -302,7 +302,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Karte</b> (Haken oben): Spielwelt als Hintergrund. Die vier Kacheln liegen in <code>userdata\kartenbild</code> (<code>Map_0-0 … Map_1-1</code>, je 3,75 × 3,75 km).</li>
   <li><b>Höhe von – bis</b> (Meter): zeigt nur Bauteile in diesem Bereich, z. B. eine einzelne Etage einer großen Fabrik.</li>
   <li>Rechts <b>Gebäude nach Art</b>: alle Maschinen, Generatoren, Lager, Bahn usw. mit Anzahl. <b>Anhaken</b> hebt sie hervor, alles andere wird abgedunkelt (mehrere Häkchen möglich, das Häkchen an der Gruppe nimmt die ganze Gruppe, z. B. alle Rohre). <b>„Alle normal“</b> (oben) oder <kbd>Esc</kbd> hebt das wieder auf.</li>
-  <li><b>In 3D öffnen</b>: startet den Spielstand im 3D-Editor „Satisfactory 3D Map“ (siehe unten).</li>
+  <li><b>In 3D öffnen</b>: zeigt den Spielstand in der <a href="#welt">Welt-Ansicht</a> (3D mit Gelände, siehe unten).</li>
 </ul>
 <p>Die Karte selbst verändert den Spielstand nicht.</p>
 <h3>Bereich als Blaupause herauskopieren</h3>
@@ -324,15 +324,16 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>Die vier Texturen <code>Map_0-0</code>, <code>Map_0-1</code>, <code>Map_1-0</code>, <code>Map_1-1</code> markieren → Rechtsklick → <i>Save Texture</i> (PNG).</li>
   <li><code>werkzeuge\kartenbild-uebernehmen.bat</code> starten. Es sucht die Bilder im FModel-Export und legt sie in <code>userdata\kartenbild</code> ab (alte Bilder bleiben als <code>.alt</code> erhalten).</li>
 </ol>
-<h3>3D-Editor „Satisfactory 3D Map“</h3>
-<p>Ein eigenständiges Open-Source-Programm (GPL-3.0) von moritz-h, das alle Objekte eines Spielstands in 3D zeigt und ihre Eigenschaften bearbeiten lässt. Blueprint Studio startet es nur mit dem gewählten Spielstand.</p>
-<ol>
-  <li>Von <a href="https://github.com/moritz-h/satisfactory-3d-map/releases" target="_blank" rel="noopener">github.com/moritz-h/satisfactory-3d-map/releases</a> die neueste Windows-Version laden (ab v0.10 für Spielstände von 1.2).</li>
-  <li>Entpacken, z. B. nach <code>werkzeuge\Satisfactory3DMap</code> – dort findet die App es von selbst. Liegt es woanders: <b>Einstellungen → 3D-Editor</b> mit Ordner oder <code>.exe</code> ausfüllen.</li>
-  <li>In der Karte den Spielstand wählen → <b>In 3D öffnen</b>.</li>
-</ol>
-<p>Blueprint Studio stellt den 3D-Editor beim Start so ein, dass er die <b>echten Spielmodelle</b> aus deinen Spieldateien lädt (abschaltbar unter Einstellungen). Dafür braucht er die Datei <code>oodle-data-shared.dll</code>; die App kopiert sie automatisch aus deinem FModel-Ordner (FModel lädt sie beim ersten Start selbst herunter). Fehlt sie, startet der Editor ohne Spielmodelle. Der 3D-Editor ist ein eigenes Programm mit eigenem Fenster – für einen schnellen Blick ohne Fensterwechsel gibt es auf der Karte „In 3D ansehen“.</p>
-<p><b>Achtung:</b> Änderungen speicherst du dort selbst. Vorher den Spielstand sichern und im Spiel nicht gleichzeitig denselben Stand geöffnet haben.</p>
+<h3 id="welt">Welt-Ansicht (3D mit Gelände)</h3>
+<p>Der Bereich <b>Welt</b> zeigt die ganze Spielwelt in 3D – Gelände in 1-m-Auflösung, Kartenbild darauf, Felsen und Klippen als echte Spielmodelle – und auf Wunsch einen Spielstand mit allen Bauteilen. Gedacht zum Planen ohne das Spiel zu starten; es ersetzt das Spiel nicht.</p>
+<ul>
+  <li>Oben einen Spielstand wählen → <b>Laden</b> (oder in der Karte <b>In 3D öffnen</b>). Ohne Spielstand: nur Gelände.</li>
+  <li>In die Ansicht klicken, dann <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> fliegen, <kbd>Q</kbd>/<kbd>E</kbd> runter/hoch, <kbd>Umschalt</kbd> schneller; Maus ziehen = umsehen, Mausrad = vor/zurück. Das Tempo passt sich der Flughöhe an.</li>
+  <li><b>Blaupausen setzen</b>: unter „Blaupausen setzen“ eine Blaupause aus der Ablage oder einer Spiel-Sitzung suchen → <b>Setzen</b>. Die blaue Vorschau folgt der Maus und liegt auf der sichtbaren Oberfläche (Gelände, Felsen, Bauten). <b>Klick</b> setzt ab (beliebig oft, grün = gesetzt), <kbd>R</kbd> dreht um 90° (<kbd>Umschalt</kbd>+<kbd>R</kbd> um 15°), <kbd>Bild↑</kbd>/<kbd>Bild↓</kbd> ändert die Höhe um 1 m (mit <kbd>Umschalt</kbd> 4 m), <kbd>Esc</kbd> beendet. Danach einen Namen eingeben → <b>In Spielstand speichern</b>: Es entsteht eine <b>neue</b> Spielstand-Datei neben dem geladenen; das Original bleibt unverändert.</li>
+  <li><b>Bestehendes ändern</b>: <b>Klick</b> auf ein Bauteil des geladenen Spielstands wählt es aus (gelb), <kbd>Strg</kbd>+Klick nimmt weitere dazu oder wieder weg. <kbd>Pfeiltasten</kbd> verschieben um 1 m entlang der Achse, die deiner Blickrichtung am nächsten ist (<kbd>Umschalt</kbd> = 8 m, das Fundament-Raster), <kbd>Bild↑</kbd>/<kbd>Bild↓</kbd> ändert die Höhe, <kbd>R</kbd> dreht um die Mitte der Auswahl, <kbd>Entf</kbd> löscht. <kbd>Esc</kbd> oder ein Klick ins Gelände schließt die Auswahl ab; <b>Verwerfen</b> nimmt alle Änderungen zurück. Gespeichert wird wie beim Setzen in eine <b>neue</b> Datei. Gelöschte Maschinen nehmen ihre Stromkabel mit; Bänder und Rohre lassen sich (noch) nicht auswählen und bleiben, wo sie sind.</li>
+  <li><b>Maus links/rechts umkehren</b>, falls sich das Umsehen falsch herum anfühlt (wird gemerkt).</li>
+  <li>Gelände und Felsen holt einmalig das Hilfsprogramm <code>werkzeuge\gelaende</code> aus deinen Spieldateien nach <code>userdata\gelaende</code> und <code>userdata\welt</code>. Die Welt-Ansicht verändert den Spielstand nicht.</li>
+</ul>
 
 <h2 class="sec" id="megaprints">Megaprints (.cbp)</h2>
 <p>Megaprints sind Exporte von <i>satisfactory-calculator.com</i> (Dateiendung <code>.cbp</code>, gepacktes JSON mit allen Objekten samt Lage und Eigenschaften). Die Karte listet sie unter den Spielständen (Ordner in den Einstellungen, z. B. <code data-pfad="megaprints">…\Megaprints</code>, ohne <code>_Archiv</code>) und zeigt sie an ihrer Original-Position auf der Weltkarte – mit Ebenen, Hervorheben und „Gebäude nach Art“. Auch sehr große Megaprints (400 MB JSON, 300.000 Teile) sind in rund 2 Sekunden gelesen. Bänder und Rohre erscheinen dabei vorerst als Punkte statt als Linien.</p>
@@ -354,11 +355,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Spielstand</b> – in welchen Spielstand „Ins Spiel holen“ die Blaupausen legt (oder jedes Mal fragen).</li>
   <li><b>3D-Darstellung</b> – <i>einfache Kästen</i> (sofort fertig) oder <i>echte Spielmodelle</i>.</li>
   <li><b>Spielmodelle</b> (nur bei Wahl „echte Spielmodelle“) – <b>automatisch</b> mit einem Klick auf „Modelle automatisch holen“: Die App installiert beim ersten Mal das kostenlose <b>.NET 10 SDK</b> von Microsoft (Windows fragt evtl. nach Erlaubnis), lädt die freie Bibliothek <i>CUE4Parse</i> (dieselbe, die FModel verwendet), baut daraus ein kleines Hilfsprogramm (<code>werkzeuge\extraktor</code>) und holt damit Bauteil-Daten, 3D-Modelle und Icons direkt aus deiner Spielinstallation. Fortschritt und Ausgabe stehen im Fenster; beim ersten Mal ca. 5–15 Minuten, später deutlich schneller. Klappt das nicht, gibt es darunter weiterhin die <b>manuelle</b> Anleitung mit FModel (.NET-Desktop-Laufzeit 10 installieren, FModel herunterladen, Werte eintragen – jeder mit <b>Kopieren</b>-Knopf –, drei Exporte anklicken, „Übernehmen“).</li>
-  <li><b>Extras</b> – Kartenbild, 3D-Editor „Satisfactory 3D Map“, Desktop-Verknüpfung.</li>
+  <li><b>Extras</b> – Kartenbild, Desktop-Verknüpfung.</li>
 </ol>
-<p>Zusätzlich prüft <b>Einstellungen → Voraussetzungen &amp; Verknüpfung</b> jederzeit: Node.js, Spiel-Installation, Spielstand-Ordner, App-Fenster (Edge/Chrome), 3D-Modelle, Icons, Kartenbild, 3D-Editor und Desktop-Verknüpfung – mit einem Klick nachinstallieren lassen sich:</p>
+<p>Zusätzlich prüft <b>Einstellungen → Voraussetzungen &amp; Verknüpfung</b> jederzeit: Node.js, Spiel-Installation, Spielstand-Ordner, App-Fenster (Edge/Chrome), 3D-Modelle, Icons, Kartenbild und Desktop-Verknüpfung – mit einem Klick nachinstallieren lassen sich:</p>
 <ul>
-  <li><b>3D-Editor</b> „Satisfactory 3D Map“ – neueste Windows-Version von GitHub nach <code>werkzeuge\Satisfactory3DMap</code>.</li>
   <li><b>Kartenbild</b> – die vier Kacheln aus dem satisfactory-3d-map-Projekt (Stand 0.6; für den aktuellen Stand per FModel ersetzen).</li>
   <li><b>Desktop-Verknüpfung</b> – auf Desktop und im Startmenü, mit Symbol.</li>
 </ul>
@@ -366,12 +366,12 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h3 id="updates">Updates</h3>
 <p>Blueprint Studio sucht beim Start (höchstens alle 6 Stunden) auf GitHub nach einer neuen Version. Gibt es eine, erscheint oben der Knopf <b>⬆ Update</b>: Er zeigt, was neu ist, und installiert das Update mit <b>Jetzt aktualisieren</b>. Danach lädt die App neu und startet ihren Server selbst neu. Von Hand: <b>Einstellungen → Updates → Jetzt nach Updates suchen</b>.</p>
 <ul>
-  <li><b>Bleibt erhalten:</b> Einstellungen und alles in <code>userdata</code>, deine Blaupausen, 3D-Modelle, Icons, FModel, der 3D-Editor und die Dateien des Extraktors.</li>
+  <li><b>Bleibt erhalten:</b> Einstellungen und alles in <code>userdata</code>, deine Blaupausen, 3D-Modelle, Icons, FModel und die Dateien des Extraktors.</li>
   <li><b>Sicherung:</b> Jede ersetzte Programmdatei wird vorher nach <code>userdata\update-sicherung\&lt;alte Version&gt;</code> kopiert – zum Zurückgehen diese Dateien einfach wieder in den Programmordner kopieren.</li>
   <li><b>Quelle:</b> die Veröffentlichungen (Releases) des GitHub-Projekts, eingetragen in <code>app\update.json</code>; in den Einstellungen lässt sich eine andere Quelle angeben. Die automatische Suche lässt sich dort auch abschalten.</li>
 </ul>
 <h3>Veröffentlichen (z. B. GitHub)</h3>
-<p>Die Datei <code>.gitignore</code> im Programmordner schließt alles aus, was nicht veröffentlicht werden darf oder persönlich ist: <code>userdata</code>, Modelle, Icons, Kartenbild, FModel, den 3D-Editor und Blaupausen/Spielstände. Die Hilfe enthält keine festen Pfade – sie zeigt immer die Ordner aus deinen eigenen Einstellungen.</p>
+<p>Die Datei <code>.gitignore</code> im Programmordner schließt alles aus, was nicht veröffentlicht werden darf oder persönlich ist: <code>userdata</code>, Modelle, Icons, Kartenbild, FModel und Blaupausen/Spielstände. Die Hilfe enthält keine festen Pfade – sie zeigt immer die Ordner aus deinen eigenen Einstellungen.</p>
 <p><b>Ein Update herausgeben:</b> Versionsnummer in <code>app\server.mjs</code> (<code>VERSION</code>) und <code>app\public\js\main.js</code> (<code>APP_VERSION</code>) erhöhen, hochladen (GitHub Desktop: <i>Commit</i> → <i>Push</i>) und auf GitHub unter <i>Releases → Draft a new release</i> ein Release mit dem Tag <code>v</code> + Versionsnummer (z. B. <code>v1.1.0</code>) und einer kurzen Beschreibung der Neuerungen veröffentlichen. Alle installierten Apps bieten das Update dann beim nächsten Start an.</p>
 
 <h2 class="sec" id="einstellungen">Einstellungen</h2>

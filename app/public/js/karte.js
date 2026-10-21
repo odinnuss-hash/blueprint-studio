@@ -105,9 +105,8 @@ export class Karte {
     try {
       const r = await fetch('/api/karte/liste', { cache: 'no-store' });
       const j = await r.json();
-      this.liste = [...j.spielstaende, ...(j.megaprints || [])]; this.kartenbild = j.kartenbild; this.editor3d = j.editor3d;
+      this.liste = [...j.spielstaende, ...(j.megaprints || [])]; this.kartenbild = j.kartenbild;
       $('k-bild').disabled = !j.kartenbild; $('k-bild').parentElement.title = j.kartenbild ? 'Spielwelt als Hintergrund' : 'Kein Kartenbild vorhanden – siehe Hilfe → Karte';
-      $('k-3d').title = j.editor3d ? 'Im 3D-Editor öffnen: ' + j.editor3d : '3D-Editor nicht gefunden – siehe Hilfe → Karte';
       this.zeichne();
       $('k-ordner').textContent = j.ordner;
       this.renderListe();
@@ -602,14 +601,11 @@ export class Karte {
     this.puffer(); this.renderInfo();
   }
 
-  async oeffne3d() {
+  /** Spielstand in der eigenen Welt-Ansicht öffnen */
+  oeffne3d() {
     if (!this.id) { this.app.toast('Bitte zuerst links einen Spielstand wählen.', 'err'); return; }
-    if (this.id.startsWith('mp:')) { this.app.toast('Megaprints kann der 3D-Editor nicht öffnen – nur Spielstände.', 'err'); return; }
-    try {
-      const r = await fetch('/api/karte/3d', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ id: this.id }) });
-      const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status);
-      this.app.toast(j.hinweis || '3D-Editor wird geöffnet … (großer Spielstand: einige Sekunden)', j.hinweis ? 'err' : 'ok');
-    } catch (e) { this.app.toast(e.message, 'err'); }
+    if (this.id.startsWith('mp:')) { this.app.toast('Megaprints zeigt die Welt-Ansicht nicht – nur Spielstände.', 'err'); return; }
+    this.app.weltOeffnen(this.id);
   }
 
   // ------------------------------------------------------------ Bedienung

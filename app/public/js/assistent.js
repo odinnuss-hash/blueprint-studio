@@ -275,12 +275,12 @@ export class AssistentUI {
   async s_extras(el) {
     el.innerHTML = '<p class="muted">Prüfe …</p>';
     let j; try { j = await get('einrichtung'); } catch (e) { el.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
-    const zeig = j.liste.filter((x) => ['kartenbild', 'editor3d', 'verknuepfung', 'browser', 'node'].includes(x.id));
+    const zeig = j.liste.filter((x) => ['kartenbild', 'verknuepfung', 'browser', 'node'].includes(x.id));
     el.innerHTML = `<h3>Extras</h3><p>Alles freiwillig – ein Klick lädt bzw. legt an.</p>
       <div class="ein-liste">${zeig.map((x) => `<div class="ein-row ${x.status}"><span class="ein-st">${x.status === 'ok' ? '✓' : x.status === 'fehler' ? '✕' : '!'}</span>
         <div class="ein-txt"><b>${esc(x.titel)}</b><div class="m">${esc(x.text)}</div></div>
         <div class="ein-act">${x.aktion ? `<button type="button" class="btn small${x.status === 'ok' ? '' : ' primary'}" data-akt="${x.aktion}">${esc(x.aktionText)}</button>` : ''}</div></div>`).join('')}</div>
-      <p class="hint">Kartenbild: Hintergrund der Weltkarte (von GitHub). 3D-Editor „Satisfactory 3D Map“: eigenständiges Programm (GPL-3.0) zum Ansehen ganzer Spielstände.</p>`;
+      <p class="hint">Kartenbild: Hintergrund der Weltkarte und der Welt-Ansicht (von GitHub).</p>`;
     el.querySelectorAll('[data-akt]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true; b.textContent = 'Läuft …';
       try { const r = await post('einrichtung/aktion', { aktion: b.dataset.akt }); this.app.toast(r.text, 'ok'); } catch (e) { this.app.toast(e.message, 'err'); }
@@ -297,7 +297,7 @@ export class AssistentUI {
     el.innerHTML = `<h3>Fertig eingerichtet</h3><ul class="as-summe">
       ${zeile(st('saves'), 'Spielstand-Ordner')}${zeile(st('spiel'), 'Spieldaten (Katalog)')}
       ${zeile(true, `3D-Darstellung: ${this.wahl.modelle3d === 'modelle' ? 'echte Spielmodelle' + (st('modelle') ? '' : ' (noch nicht übernommen – geht später im Assistenten)') : 'einfache Kästen'}`)}
-      ${zeile(st('kartenbild'), 'Kartenbild')}${zeile(st('editor3d'), '3D-Editor')}</ul>
+      ${zeile(st('kartenbild'), 'Kartenbild')}</ul>
       <p>Tipps: Links eine Blaupause öffnen, unten einsortieren, mit <b>Hilfe</b> oben alles nachlesen. Diesen Assistenten findest du wieder unter <b>Einstellungen → Einrichtungs-Assistent</b>.</p>`;
   }
 }

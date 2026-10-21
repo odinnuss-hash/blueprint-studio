@@ -696,3 +696,13 @@ dialog.dlg-ablage[open] { display: flex; flex-direction: column; }
 
 /* Pixel-Art-Vorschau im Formen-Generator */
 .gen-pixel { display: block; width: 100%; max-width: 280px; margin-top: 6px; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; background: repeating-conic-gradient(#0002 0 25%, transparent 0 50%) 0 0 / 12px 12px; }
+
+/* Welt-Ansicht (3D mit Gelände) */
+.w-canvas { width: 100%; height: 100%; display: block; outline: none; background: #9fb3c7; }
+#view-welt .stage { position: relative; padding: 0; }
+.w-fehler { position: absolute; left: 16px; top: 16px; }
+#view-welt .side select, #view-welt .side .btn, #view-welt .side input[type=search], #view-welt .side input[type=text] { width: 100%; margin-bottom: 8px; box-sizing: border-box; }
+.w-gesetzt { display: flex; flex-direction: column; gap: 4px; margin: 6px 0 8px; }
+.w-gesetzt .w-g { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.w-gesetzt .w-g span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-gesetzt .w-g .btn { width: auto; margin: 0; }

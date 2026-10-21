@@ -102,13 +102,13 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Distribution and modification:</b> Selling, renting, commercial use and publishing modified versions or parts of the program outside the official repository are only permitted with the author's prior express consent. Viewing and forking on GitHub within the scope of the GitHub Terms of Service as well as suggestions for improvement (issues, pull requests) are expressly welcome. References to the author and this copyright must not be removed. The file <code>LICENSE</code> is authoritative.</li>
   <li><b>Warranty and liability:</b> The program is provided without warranty. Use is at your own risk. Backups should be made before editing, renaming or overwriting blueprints and saves; the app itself creates a backup when overwriting and logs renamings. To the extent permitted by law, no liability is accepted for data loss, damaged saves or other damage.</li>
   <li><b>Third-party content:</b> <i>Satisfactory</i>, the game data (<code>CommunityResources</code>), icons, 3D models and game graphics are the property of Coffee Stain Studios. They are only read or exported from your own, lawfully acquired game installation for private use and must not be distributed. Blueprint Studio is an unofficial fan tool and is not affiliated with Coffee Stain Studios. Blueprints by other players remain the work of their respective creators.</li>
-  <li><b>Third-party programs:</b> FModel and “Satisfactory 3D Map” are independent open-source programs by their developers and are subject to their licenses. Blueprint Studio contains no program code from them; it only launches them if they are installed. This translation is for convenience; the German version is authoritative.</li>
+  <li><b>Third-party programs:</b> FModel is an independent open-source program by its developers and is subject to its license. Blueprint Studio contains no program code from it; it only launches it if it is installed. This translation is for convenience; the German version is authoritative.</li>
 </ol>
 <h3>Components and third-party licenses</h3>
 <table>
   <tr><th style="width:200px">Game content</th><td><i>Satisfactory</i>, game data, icons, 3D models and the map image (tiles <code>Map_0-0 … Map_1-1</code>): Copyright © Coffee Stain Studios AB. Only from your own game installation or for private use; do not distribute.</td></tr>
   <tr><th>Icons</th><td><a href="https://fontawesome.com" target="_blank" rel="noopener">Font Awesome Free</a> 6.7.2 by Fonticons, Inc. – icons under <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> (license: fontawesome.com/license/free). The app icon (hexagon with building) is an original design.</td></tr>
-  <tr><th>3D editor (optional)</th><td><a href="https://github.com/moritz-h/satisfactory-3d-map" target="_blank" rel="noopener">Satisfactory 3D Map</a> by moritz-h (GitHub) – GPL-3.0. Only launched as a standalone program.</td></tr>
+  <tr><th>Map image download (optional)</th><td>On request the wizard downloads the four tiles from the GitHub project <a href="https://github.com/moritz-h/satisfactory-3d-map" target="_blank" rel="noopener">satisfactory-3d-map</a> by moritz-h; the image itself comes from the game (see above).</td></tr>
   <tr><th>FModel (optional)</th><td><a href="https://github.com/4sval/FModel" target="_blank" rel="noopener">FModel</a> by 4sval – GPL-3.0. Downloaded by the wizard from the official GitHub releases when needed and only launched as a standalone program.</td></tr>
   <tr><th>CUE4Parse (extractor)</th><td><a href="https://github.com/FabianFG/CUE4Parse" target="_blank" rel="noopener">CUE4Parse</a> by FabianFG – Apache-2.0. Not included; downloaded as source code from GitHub when using “Fetch models automatically” and built on your own PC into the helper program <code>werkzeuge\extraktor</code>. It downloads the helper libraries Oodle (OodleUE) and zlib-ng itself.</td></tr>
   <tr><th>.NET 10 SDK</th><td><a href="https://dotnet.microsoft.com" target="_blank" rel="noopener">.NET</a> by Microsoft – MIT licence. Not included; installed via winget when needed.</td></tr>
@@ -302,7 +302,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Map</b> (checkbox at the top): game world as background. The four tiles are located in <code>userdata\kartenbild</code> (<code>Map_0-0 … Map_1-1</code>, each 3.75 × 3.75 km).</li>
   <li><b>Height from – to</b> (meters): shows only parts in this range, e.g. a single floor of a large factory.</li>
   <li>On the right, <b>Buildings by type</b>: all machines, generators, storage, trains etc. with their count. <b>Checking</b> them highlights them, everything else is dimmed (several checkmarks possible; the checkmark on the group takes the whole group, e.g. all pipelines). <b>“All normal”</b> (at the top) or <kbd>Esc</kbd> undoes this.</li>
-  <li><b>Open in 3D</b>: opens the save in the 3D editor “Satisfactory 3D Map” (see below).</li>
+  <li><b>Open in 3D</b>: shows the save in the <a href="#welt">world view</a> (3D with terrain, see below).</li>
 </ul>
 <p>The map itself does not change the save.</p>
 <h3>Copying out an area as a blueprint</h3>
@@ -324,15 +324,16 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>Select the four textures <code>Map_0-0</code>, <code>Map_0-1</code>, <code>Map_1-0</code>, <code>Map_1-1</code> → right-click → <i>Save Texture</i> (PNG).</li>
   <li>Run <code>werkzeuge\kartenbild-uebernehmen.bat</code>. It looks for the images in the FModel export and puts them into <code>userdata\kartenbild</code> (old images are kept as <code>.alt</code>).</li>
 </ol>
-<h3>3D editor “Satisfactory 3D Map”</h3>
-<p>A standalone open-source program (GPL-3.0) by moritz-h that shows all objects of a save in 3D and lets you edit their properties. Blueprint Studio only launches it with the chosen save.</p>
-<ol>
-  <li>Download the latest Windows version from <a href="https://github.com/moritz-h/satisfactory-3d-map/releases" target="_blank" rel="noopener">github.com/moritz-h/satisfactory-3d-map/releases</a> (v0.10 or later for saves from 1.2).</li>
-  <li>Unpack it, e.g. to <code>werkzeuge\Satisfactory3DMap</code> – the app finds it there by itself. If it is somewhere else: fill in <b>Settings → 3D editor</b> with the folder or the <code>.exe</code>.</li>
-  <li>Choose the save on the map → <b>Open in 3D</b>.</li>
-</ol>
-<p>When launching it, Blueprint Studio configures the 3D editor to load the <b>real game models</b> from your game files (can be turned off in Settings). For this it needs the file <code>oodle-data-shared.dll</code>; the app copies it automatically from your FModel folder (FModel downloads it itself on first start). If it is missing, the editor starts without game models. The 3D editor is a separate program with its own window – for a quick look without switching windows, the map has “View in 3D”.</p>
-<p><b>Caution:</b> You save changes there yourself. Back up the save beforehand and do not have the same save open in the game at the same time.</p>
+<h3 id="welt">World view (3D with terrain)</h3>
+<p>The <b>World</b> area shows the whole game world in 3D – terrain at 1 m resolution with the map image on top, rocks and cliffs as real game models – and optionally a save with all its parts. Meant for planning without starting the game; it does not replace the game.</p>
+<ul>
+  <li>Choose a save at the top → <b>Load</b> (or <b>Open in 3D</b> on the map). Without a save: terrain only.</li>
+  <li>Click into the view, then <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> to fly, <kbd>Q</kbd>/<kbd>E</kbd> down/up, <kbd>Shift</kbd> faster; drag the mouse to look around, mouse wheel = forward/back. The speed adapts to the flight height.</li>
+  <li><b>Placing blueprints</b>: under “Place blueprints”, search for a blueprint from the storage or a game session → <b>Place</b>. The blue preview follows the mouse and sits on the visible surface (terrain, rocks, buildings). <b>Click</b> places it (as often as you like, green = placed), <kbd>R</kbd> rotates by 90° (<kbd>Shift</kbd>+<kbd>R</kbd> by 15°), <kbd>Page↑</kbd>/<kbd>Page↓</kbd> changes the height by 1 m (with <kbd>Shift</kbd> 4 m), <kbd>Esc</kbd> ends. Then enter a name → <b>Save to save game</b>: this creates a <b>new</b> save file next to the loaded one; the original stays unchanged.</li>
+  <li><b>Changing existing parts</b>: <b>click</b> a part of the loaded save to select it (yellow), <kbd>Ctrl</kbd>+click adds or removes more. <kbd>Arrow keys</kbd> move by 1 m along the axis closest to your view direction (<kbd>Shift</kbd> = 8 m, the foundation grid), <kbd>Page↑</kbd>/<kbd>Page↓</kbd> change the height, <kbd>R</kbd> rotates around the centre of the selection, <kbd>Del</kbd> deletes. <kbd>Esc</kbd> or a click on the terrain finishes the selection; <b>Discard</b> undoes all changes. Saving works as with placing, into a <b>new</b> file. Deleted machines take their power cables with them; belts and pipes cannot be selected (yet) and stay where they are.</li>
+  <li><b>Invert mouse left/right</b> if looking around feels the wrong way (remembered).</li>
+  <li>Terrain and rocks are extracted once from your game files by the helper program <code>werkzeuge\gelaende</code> into <code>userdata\gelaende</code> and <code>userdata\welt</code>. The world view does not change the save.</li>
+</ul>
 
 <h2 class="sec" id="megaprints">Megaprints (.cbp)</h2>
 <p>Megaprints are exports from <i>satisfactory-calculator.com</i> (file extension <code>.cbp</code>, compressed JSON with all objects including position and properties). The map lists them below the saves (folder in Settings, e.g. <code data-pfad="megaprints">…\Megaprints</code>, without <code>_Archiv</code>) and shows them at their original position on the world map – with levels, highlighting and “Buildings by type”. Even very large Megaprints (400 MB JSON, 300,000 parts) are read in about 2 seconds. Belts and pipelines appear as dots instead of lines for now.</p>
@@ -354,11 +355,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Save</b> – into which save “Move into game” puts the blueprints (or ask every time).</li>
   <li><b>3D rendering</b> – <i>simple boxes</i> (ready immediately) or <i>real game models</i>.</li>
   <li><b>Game models</b> (only when “real game models” is chosen) – <b>automatically</b> with one click on “Fetch models automatically”: on first use the app installs Microsoft's free <b>.NET 10 SDK</b> (Windows may ask for permission), downloads the free library <i>CUE4Parse</i> (the same one FModel uses), builds a small helper program from it (<code>werkzeuge\extraktor</code>) and uses it to take part data, 3D models and icons straight from your game installation. Progress and output are shown in the window; about 5–15 minutes the first time, much faster afterwards. If that does not work, the <b>manual</b> guide with FModel is still available below (install .NET Desktop Runtime 10, download FModel, enter the values – each with a <b>Copy</b> button –, click three exports, “Import”).</li>
-  <li><b>Extras</b> – map image, 3D editor “Satisfactory 3D Map”, desktop shortcut.</li>
+  <li><b>Extras</b> – map image, desktop shortcut.</li>
 </ol>
-<p>In addition, <b>Settings → Requirements &amp; Shortcut</b> checks at any time: Node.js, game installation, save folder, app window (Edge/Chrome), 3D models, icons, map image, 3D editor and desktop shortcut – the following can be installed with one click:</p>
+<p>In addition, <b>Settings → Requirements &amp; Shortcut</b> checks at any time: Node.js, game installation, save folder, app window (Edge/Chrome), 3D models, icons, map image and desktop shortcut – the following can be installed with one click:</p>
 <ul>
-  <li><b>3D editor</b> “Satisfactory 3D Map” – latest Windows version from GitHub into <code>werkzeuge\Satisfactory3DMap</code>.</li>
   <li><b>Map image</b> – the four tiles from the satisfactory-3d-map project (version 0.6; replace via FModel for the current version).</li>
   <li><b>Desktop shortcut</b> – on the desktop and in the Start menu, with icon.</li>
 </ul>
@@ -366,12 +366,12 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h3 id="updates">Updates</h3>
 <p>Blueprint Studio checks GitHub for a new version on start (at most every 6 hours). If there is one, the <b>⬆ Update</b> button appears at the top: it shows what is new and installs the update with <b>Update now</b>. The app then reloads and restarts its server by itself. Manually: <b>Settings → Updates → Check for updates now</b>.</p>
 <ul>
-  <li><b>Kept:</b> settings and everything in <code>userdata</code>, your blueprints, 3D models, icons, FModel, the 3D editor and the extractor files.</li>
+  <li><b>Kept:</b> settings and everything in <code>userdata</code>, your blueprints, 3D models, icons, FModel and the extractor files.</li>
   <li><b>Backup:</b> every program file that is replaced is first copied to <code>userdata\update-sicherung\&lt;old version&gt;</code> – to go back, simply copy these files into the program folder again.</li>
   <li><b>Source:</b> the releases of the GitHub project, set in <code>app\update.json</code>; another source can be entered in the settings. Automatic checking can be switched off there as well.</li>
 </ul>
 <h3>Publishing (e.g. GitHub)</h3>
-<p>The file <code>.gitignore</code> in the program folder excludes everything that must not be published or is personal: <code>userdata</code>, models, icons, map image, FModel, the 3D editor and blueprints/saves. The help contains no fixed paths – it always shows the folders from your own settings.</p>
+<p>The file <code>.gitignore</code> in the program folder excludes everything that must not be published or is personal: <code>userdata</code>, models, icons, map image, FModel and blueprints/saves. The help contains no fixed paths – it always shows the folders from your own settings.</p>
 <p><b>Releasing an update:</b> increase the version number in <code>app\server.mjs</code> (<code>VERSION</code>) and <code>app\public\js\main.js</code> (<code>APP_VERSION</code>), upload (GitHub Desktop: <i>Commit</i> → <i>Push</i>) and publish a release on GitHub under <i>Releases → Draft a new release</i> with the tag <code>v</code> + version number (e.g. <code>v1.1.0</code>) and a short description of what is new. All installed apps then offer the update on their next start.</p>
 
 <h2 class="sec" id="einstellungen">Settings</h2>

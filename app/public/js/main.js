@@ -32,7 +32,7 @@ async function api(path, body) {
 
 // W/A/S/D: [vor, seitlich] (e.code = Tastenposition, unabhängig vom Tastaturlayout)
 const FAHR = { KeyW: [1, 0], KeyS: [-1, 0], KeyA: [0, -1], KeyD: [0, 1] };
-const APP_VERSION = '1.2.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
+const APP_VERSION = '1.3.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
 
 class App {
   constructor() {
@@ -755,16 +755,114 @@ class App {
   }
   setMode(m) {
     this.area = m;
-    for (const v of ['editor', 'katalog', 'ordnen', 'karte', 'planer', 'hilfe']) {
+    for (const v of ['editor', 'katalog', 'ordnen', 'karte', 'welt', 'planer', 'hilfe']) {
       $('view-' + v).hidden = v !== m;
       $('mode-' + v).classList.toggle('on', v === m); $('mode-' + v).setAttribute('aria-selected', v === m);
     }
     if (m === 'katalog' && this.kat) this.katalog.renderCards();
     if (m === 'ordnen') this.ordnen.show();
     if (m === 'karte') this.karte.show();
+    if (m === 'welt') this.weltZeigen();
     if (m === 'planer') this.planer.show();
     if (m === 'hilfe' && $('hilfe-frame').src === 'about:blank') $('hilfe-frame').src = this.hilfeDatei();
     if (m === 'editor') requestAnimationFrame(() => this.render());
+  }
+  // ------------------------------------------------------------ Welt-Ansicht (3D mit Gelände)
+  async weltZeigen() {
+    try {
+      if (!this.welt) {
+        const { Welt3D } = await import('./welt3d.js');
+        this.welt = new Welt3D($('w-canvas'), this);
+        $('w-laden').addEventListener('click', async () => {
+          const id = $('w-spielstand').value; if (!id) return;
+          $('w-laden').disabled = true; $('w-laden').textContent = 'Wird geladen …';
+          try {
+            const m = await this.welt.ladeSpielstand(id);
+            this.toast(`${m.name}: ${m.anzahl.toLocaleString('de-DE')} Bauteile${m.linien.length ? `, ${m.linien.length} Bänder/Rohre/Schienen` : ''}.`, 'ok');
+            $('w-canvas').focus();
+          } catch (e) { this.toast(e.message, 'err'); }
+          finally { $('w-laden').disabled = false; $('w-laden').textContent = 'Laden'; }
+        });
+        $('w-bild').addEventListener('change', (e) => { this.welt.bildAn = e.target.checked; this.welt.zeichne(); });
+        $('w-maus').checked = this.welt.mausUmkehren;
+        $('w-maus').addEventListener('change', (e) => { this.welt.mausUmkehren = e.target.checked; try { localStorage.setItem('bs-welt-maus-umkehren', e.target.checked ? '1' : '0'); } catch { /* egal */ } });
+        this.weltBlaupausenVerdrahten();
+        const j = await (await fetch('/api/karte/liste', { cache: 'no-store' })).json();
+        $('w-spielstand').insertAdjacentHTML('beforeend', (j.spielstaende || []).map((x) => `<option value="${esc(x.id)}">${esc(x.sitzung)} · ${esc(x.name)}</option>`).join(''));
+      }
+      await this.welt.start();
+      this.welt.zeichne();
+    } catch (e) { $('w-fehler').hidden = false; $('w-fehler').textContent = e.message; }
+  }
+  /** Spielstand direkt in der Welt-Ansicht öffnen (Knopf „In 3D öffnen“ auf der Karte) */
+  async weltOeffnen(id) {
+    this.setMode('welt'); // lädt die Welt-Ansicht; warten, bis die Spielstand-Liste da ist
+    for (let i = 0; i < 100 && !(this.welt && $('w-spielstand').options.length > 1); i++) await new Promise((r) => setTimeout(r, 100));
+    if (![...$('w-spielstand').options].some((o) => o.value === id)) return;
+    $('w-spielstand').value = id; $('w-laden').click();
+  }
+  /** Stufe 3: Blaupausen aus Ablage und Spiel-Sitzungen zur Auswahl, Setzen, Liste, Speichern als neue Spielstand-Datei */
+  async weltBlaupausenVerdrahten() {
+    const wahl = new Map(), opts = [];
+    try {
+      const ab = await (await fetch('/api/ablage', { cache: 'no-store' })).json();
+      for (const [ordner, liste] of Object.entries(ab.ordner || {})) for (const x of liste) { const l = `${x.name} · ${ordner}`; wahl.set(l, { ablage: ordner, name: x.name }); opts.push(l); }
+      for (const sitz of ab.spielSitzungen || []) {
+        const r = await fetch('/api/blueprints?session=' + encodeURIComponent(sitz), { cache: 'no-store' }); if (!r.ok) continue; // Sitzung ohne Blaupausen-Ordner
+        const bl = await r.json();
+        for (const x of Array.isArray(bl) ? bl : []) { const l = `${x.name} · Spiel: ${sitz}`; wahl.set(l, { session: sitz, name: x.name }); opts.push(l); }
+      }
+    } catch (e) { this.toast('Blaupausen-Liste: ' + e.message, 'err'); }
+    $('w-bp-liste').innerHTML = opts.map((l) => `<option value="${esc(l)}"></option>`).join('');
+    const pruefe = () => { $('w-bp-setzen').disabled = !wahl.has($('w-bp').value); };
+    $('w-bp').addEventListener('input', pruefe);
+    $('w-bp-setzen').addEventListener('click', async () => {
+      const q = wahl.get($('w-bp').value); if (!q) return;
+      $('w-bp-setzen').disabled = true;
+      try { const m = await this.welt.waehleBlaupause(q); this.toast(`${m.name}: ${m.anzahl + m.linien.length} Bauteile – in die Ansicht zeigen und klicken zum Absetzen.`, 'ok'); $('w-canvas').focus(); }
+      catch (e) { this.toast(e.message, 'err'); } finally { pruefe(); }
+    });
+    $('w-speichern').addEventListener('click', async () => {
+      const w = this.welt, id = $('w-spielstand').value, name = $('w-neu-name').value.trim();
+      if (!w.objekte || !id) { this.toast('Bitte zuerst oben einen Spielstand laden – die Blaupausen kommen in eine Kopie davon.', 'err'); return; }
+      if (!name) { this.toast('Bitte einen Namen für den neuen Spielstand eingeben.', 'err'); $('w-neu-name').focus(); return; }
+      $('w-speichern').disabled = true;
+      try {
+        const setzungen = w.gesetzt.map((g) => ({ ...g.quelle, x: g.x, y: g.y, z: g.z, dreh: g.dreh })), { loeschen, verschieben } = w.aenderungen();
+        $('w-speichern').textContent = 'Wird gespeichert …';
+        const r = await api('welt/spielstand', { id, name, setzungen, loeschen, verschieben }), i = r.info;
+        const teile = [i.blaupausen ? `${i.blaupausen} Blaupausen (${i.eingefuegt.toLocaleString('de-DE')} Objekte)` : '', i.verschoben ? `${i.verschoben} verschoben` : '', (i.akteureGeloescht || 0) + (i.leichtbauGeloescht || 0) ? `${i.akteureGeloescht + i.leichtbauGeloescht} gelöscht${i.kabelGeloescht ? ` (+${i.kabelGeloescht} Kabel)` : ''}` : ''].filter(Boolean);
+        this.toast(`Neuer Spielstand „${r.name}“ gespeichert: ${teile.join(', ')}. Im Spiel laden zum Prüfen.`, 'ok');
+      } catch (e) { this.toast(e.message, 'err'); } finally { $('w-speichern').disabled = false; $('w-speichern').textContent = 'In Spielstand speichern'; }
+    });
+    this.weltSetzenStatus(this.welt);
+  }
+  weltSetzenStatus(w) {
+    const el = $('w-gesetzt'); if (!el || !w) return;
+    el.innerHTML = w.gesetzt.map((g, i) => `<div class="w-g"><span title="${esc(g.quelle.name)}">${i + 1}. ${esc(g.quelle.name)} · ${g.dreh}°</span><button type="button" class="btn small" data-weg="${i}" title="Entfernen" aria-label="Entfernen">✕</button></div>`).join('')
+      + (w.setzen ? `<div class="hint">Setzt gerade: <b>${esc(w.setzen.quelle.name)}</b> · ${w.setzen.dreh}°${w.setzen.dz ? ` · ${w.setzen.dz > 0 ? '+' : ''}${w.setzen.dz / 100} m` : ''} – Esc = fertig</div>` : '');
+    el.querySelectorAll('[data-weg]').forEach((b) => b.addEventListener('click', () => w.entferne(+b.dataset.weg)));
+    this.weltAendernStatus(w);
+  }
+  weltAendernStatus(w) {
+    const el = $('w-aendern'); if (!el || !w) return;
+    const O = w.objekte, nA = w.auswahl?.size || 0, nG = w.geloescht?.size || 0, nV = [...(w.delta?.keys() || [])].filter((i) => !w.geloescht.has(i)).length;
+    let html = '';
+    if (nA && O) {
+      const arten = new Map(); for (const i of w.auswahl) { const c = O.meta.klassen[O.w[i * 12 + 10]]; arten.set(c, (arten.get(c) || 0) + 1); }
+      const kat = this.kat?.gebaeude || {}, B = w.bewegung;
+      html += `<div class="hint">Ausgewählt: <b>${[...arten].map(([c, n]) => `${n > 1 ? n + '× ' : ''}${esc(kat[c]?.name || c.replace(/^Build_|_C$/g, ''))}`).join(', ')}</b>${B ? ` · ${(B.t[0] / 100).toFixed(0)} / ${(B.t[1] / 100).toFixed(0)} / ${(B.t[2] / 100).toFixed(0)} m, ${Math.round(B.a * 180 / Math.PI)}°` : ''}</div>`;
+    }
+    if (nV || nG) html += `<div class="w-g"><span>Änderungen: ${nV} verschoben, ${nG} gelöscht</span><button type="button" class="btn small" id="w-verwerfen">Verwerfen</button></div>`;
+    el.innerHTML = html;
+    $('w-verwerfen')?.addEventListener('click', () => w.aenderungenVerwerfen());
+    $('w-speichern-feld').hidden = !(w.gesetzt.length || nV || nG || w.bewegung);
+  }
+  weltStatus(w) {
+    const el = $('w-status'); if (!el) return;
+    const z = Math.round(w.eye[2] / 100), b = Math.round(w.boden() / 100);
+    el.innerHTML = `<span>Position</span><b>${Math.round(w.eye[0] / 100)} / ${Math.round(w.eye[1] / 100)} m</b><span>Höhe</span><b>${z} m (${z - b} m über Grund)</b>`
+      + `<span>Gelände-Kacheln</span><b>${w.zahlKacheln || 0}${w.laden.size ? ` (+${w.laden.size} laden)` : ''}</b>${w.objekte ? `<span>Bauteile</span><b>${w.objekte.meta.anzahl.toLocaleString('de-DE')}</b>` : ''}`;
   }
   showHelp(anker) { this.setMode('hilfe'); $('hilfe-frame').src = this.hilfeDatei() + (anker ? '#' + anker : ''); }
   hilfeDatei() { const l = this.cfg?.sprache; return l && l !== 'de' && this.cfg.hilfeSprachen?.includes(l) ? `hilfe.${l}.html` : 'hilfe.html'; }
@@ -1103,6 +1201,7 @@ class App {
     $('mode-katalog').addEventListener('click', () => this.setMode('katalog'));
     $('mode-ordnen').addEventListener('click', () => this.setMode('ordnen'));
     $('mode-karte').addEventListener('click', () => this.setMode('karte'));
+    $('mode-welt').addEventListener('click', () => this.setMode('welt'));
     $('mode-planer').addEventListener('click', () => this.setMode('planer'));
     $('mode-hilfe').addEventListener('click', () => this.setMode('hilfe'));
     $('st-version').addEventListener('click', (e) => { e.preventDefault(); this.showHelp('zur-app'); });
@@ -1154,7 +1253,7 @@ class App {
     ablageSicht(ablageAn);
     $('btn-ablage').addEventListener('click', () => { ablageAn = !ablageAn; ablageSicht(ablageAn); if (ablageAn && this.area !== 'editor') this.setMode('editor'); });
     $('btn-ablage-gross').addEventListener('click', () => { if (this.area !== 'editor') this.setMode('editor'); this.ablage.grossesFenster(); });
-    $('btn-settings').addEventListener('click', () => { $('set-save').value = this.cfg.saveDir; $('set-sprache').value = this.cfg.sprache || 'de'; $('set-game').value = this.cfg.gameDir; $('set-lib').value = (this.cfg.bibliotheken || []).join('\n'); $('set-3d').value = this.cfg.editor3d || ''; $('set-3dm').checked = this.cfg.editor3dModelle !== false; $('set-rutschen').checked = this.cfg.nachrutschen !== false; $('set-einsortieren').checked = this.cfg.umbenennenEinsortieren !== false; $('set-spielstand').innerHTML = '<option value="">Jedes Mal fragen</option>' + (this.cfg.spielSitzungen || []).map((x) => `<option value="${esc(x.name)}">${esc(x.name)} (zuletzt ${new Date(x.zuletzt).toLocaleDateString('de-DE')})</option>`).join(''); $('set-spielstand').value = this.cfg.spielSitzung || ''; $('set-ansicht').value = this.cfg.ansicht || 'zuletzt'; document.querySelectorAll('[name=set-ablage-lage]').forEach((r) => { r.checked = r.value === (this.cfg.ablageLage || 'unten'); }); $('set-ablage-breite').value = this.cfg.ablageBreite || 420; $('set-ablage-hoehe').value = this.cfg.ablageHoehe || 260; this.ablageWerteZeigen(); $('set-mp').value = (this.cfg.megaprints || []).join('\n'); $('set-praefixe').value = (this.cfg.namensPraefixe || []).join(', '); $('set-update-auto').checked = this.cfg.updatePruefen !== false; $('set-update-repo').value = this.cfg.updateRepo || ''; $('set-update-repo').placeholder = this.cfg.updateRepoStandard || 'Besitzer/Repository'; $('set-update-status').textContent = `Installiert: ${this.cfg.version}`; this.einstellungenStruktur(); $('set-status').textContent = `Spieldaten: ${this.cfg.docs || 'nicht gefunden'}`; $('dlg-settings').showModal(); });
+    $('btn-settings').addEventListener('click', () => { $('set-save').value = this.cfg.saveDir; $('set-sprache').value = this.cfg.sprache || 'de'; $('set-game').value = this.cfg.gameDir; $('set-lib').value = (this.cfg.bibliotheken || []).join('\n'); $('set-rutschen').checked = this.cfg.nachrutschen !== false; $('set-einsortieren').checked = this.cfg.umbenennenEinsortieren !== false; $('set-spielstand').innerHTML = '<option value="">Jedes Mal fragen</option>' + (this.cfg.spielSitzungen || []).map((x) => `<option value="${esc(x.name)}">${esc(x.name)} (zuletzt ${new Date(x.zuletzt).toLocaleDateString('de-DE')})</option>`).join(''); $('set-spielstand').value = this.cfg.spielSitzung || ''; $('set-ansicht').value = this.cfg.ansicht || 'zuletzt'; document.querySelectorAll('[name=set-ablage-lage]').forEach((r) => { r.checked = r.value === (this.cfg.ablageLage || 'unten'); }); $('set-ablage-breite').value = this.cfg.ablageBreite || 420; $('set-ablage-hoehe').value = this.cfg.ablageHoehe || 260; this.ablageWerteZeigen(); $('set-mp').value = (this.cfg.megaprints || []).join('\n'); $('set-praefixe').value = (this.cfg.namensPraefixe || []).join(', '); $('set-update-auto').checked = this.cfg.updatePruefen !== false; $('set-update-repo').value = this.cfg.updateRepo || ''; $('set-update-repo').placeholder = this.cfg.updateRepoStandard || 'Besitzer/Repository'; $('set-update-status').textContent = `Installiert: ${this.cfg.version}`; this.einstellungenStruktur(); $('set-status').textContent = `Spieldaten: ${this.cfg.docs || 'nicht gefunden'}`; $('dlg-settings').showModal(); });
     $('set-cancel').addEventListener('click', () => $('dlg-settings').close());
     $('set-struktur').addEventListener('click', () => this.struktur.zeigen());
     $('btn-update')?.addEventListener('click', () => this.update.zeigen());
@@ -1167,7 +1266,7 @@ class App {
     });
     $('set-ok').addEventListener('click', async () => {
       const spr = $('set-sprache').value, sprNeu = spr !== (this.cfg.sprache || 'de');
-      try { await api('config', { saveDir: $('set-save').value, gameDir: $('set-game').value, bibliotheken: $('set-lib').value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean), editor3d: $('set-3d').value, editor3dModelle: $('set-3dm').checked, nachrutschen: $('set-rutschen').checked, umbenennenEinsortieren: $('set-einsortieren').checked, namensPraefixe: $('set-praefixe').value.split(/[,;]/).map((x) => x.trim()).filter(Boolean), updatePruefen: $('set-update-auto').checked, updateRepo: $('set-update-repo').value, spielSitzung: $('set-spielstand').value, ansicht: $('set-ansicht').value, ablageLage: document.querySelector('[name=set-ablage-lage]:checked')?.value || 'unten', ablageBreite: +$('set-ablage-breite').value, ablageHoehe: +$('set-ablage-hoehe').value, megaprints: $('set-mp').value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean) }); this.karte.liste = null; this.ordnen.data = null; $('dlg-settings').close(); if (sprNeu) { await api('config', { sprache: spr }); location.reload(); return; } this.toast('Einstellungen gespeichert.', 'ok'); await this.init(); }
+      try { await api('config', { saveDir: $('set-save').value, gameDir: $('set-game').value, bibliotheken: $('set-lib').value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean), nachrutschen: $('set-rutschen').checked, umbenennenEinsortieren: $('set-einsortieren').checked, namensPraefixe: $('set-praefixe').value.split(/[,;]/).map((x) => x.trim()).filter(Boolean), updatePruefen: $('set-update-auto').checked, updateRepo: $('set-update-repo').value, spielSitzung: $('set-spielstand').value, ansicht: $('set-ansicht').value, ablageLage: document.querySelector('[name=set-ablage-lage]:checked')?.value || 'unten', ablageBreite: +$('set-ablage-breite').value, ablageHoehe: +$('set-ablage-hoehe').value, megaprints: $('set-mp').value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean) }); this.karte.liste = null; this.ordnen.data = null; $('dlg-settings').close(); if (sprNeu) { await api('config', { sprache: spr }); location.reload(); return; } this.toast('Einstellungen gespeichert.', 'ok'); await this.init(); }
       catch (e) { $('set-status').textContent = e.message; }
     });
     window.addEventListener('beforeunload', (e) => { if (this.dirty()) { e.preventDefault(); e.returnValue = ''; } });

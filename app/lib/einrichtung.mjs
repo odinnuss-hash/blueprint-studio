@@ -1,7 +1,6 @@
 // Einrichtung: Voraussetzungen pruefen und fehlende Teile (soweit erlaubt) automatisch installieren.
 //
-// Automatisch:  3D-Editor „Satisfactory 3D Map“ (GitHub-Release, GPL-3.0, eigenstaendiges Programm),
-//               Kartenbild (Kacheln aus dem satisfactory-3d-map-Repository), Desktop-Verknuepfung.
+// Automatisch:  Kartenbild (Kacheln aus dem satisfactory-3d-map-Repository), Desktop-Verknuepfung.
 // 3D-Modelle und Icons: automatisch mit dem eigenen Extraktor (werkzeuge\extraktor, baut sich beim ersten Mal
 //               selbst mit dem .NET-10-SDK und CUE4Parse) oder angeleitet per FModel – immer aus der eigenen
 //               Spielinstallation, Spielinhalte von Coffee Stain duerfen nicht mitgeliefert werden.
@@ -13,8 +12,6 @@ import os from 'node:os';
 import { spawn } from 'node:child_process';
 
 export const QUELLEN = {
-  editor3d: 'https://github.com/moritz-h/satisfactory-3d-map/releases/latest/download/Satisfactory3DMap-Windows.zip',
-  editor3dSeite: 'https://github.com/moritz-h/satisfactory-3d-map/releases',
   kachel: (n) => `https://raw.githubusercontent.com/moritz-h/satisfactory-3d-map/master/map/resources/textures/Map/${n}.png`,
   fmodel: 'https://fmodel.app',
   fmodelZip: 'https://github.com/4sval/FModel/releases/latest/download/FModel.zip',
@@ -127,7 +124,7 @@ function laufZeilen(cmd, args, opts, proZeile) {
 export const CUE_COMMIT = '3fc091a085a609bdb7bd2f8934890051b88ac18b';
 
 export class Einrichtung {
-  /** ctx: { ROOT, APP_DIR, PUBLIC_DIR, DATA_DIR, settings, docsFile, getKatalog, bpRoot, finde3d, kartenKachel, browserExe, log } */
+  /** ctx: { ROOT, APP_DIR, PUBLIC_DIR, DATA_DIR, settings, docsFile, getKatalog, bpRoot, kartenKachel, browserExe, log } */
   constructor(ctx) { this.c = ctx; }
 
   /** FModel.exe im eingestellten bzw. Standard-Ordner */
@@ -180,8 +177,6 @@ export class Einrichtung {
     add('icons', 'Gebäude-Icons', nIcons > 100 ? 'ok' : 'warnung', nIcons > 100 ? `${nIcons} Icons` : 'fehlen – Katalog ohne Bilder. Im Einrichtungs-Assistenten (Schritt „Spielmodelle“) automatisch holen.', { hilfe: 'fm-icons' });
     const kacheln = ['Map_0-0', 'Map_0-1', 'Map_1-0', 'Map_1-1'].every((n) => c.kartenKachel(n));
     add('kartenbild', 'Kartenbild (Spielwelt)', kacheln ? 'ok' : 'warnung', kacheln ? 'vorhanden' : 'fehlt – Karte ohne Hintergrund', { aktion: kacheln ? null : 'kartenbild', aktionText: 'Herunterladen' });
-    const e3 = c.finde3d();
-    add('editor3d', '3D-Editor „Satisfactory 3D Map“', e3 ? 'ok' : 'warnung', e3 || 'nicht installiert – „In 3D öffnen“ geht erst danach', { aktion: e3 ? 'editor3d' : 'editor3d', aktionText: e3 ? 'Aktualisieren' : 'Installieren', link: QUELLEN.editor3dSeite });
     if (process.platform === 'win32') {
       const lnk = this.desktopLnk();
       add('verknuepfung', 'Desktop-Verknüpfung', lnk ? 'ok' : 'warnung', lnk ? lnk : 'keine Verknüpfung auf dem Desktop', { aktion: 'verknuepfung', aktionText: lnk ? 'Neu anlegen' : 'Anlegen' });
@@ -272,18 +267,6 @@ export class Einrichtung {
 
   async ausfuehren(aktion) {
     const c = this.c;
-    if (aktion === 'editor3d') {
-      const dir = path.join(c.ROOT, 'werkzeuge', 'Satisfactory3DMap');
-      const zip = path.join(dir, 'Satisfactory3DMap-Windows.zip');
-      c.log('Lade 3D-Editor …');
-      const n = await laden(QUELLEN.editor3d, zip);
-      await entpacken(zip, dir);
-      try { await fsp.unlink(zip); } catch { /* bleibt liegen */ }
-      const exe = c.finde3d();
-      if (!exe) throw new Error('Heruntergeladen, aber keine Satisfactory3DMap*.exe gefunden.');
-      c.log(`3D-Editor installiert: ${exe} (${(n / 1e6).toFixed(1)} MB)`);
-      return { ok: true, text: `3D-Editor installiert (${(n / 1e6).toFixed(1)} MB): ${exe}` };
-    }
     if (aktion === 'kartenbild') {
       const dir = path.join(c.DATA_DIR, 'kartenbild');
       let n = 0;

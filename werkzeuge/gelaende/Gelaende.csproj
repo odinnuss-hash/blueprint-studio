@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Geländehöhen aus der eigenen Satisfactory-Installation lesen (Welt-Ansicht: Gelände + Felsen; nutzt CUE4Parse aus werkzeuge\extraktor\quelle) -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <NoWarn>$(NoWarn);CS1591;CS8600;CS8602;CS8604;NU1701;NU1902;NU1903</NoWarn>
+    <CuePfad>$(MSBuildThisFileDirectory)..\extraktor\quelle\CUE4Parse-3fc091a085a609bdb7bd2f8934890051b88ac18b\</CuePfad>
+    <CUE4PARSE_SKIP_NATIVE>true</CUE4PARSE_SKIP_NATIVE>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(CuePfad)CUE4Parse-Conversion\CUE4Parse-Conversion.csproj" />
+  </ItemGroup>
+</Project>

@@ -2,7 +2,7 @@
 //
 // Ablauf: GET https://api.github.com/repos/<repo>/releases/latest  ->  Tag (z. B. v0.9.0) mit der eigenen
 // Version vergleichen  ->  auf Wunsch Quelltext-ZIP des Releases laden, entpacken, Dateien kopieren.
-// Persönliches bleibt unberührt: userdata, Modelle, Icons, FModel, 3D-Editor, Extraktor-Zwischendateien.
+// Persönliches bleibt unberührt: userdata, Modelle, Icons, FModel, Extraktor-Zwischendateien.
 // Jede ersetzte Datei wird vorher nach userdata\update-sicherung\<alte Version>\ kopiert.
 
 import fs from 'node:fs';
@@ -14,7 +14,7 @@ const API = process.env.BS_UPDATE_API || 'https://api.github.com'; // Umgebungsv
 const UA = { 'User-Agent': 'BlueprintStudio-Updater', Accept: 'application/vnd.github+json' };
 // nie überschreiben (relativ zum Programmordner, mit /)
 const GESCHUETZT = [/^userdata\//i, /^app\/public\/modelle\//i, /^app\/public\/icons\/[^/]+\.png$/i, /^app\/icon-[^/]*\.ico$/i,
-  /^werkzeuge\/FModel\//i, /^werkzeuge\/Satisfactory3DMap\//i, /^werkzeuge\/extraktor\/(quelle|bin|obj|Export|daten)\//i, /^\.git\//i];
+  /^werkzeuge\/FModel\//i, /^werkzeuge\/extraktor\/(quelle|bin|obj|Export|daten)\//i, /^\.git\//i];
 
 /** "v0.10.2" -> [0,10,2] ; Vergleich numerisch */
 export function versionVergleich(a, b) {

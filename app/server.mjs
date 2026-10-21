@@ -14,6 +14,10 @@ import { fileURLToPath } from 'node:url';
 import { readBlueprint, writeBlueprint, readCfg, createBlueprint } from './lib/sbp.mjs';
 import { baueReihe, baueKette } from './lib/fabrik.mjs';
 import { bauePixelbild } from './lib/pixelbild.mjs';
+import { ladeMuster, kopiere, qmul, qrot, qz } from './lib/muster.mjs';
+import { objekteEinfuegen } from './lib/spielstand-einfuegen.mjs';
+import { spielstandAendern } from './lib/spielstand-aendern.mjs';
+import { ladeHoehen, kachel as weltKachel, weltDaten, blaupauseDaten, KACHEL } from './lib/welt.mjs';
 import { masterclassEinlesen, masterclassDatei, masterclassExport, masterclassImport, masterclassAblegen } from './lib/masterclass.mjs';
 import { rechne as planRechnen, vorstufen } from './public/js/planer-rechner.js';
 import { buildLibrary, availability, buildObject, costDelta, makeHead, newInstance, templateFor, makeCfg, i32, replaceObjectProp } from './lib/vorlagen.mjs';
@@ -38,7 +42,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 
@@ -830,66 +834,8 @@ function kartenKachel(name) {
   for (const d of KARTENBILD_DIRS()) for (const ext of ['.png', '.jpg', '.jpeg']) { const f = path.join(d, name + ext); if (fs.existsSync(f)) return f; }
   return null;
 }
-// 3D-Editor „Satisfactory 3D Map“ (github.com/moritz-h/satisfactory-3d-map) – wird nur gestartet, nicht mitgeliefert
-function finde3d() {
-  const kandidaten = [settings.editor3d, path.join(ROOT, 'werkzeuge', 'Satisfactory3DMap'), path.join(ROOT, 'werkzeuge')].filter(Boolean);
-  const suche = (d, tiefe) => {
-    let st; try { st = fs.statSync(d); } catch { return null; }
-    if (st.isFile()) return /\.exe$/i.test(d) ? d : null;
-    let l = []; try { l = fs.readdirSync(d, { withFileTypes: true }); } catch { return null; }
-    const exe = l.find((e) => e.isFile() && /^Satisfactory3DMap.*\.exe$/i.test(e.name));
-    if (exe) return path.join(d, exe.name);
-    if (tiefe > 0) for (const e of l) if (e.isDirectory()) { const r = suche(path.join(d, e.name), tiefe - 1); if (r) return r; }
-    return null;
-  };
-  for (const k of kandidaten) { const r = suche(k, 3); if (r) return r; }
-  return null;
-}
-/** oodle-data-shared.dll suchen (FModel legt sie in seinen .data-Ordner) */
-function findeOodle() {
-  const home = os.homedir();
-  const orte = [FMODEL_DIR(), path.join(ROOT, '..', 'FModel'), path.join(ROOT, '..', '..', 'FModel'),
-    path.join(home, 'Documents', 'FModel'), path.join(home, 'Desktop', 'FModel'), path.join(process.env.APPDATA || '', 'FModel'), path.join(process.env.LOCALAPPDATA || '', 'FModel')].filter(Boolean);
-  for (const o of orte) for (const sub of ['.data', path.join('Output', '.data'), '']) {
-    const f = path.join(o, sub, 'oodle-data-shared.dll');
-    if (fs.existsSync(f)) return f;
-  }
-  return null;
-}
-function oeffne3d(id) {
-  let hinweis = null;
-  const exe = finde3d();
-  if (!exe) throw Object.assign(new Error('Der 3D-Editor „Satisfactory 3D Map“ wurde nicht gefunden. Bitte herunterladen und in den Einstellungen den Ordner angeben (siehe Hilfe → Karte).'), { status: 404 });
-  if (/^mp:/.test(id || '')) throw Object.assign(new Error('Megaprints kann der 3D-Editor nicht öffnen – nur Spielstände.'), { status: 400 });
-  if (typeof id !== 'string' || !/^[^\\/:*?"<>|]+\/[^\\/:*?"<>|]+\.sav$/i.test(id)) throw Object.assign(new Error('Ungültiger Spielstand'), { status: 400 });
-  const sav = path.join(settings.saveDir, ...id.split('/'));
-  // Einstellungen des 3D-Editors: echte Spielmodelle aus den Spieldateien laden (UsePakFiles) + Spielordner
-  try {
-    const cfgDatei = path.join(path.dirname(exe), 'Satisfactory3DMap.cfg');
-    let cfg = {}; try { cfg = JSON.parse(fs.readFileSync(cfgDatei, 'utf8')); } catch { /* neu */ }
-    let modelle = settings.editor3dModelle !== false;
-    // Fuer die Spielmodelle braucht der Editor die Oodle-Bibliothek (oodle-data-shared.dll) neben der .exe.
-    // FModel laedt sie selbst herunter – von dort kopieren; sonst ohne Spielmodelle starten (statt Fehlermeldung).
-    if (modelle) {
-      const ziel = path.join(path.dirname(exe), 'oodle-data-shared.dll');
-      if (!fs.existsSync(ziel)) {
-        const quelle = findeOodle();
-        if (quelle) { fs.copyFileSync(quelle, ziel); log('Oodle-Bibliothek für 3D-Editor übernommen:', quelle); }
-        else { modelle = false; hinweis = 'Ohne Spielmodelle gestartet: oodle-data-shared.dll nicht gefunden (kommt mit FModel – einmal FModel starten).'; }
-      }
-    }
-    let geaendert = cfg.UsePakFiles !== modelle;
-    cfg.UsePakFiles = modelle;
-    if (fs.existsSync(path.join(settings.gameDir, 'FactoryGame')) && cfg.GameDirectory !== settings.gameDir) { cfg.GameDirectory = settings.gameDir; geaendert = true; }
-    if (geaendert) fs.writeFileSync(cfgDatei, JSON.stringify(cfg, null, 4));
-  } catch (e) { log('3D-Editor-Einstellungen nicht geschrieben:', e.message); }
-  spawn(exe, [sav], { cwd: path.dirname(exe), detached: true, stdio: 'ignore' }).unref();
-  log(`3D-Editor gestartet: ${exe} ${sav}`);
-  return { ok: true, exe, hinweis };
-}
-
 const einrichtung = new Einrichtung({
-  ROOT, APP_DIR, PUBLIC_DIR, DATA_DIR, get settings() { return settings; }, docsFile, getKatalog: () => getKatalog(), bpRoot, finde3d, kartenKachel, fmodelDir: FMODEL_DIR, fmodelExport: FMODEL_EXPORT,
+  ROOT, APP_DIR, PUBLIC_DIR, DATA_DIR, get settings() { return settings; }, docsFile, getKatalog: () => getKatalog(), bpRoot, kartenKachel, fmodelDir: FMODEL_DIR, fmodelExport: FMODEL_EXPORT,
   browserExe: () => browserCandidates().find((p) => fs.existsSync(p)) || null, log: (...a) => log(...a),
 });
 const updater = new Updater({ ROOT, DATA_DIR, VERSION, get settings() { return settings; }, log: (...a) => log(...a) });
@@ -925,6 +871,42 @@ async function karteZuBlaupause({ id, bereich, ohne = [], session, name }) {
   bpCache.clear(); letzterPlan = null;
   log(`Blaupause aus Karte: ${dst} (${r.info.objekte} Objekte)`);
   return { ok: true, name, session, info: r.info };
+}
+// ------------------------------------------------------------------ Welt-Ansicht (3D mit Gelände)
+let weltHoehenCache;
+const weltHoehen = () => { if (weltHoehenCache === undefined) { const st = path.join(DATA_DIR, 'gelaende', 'hoehen1m'); weltHoehenCache = fs.existsSync(st + '.json') ? ladeHoehen(st) : null; } return weltHoehenCache; };
+// Welt-Ansicht Stufe 3: Blaupausen in der Welt setzen und als neue Spielstand-Kopie speichern
+/** Blaupausen-Datei aus Spiel-Sitzung ({session, name}) oder Ablage ({ablage, name}) */
+function weltBpPfad(q) {
+  if (!q || !safeName(q.name)) throw Object.assign(new Error('Ungültiger Blaupausen-Name'), { status: 400 });
+  const f = q.ablage != null ? path.join(ablage.ordnerPfad(q.ablage), q.name + '.sbp') : bpPath(q.session, q.name);
+  if (!fs.existsSync(f)) throw Object.assign(new Error(`Blaupause „${q.name}“ nicht gefunden.`), { status: 404 });
+  return f;
+}
+async function weltSpielstand(body) {
+  const { id, name } = body, setzungen = Array.isArray(body.setzungen) ? body.setzungen : [];
+  const loeschen = Array.isArray(body.loeschen) ? body.loeschen : [], verschieben = Array.isArray(body.verschieben) ? body.verschieben : [];
+  if (!id || !/^[^\\/:*?"<>|]+\/[^\\/:*?"<>|]+\.sav$/i.test(id)) throw Object.assign(new Error('Bitte zuerst einen Spielstand laden.'), { status: 400 });
+  if (!safeName(name)) throw Object.assign(new Error('Bitte einen gültigen Namen für den neuen Spielstand angeben.'), { status: 400 });
+  if (!setzungen.length && !loeschen.length && !verschieben.length) throw Object.assign(new Error('Noch nichts gesetzt oder geändert.'), { status: 400 });
+  const quelle = path.join(settings.saveDir, ...id.split('/')), ziel = path.join(path.dirname(quelle), name + '.sav');
+  if (fs.existsSync(ziel)) throw Object.assign(new Error(`Den Spielstand „${name}“ gibt es schon. Bitte einen anderen Namen wählen.`), { status: 409 });
+  const muster = new Map(), objs = []; let version = 0;
+  for (const st of setzungen) {
+    const datei = weltBpPfad(st); let m = muster.get(datei);
+    if (!m) muster.set(datei, m = ladeMuster(datei));
+    version = Math.max(version, m.version);
+    const q = qz(((+st.dreh || 0) * Math.PI) / 180), off = [+st.x, +st.y, +st.z];
+    if (!off.every(Number.isFinite)) throw Object.assign(new Error('Ungültige Lage'), { status: 400 });
+    objs.push(...kopiere(m, () => true, (o) => { const w = qrot(q, o.pos); return { pos: [w[0] + off[0], w[1] + off[1], w[2] + off[2]], rot: qmul(q, o.rot) }; }));
+  }
+  // erst Bestehendes ändern (Stufe 4), dann Blaupausen einfügen (Stufe 3)
+  let daten = await fsp.readFile(quelle), info = { blaupausen: setzungen.length, eingefuegt: 0 };
+  if (loeschen.length || verschieben.length) { const a = spielstandAendern(daten, { loeschen, verschieben, speichername: name }); daten = a.ausgabe; Object.assign(info, a.info); }
+  if (objs.length) { const e = objekteEinfuegen(daten, objs, { musterVersion: version, speichername: name }); daten = e.ausgabe; Object.assign(info, e.info); }
+  await fsp.writeFile(ziel, daten);
+  log(`Welt → Spielstand: ${ziel} (${setzungen.length} Blaupausen, ${info.eingefuegt} Objekte eingefügt, ${loeschen.length} gelöscht, ${verschieben.length} verschoben, Quelle ${id})`);
+  return { ok: true, name, datei: path.basename(ziel), info };
 }
 // ------------------------------------------------------------------ Master Class (Lehrbuch-Fabriken als Vorlagen)
 const MC_DIR = () => path.join(DATA_DIR, 'masterclass');
@@ -1137,15 +1119,13 @@ const server = http.createServer(async (req, res) => {
           appDir: ROOT, fmodelDir: FMODEL_DIR(), fmodelExport: FMODEL_EXPORT(), fmodelEigen: settings.fmodel || '', fmodelExportEigen: settings.fmodelExport || '',
           namensPraefixe: settings.namensPraefixe || [], struktur: GRUPPEN, strukturStandard: standardStruktur(), hilfeSprachen: ['en', 'fr', 'ja'].filter((l) => fs.existsSync(path.join(PUBLIC_DIR, `hilfe.${l}.html`))), sprache: settings.sprache || 'de',
           modelle3d: settings.modelle3d || (modelleDa ? 'modelle' : 'kaesten'), modelleVorhanden: modelleDa, eingerichtet: !!settings.eingerichtet, plattform: process.platform, updateRepo: settings.updateRepo || '', updateRepoStandard: updater.standardRepo(), updatePruefen: settings.updatePruefen !== false, ueVersion: settings.ueVersion || 'GAME_UE5_6',
-          blueprintDirOk: fs.existsSync(bpRoot()), bibliotheken: settings.bibliotheken || [], editor3d: settings.editor3d || '', editor3dModelle: settings.editor3dModelle !== false, ansicht: settings.ansicht || 'zuletzt', nachrutschen: settings.nachrutschen !== false, umbenennenEinsortieren: settings.umbenennenEinsortieren !== false, spielSitzung: settings.spielSitzung || '', spielSitzungen: await spielSitzungen(), ablageLage: settings.ablageLage || 'unten', ablageBreite: settings.ablageBreite || 420, ablageHoehe: settings.ablageHoehe || 260, megaprints: settings.megaprints || [], editor3dGefunden: finde3d(), docs: docsFile(), katalogOk: !!k, katalogFehler, sessions: await listSessions(),
+          blueprintDirOk: fs.existsSync(bpRoot()), bibliotheken: settings.bibliotheken || [], ansicht: settings.ansicht || 'zuletzt', nachrutschen: settings.nachrutschen !== false, umbenennenEinsortieren: settings.umbenennenEinsortieren !== false, spielSitzung: settings.spielSitzung || '', spielSitzungen: await spielSitzungen(), ablageLage: settings.ablageLage || 'unten', ablageBreite: settings.ablageBreite || 420, ablageHoehe: settings.ablageHoehe || 260, megaprints: settings.megaprints || [], docs: docsFile(), katalogOk: !!k, katalogFehler, sessions: await listSessions(),
           icons: await fsp.readdir(path.join(PUBLIC_DIR, 'icons')).then((l) => l.filter((f) => f.endsWith('.png'))).catch(() => []) });
       }
       if (p === '/api/config' && req.method === 'POST') {
         const b = await readJsonBody(req);
         if (typeof b.saveDir === 'string' && b.saveDir.trim()) { settings.saveDir = b.saveDir.trim(); lib = null; libPromise = null; availCache.clear(); }
         if (typeof b.gameDir === 'string' && b.gameDir.trim()) { settings.gameDir = b.gameDir.trim(); katalog = null; availCache.clear(); }
-        if (typeof b.editor3d === 'string') settings.editor3d = b.editor3d.trim();
-        if (typeof b.editor3dModelle === 'boolean') settings.editor3dModelle = b.editor3dModelle;
         if (typeof b.nachrutschen === 'boolean') settings.nachrutschen = b.nachrutschen;
         if (typeof b.umbenennenEinsortieren === 'boolean') settings.umbenennenEinsortieren = b.umbenennenEinsortieren;
         if (typeof b.spielSitzung === 'string' && (!b.spielSitzung || safeName(b.spielSitzung))) settings.spielSitzung = b.spielSitzung;
@@ -1243,7 +1223,7 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/update' && req.method === 'GET') return sendJson(res, 200, await updater.pruefen(url.searchParams.get('neu') === '1'));
       if (p === '/api/update' && req.method === 'POST') return sendJson(res, 200, await updater.installieren());
       if (p === '/api/einrichtung/aktion' && req.method === 'POST') return sendJson(res, 200, await einrichtung.ausfuehren((await readJsonBody(req)).aktion));
-      if (p === '/api/karte/liste') return sendJson(res, 200, { ordner: settings.saveDir, spielstaende: await spielstaende(), megaprints: megaprintListe(), kartenbild: ['Map_0-0', 'Map_0-1', 'Map_1-0', 'Map_1-1'].every((n) => kartenKachel(n)), editor3d: finde3d() });
+      if (p === '/api/karte/liste') return sendJson(res, 200, { ordner: settings.saveDir, spielstaende: await spielstaende(), megaprints: megaprintListe(), kartenbild: ['Map_0-0', 'Map_0-1', 'Map_1-0', 'Map_1-1'].every((n) => kartenKachel(n)) });
       if (p.startsWith('/api/karte/kachel/')) {
         const f = kartenKachel(decodeURIComponent(p.slice('/api/karte/kachel/'.length)));
         if (!f) return sendJson(res, 404, { fehler: 'Kein Kartenbild' });
@@ -1263,7 +1243,33 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/pixelbild/vorschau' && req.method === 'POST') return sendJson(res, 200, await pixelVorschau(await readJsonBody(req)));
       if (p === '/api/pixelbild/blaupause' && req.method === 'POST') return sendJson(res, 200, await pixelSpeichern(await readJsonBody(req)));
       if (p === '/api/karte/blaupause' && req.method === 'POST') return sendJson(res, 200, await karteZuBlaupause(await readJsonBody(req)));
-      if (p === '/api/karte/3d' && req.method === 'POST') return sendJson(res, 200, oeffne3d((await readJsonBody(req)).id));
+      // Welt-Ansicht: Gelände-Kacheln in Detailstufen, Bauteile eines Spielstands mit voller Drehung
+      if (p.startsWith('/api/welt/felsen/')) { // Fels-Modelle + Platzierungen (werkzeuge/gelaende --felsen-modelle)
+        const n = p.slice('/api/welt/felsen/'.length);
+        if (!['index.json', 'meshes.bin', 'platzierungen.bin'].includes(n)) throw Object.assign(new Error('Unbekannte Datei'), { status: 404 });
+        const f = path.join(DATA_DIR, 'welt', 'felsen', n);
+        if (!fs.existsSync(f)) throw Object.assign(new Error('Keine Fels-Daten (werkzeuge/gelaende --felsen-modelle)'), { status: 404 });
+        const d = await fsp.readFile(f);
+        res.writeHead(200, { 'Content-Type': n.endsWith('.json') ? 'application/json' : 'application/octet-stream', 'Cache-Control': 'max-age=3600', 'Content-Length': d.length }); return res.end(d);
+      }
+      if (p === '/api/welt/info') { const h = weltHoehen(); return sendJson(res, 200, { gelaende: h ? h.kopf : null, kachel: KACHEL }); }
+      if (p === '/api/welt/kachel') {
+        const h = weltHoehen(); if (!h) throw Object.assign(new Error('Keine Geländedaten (werkzeuge/gelaende --raster 100)'), { status: 404 });
+        const lod = Math.max(0, Math.min(8, +url.searchParams.get('lod') | 0)), d = Buffer.from(weltKachel(h, lod, +url.searchParams.get('x') | 0, +url.searchParams.get('y') | 0).buffer);
+        res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'max-age=3600', 'Content-Length': d.length }); return res.end(d);
+      }
+      if (p === '/api/welt/daten') {
+        const id = url.searchParams.get('id') || '';
+        if (!/^[^\\/:*?"<>|]+\/[^\\/:*?"<>|]+\.sav$/i.test(id)) throw Object.assign(new Error('Bitte einen Spielstand wählen.'), { status: 400 });
+        const d = packen(weltDaten(await fsp.readFile(path.join(settings.saveDir, ...id.split('/')))));
+        res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store', 'Content-Length': d.length }); return res.end(d);
+      }
+      if (p === '/api/welt/blaupause') {
+        const q = { name: url.searchParams.get('name'), session: url.searchParams.get('session'), ablage: url.searchParams.get('ablage') ?? undefined };
+        const d = packen(blaupauseDaten(await loadBpFile(weltBpPfad(q)), q.name));
+        res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store', 'Content-Length': d.length }); return res.end(d);
+      }
+      if (p === '/api/welt/spielstand' && req.method === 'POST') return sendJson(res, 200, await weltSpielstand(await readJsonBody(req)));
       if (p === '/api/karte/daten') {
         const d = await karte(url.searchParams.get('id'));
         res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store', 'Content-Length': d.length });

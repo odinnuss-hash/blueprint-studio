@@ -102,13 +102,13 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>再配布と改変:</b> 販売、貸与、商用利用、ならびに改変版やプログラムの一部を公式リポジトリ以外で公開することは、作者の事前の明示的な同意がある場合にのみ許可されます。GitHub 利用規約の範囲内での GitHub 上の閲覧とフォーク、および改善提案(Issue、Pull Request)は大歓迎です。作者およびこの著作権に関する表示を削除してはなりません。基準となるのはファイル <code>LICENSE</code> です。</li>
   <li><b>保証と責任:</b> 本プログラムは無保証で提供されます。利用は自己責任で行ってください。設計図やセーブデータを編集、名前変更、上書きする前にバックアップを作成してください。アプリは上書き時に自動でバックアップを作成し、名前の変更を記録します。データの消失、セーブデータの破損、その他の損害について、法律で認められる範囲において一切の責任を負いません。</li>
   <li><b>第三者のコンテンツ:</b> <i>Satisfactory</i>、ゲームデータ(<code>CommunityResources</code>)、アイコン、3D モデル、ゲームのグラフィックは Coffee Stain Studios の所有物です。これらは正規に入手した自分のゲームインストールから私的利用のためにのみ読み込みまたはエクスポートされ、再配布してはなりません。Blueprint Studio は非公式のファン製ツールであり、Coffee Stain Studios とは一切関係ありません。他のプレイヤーの設計図は、それぞれの作成者の著作物です。</li>
-  <li><b>外部プログラム:</b> FModel と「Satisfactory 3D Map」は、それぞれの開発者による独立したオープンソースプログラムであり、各自のライセンスに従います。Blueprint Studio にはそれらのプログラムコードは含まれておらず、インストールされている場合に起動するだけです。この翻訳は便宜上のものであり、ドイツ語版が正本です。</li>
+  <li><b>外部プログラム:</b> FModel は開発者による独立したオープンソースプログラムであり、そのライセンスに従います。Blueprint Studio にはそのプログラムコードは含まれておらず、インストールされている場合に起動するだけです。この翻訳は便宜上のものであり、ドイツ語版が正本です。</li>
 </ol>
 <h3>構成要素と第三者のライセンス</h3>
 <table>
   <tr><th style="width:200px">ゲームコンテンツ</th><td><i>Satisfactory</i>、ゲームデータ、アイコン、3D モデル、マップ画像(タイル <code>Map_0-0 … Map_1-1</code>): Copyright © Coffee Stain Studios AB. 自分のゲームインストールからのみ、または私的利用のみ。再配布禁止。</td></tr>
   <tr><th>アイコン</th><td>Fonticons, Inc. の <a href="https://fontawesome.com" target="_blank" rel="noopener">Font Awesome Free</a> 6.7.2 – アイコンは <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> に基づきます(ライセンス: fontawesome.com/license/free)。アプリのアイコン(建物入りの六角形)はオリジナルデザインです。</td></tr>
-  <tr><th>3D エディター(任意)</th><td>moritz-h(GitHub)による <a href="https://github.com/moritz-h/satisfactory-3d-map" target="_blank" rel="noopener">Satisfactory 3D Map</a> – GPL-3.0。独立したプログラムとして起動するだけです。</td></tr>
+  <tr><th>マップ画像のダウンロード(任意)</th><td>希望に応じて、アシスタントが moritz-h による GitHub プロジェクト <a href="https://github.com/moritz-h/satisfactory-3d-map" target="_blank" rel="noopener">satisfactory-3d-map</a> から 4 枚のタイルをダウンロードします。画像自体はゲームのものです(上記参照)。</td></tr>
   <tr><th>FModel(任意)</th><td>4sval による <a href="https://github.com/4sval/FModel" target="_blank" rel="noopener">FModel</a> – GPL-3.0。必要に応じてアシスタントが公式の GitHub リリースからダウンロードし、独立したプログラムとして起動するだけです。</td></tr>
   <tr><th>CUE4Parse(抽出ツール)</th><td>FabianFG による <a href="https://github.com/FabianFG/CUE4Parse" target="_blank" rel="noopener">CUE4Parse</a> – Apache-2.0。同梱されず、「モデルを自動で取得」の際に GitHub からソースコードとしてダウンロードされ、自分の PC で補助プログラム <code>werkzeuge\extraktor</code> としてビルドされます。補助ライブラリ Oodle(OodleUE)と zlib-ng は自身でダウンロードします。</td></tr>
   <tr><th>.NET 10 SDK</th><td>Microsoft による <a href="https://dotnet.microsoft.com" target="_blank" rel="noopener">.NET</a> – MIT ライセンス。同梱されず、必要に応じて winget でインストールされます。</td></tr>
@@ -302,7 +302,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>マップ</b>(上部のチェック): ゲームワールドを背景に表示します。4 枚のタイルは <code>userdata\kartenbild</code> にあります(<code>Map_0-0 … Map_1-1</code>、各 3.75 × 3.75 km)。</li>
   <li><b>高さ 下限 – 上限</b>(メートル): この範囲内のパーツだけを表示します。例: 大きな工場の 1 フロアだけ。</li>
   <li>右の<b>種類別の建物</b>: すべての機械、発電機、保管、鉄道などとその数。<b>チェックを入れる</b>とそれらが強調され、それ以外は暗くなります(複数チェック可。グループのチェックでグループ全体、例: すべてのパイプ)。上部の<b>「すべて通常」</b>または <kbd>Esc</kbd> で元に戻ります。</li>
-  <li><b>3D で開く</b>: セーブデータを 3D エディター「Satisfactory 3D Map」で開きます(下記参照)。</li>
+  <li><b>3D で開く</b>: セーブデータを<a href="#welt">ワールドビュー</a>(地形付き 3D、下記参照)で表示します。</li>
 </ul>
 <p>マップ自体はセーブデータを変更しません。</p>
 <h3>範囲を設計図として切り出す</h3>
@@ -324,15 +324,16 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>4 つのテクスチャ <code>Map_0-0</code>、<code>Map_0-1</code>、<code>Map_1-0</code>、<code>Map_1-1</code> を選択 → 右クリック → <i>Save Texture</i>(PNG)。</li>
   <li><code>werkzeuge\kartenbild-uebernehmen.bat</code> を実行します。FModel のエクスポートから画像を探し、<code>userdata\kartenbild</code> に配置します(古い画像は <code>.alt</code> として残ります)。</li>
 </ol>
-<h3>3D エディター「Satisfactory 3D Map」</h3>
-<p>moritz-h による独立したオープンソースプログラム(GPL-3.0)で、セーブデータのすべてのオブジェクトを 3D で表示し、そのプロパティを編集できます。Blueprint Studio は選んだセーブデータでこれを起動するだけです。</p>
-<ol>
-  <li><a href="https://github.com/moritz-h/satisfactory-3d-map/releases" target="_blank" rel="noopener">github.com/moritz-h/satisfactory-3d-map/releases</a> から最新の Windows 版をダウンロードします(1.2 のセーブデータには v0.10 以降)。</li>
-  <li>展開します。例: <code>werkzeuge\Satisfactory3DMap</code> へ – そこならアプリが自動で見つけます。別の場所にある場合: <b>設定 → 3D エディター</b>にフォルダーまたは <code>.exe</code> を入力します。</li>
-  <li>マップでセーブデータを選択 → <b>3D で開く</b>。</li>
-</ol>
-<p>Blueprint Studio は起動時に 3D エディターを、あなたのゲームファイルから<b>実際のゲームモデル</b>を読み込むように設定します(設定でオフにできます)。そのためにはファイル <code>oodle-data-shared.dll</code> が必要です。アプリはこれを FModel フォルダーから自動でコピーします(FModel は初回起動時に自分でダウンロードします)。ファイルがない場合、エディターはゲームモデルなしで起動します。3D エディターは独自のウィンドウを持つ別のプログラムです – ウィンドウを切り替えずにすばやく見たい場合は、マップの「3D で表示」を使ってください。</p>
-<p><b>注意:</b> そこでの変更は自分で保存します。事前にセーブデータをバックアップし、同じセーブデータをゲームで同時に開かないでください。</p>
+<h3 id="welt">ワールドビュー(地形付き 3D)</h3>
+<p><b>ワールド</b>では、ゲームの世界全体を 3D で表示します – 1 m 解像度の地形にマップ画像を重ね、岩や崖は実際のゲームモデルで表示し、必要ならセーブデータのすべての部品も表示します。ゲームを起動せずに計画するためのもので、ゲームの代わりにはなりません。</p>
+<ul>
+  <li>上部でセーブデータを選択 → <b>読み込む</b>(またはマップで <b>3D で開く</b>)。セーブデータなし: 地形のみ。</li>
+  <li>ビューをクリックしてから <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> で飛行、<kbd>Q</kbd>/<kbd>E</kbd> で下降/上昇、<kbd>Shift</kbd> で高速。マウスをドラッグ = 見回す、マウスホイール = 前進/後退。速度は飛行高度に合わせて変わります。</li>
+  <li><b>設計図を配置</b>: 「設計図を配置」で保管庫またはゲームのセッションから設計図を検索 → <b>配置</b>。青いプレビューがマウスに追従し、見えている面(地形・岩・建物)の上に乗ります。<b>クリック</b>で配置(何度でも可、緑 = 配置済み)、<kbd>R</kbd> で 90° 回転(<kbd>Shift</kbd>+<kbd>R</kbd> で 15°)、<kbd>Page↑</kbd>/<kbd>Page↓</kbd> で高さを 1 m 変更(<kbd>Shift</kbd> で 4 m)、<kbd>Esc</kbd> で終了。その後、名前を入力 → <b>セーブデータに保存</b>: 読み込んだセーブデータの隣に<b>新しい</b>セーブファイルが作られ、元のファイルは変更されません。</li>
+  <li><b>既存の部品を変更</b>: 読み込んだセーブデータの部品を<b>クリック</b>すると選択されます(黄色)。<kbd>Ctrl</kbd>+クリックで追加・解除。<kbd>矢印キー</kbd>で視線方向に最も近い軸に沿って 1 m 移動(<kbd>Shift</kbd> = 8 m、土台のグリッド)、<kbd>Page↑</kbd>/<kbd>Page↓</kbd> で高さ、<kbd>R</kbd> で選択の中心を軸に回転、<kbd>Del</kbd> で削除。<kbd>Esc</kbd> または地形をクリックで選択を確定、<b>破棄</b>ですべての変更を取り消します。保存は配置と同様に<b>新しい</b>ファイルに行います。削除した機械は電線も一緒に削除されます。ベルトとパイプは(まだ)選択できず、そのまま残ります。</li>
+  <li>見回す向きが逆に感じる場合は<b>マウスの左右を反転</b>(記憶されます)。</li>
+  <li>地形と岩は、補助プログラム <code>werkzeuge\gelaende</code> がゲームファイルから一度だけ <code>userdata\gelaende</code> と <code>userdata\welt</code> に取り出します。ワールドビューはセーブデータを変更しません。</li>
+</ul>
 
 <h2 class="sec" id="megaprints">Megaprint (.cbp)</h2>
 <p>Megaprint は <i>satisfactory-calculator.com</i> からのエクスポートです(拡張子 <code>.cbp</code>、すべてのオブジェクトを位置とプロパティ付きで含む圧縮 JSON)。マップはこれらをセーブデータの下に一覧表示し(フォルダーは設定で指定。例: <code data-pfad="megaprints">…\Megaprints</code>、<code>_Archiv</code> を除く)、ワールドマップ上の元の位置に表示します – 階層、強調、「種類別の建物」も使えます。非常に大きな Megaprint(400 MB の JSON、300,000 パーツ)も約 2 秒で読み込めます。ただし、ベルトとパイプは今のところ線ではなく点として表示されます。</p>
@@ -354,11 +355,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>セーブデータ</b> – 「ゲームに入れる」で設計図をどのセーブデータに置くか(または毎回確認)。</li>
   <li><b>3D 表示</b> – <i>シンプルな箱</i>(すぐに完了)または<i>実際のゲームモデル</i>。</li>
   <li><b>ゲームモデル</b>(「実際のゲームモデル」を選んだ場合のみ)– 「モデルを自動で取得」をクリックするだけで<b>自動</b>: 初回はアプリが Microsoft の無料の <b>.NET 10 SDK</b> をインストールし(Windows が許可を求めることがあります)、無料ライブラリ <i>CUE4Parse</i>(FModel と同じもの)をダウンロードして小さな補助プログラム(<code>werkzeuge\extraktor</code>)をビルドし、それを使ってパーツデータ・3D モデル・アイコンをゲームのインストールから直接取り出します。進行状況と出力はウィンドウに表示されます。初回は約 5〜15 分、以降はずっと速くなります。うまくいかない場合は、その下に FModel を使う<b>手動</b>の手順も残っています(.NET デスクトップランタイム 10 をインストール、FModel をダウンロード、値を入力 – それぞれ<b>コピー</b>ボタン付き –、3 つのエクスポートをクリック、「取り込み」)。</li>
-  <li><b>その他</b> – マップ画像、3D エディター「Satisfactory 3D Map」、デスクトップのショートカット。</li>
+  <li><b>その他</b> – マップ画像、デスクトップのショートカット。</li>
 </ol>
-<p>さらに<b>設定 → 前提条件とショートカット</b>で、いつでも次を確認できます: Node.js、ゲームのインストール、セーブデータフォルダー、アプリのウィンドウ(Edge/Chrome)、3D モデル、アイコン、マップ画像、3D エディター、デスクトップのショートカット – ワンクリックで追加インストールできるもの:</p>
+<p>さらに<b>設定 → 前提条件とショートカット</b>で、いつでも次を確認できます: Node.js、ゲームのインストール、セーブデータフォルダー、アプリのウィンドウ(Edge/Chrome)、3D モデル、アイコン、マップ画像、デスクトップのショートカット – ワンクリックで追加インストールできるもの:</p>
 <ul>
-  <li><b>3D エディター</b>「Satisfactory 3D Map」– GitHub から最新の Windows 版を <code>werkzeuge\Satisfactory3DMap</code> へ。</li>
   <li><b>マップ画像</b> – satisfactory-3d-map プロジェクトの 4 枚のタイル(0.6 時点。最新の状態にするには FModel で置き換えてください)。</li>
   <li><b>デスクトップのショートカット</b> – デスクトップとスタートメニューに、アイコン付きで。</li>
 </ul>
@@ -366,12 +366,12 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h3 id="updates">アップデート</h3>
 <p>Blueprint Studio は起動時(最大 6 時間ごと)に GitHub で新しいバージョンを探します。見つかると上部に <b>⬆ アップデート</b> ボタンが表示されます: 新機能を表示し、<b>今すぐアップデート</b>でインストールします。その後アプリは再読み込みされ、サーバーも自動で再起動します。手動の場合: <b>設定 → アップデート → 今すぐアップデートを確認</b>。</p>
 <ul>
-  <li><b>保持されるもの:</b> 設定と <code>userdata</code> 内のすべて、設計図、3D モデル、アイコン、FModel、3D エディター、抽出ツールのファイル。</li>
+  <li><b>保持されるもの:</b> 設定と <code>userdata</code> 内のすべて、設計図、3D モデル、アイコン、FModel、抽出ツールのファイル。</li>
   <li><b>バックアップ:</b> 置き換えられるプログラムファイルは事前に <code>userdata\update-sicherung\&lt;旧バージョン&gt;</code> にコピーされます – 元に戻すには、これらのファイルをプログラムフォルダーにコピーし直すだけです。</li>
   <li><b>取得元:</b> GitHub プロジェクトのリリース(<code>app\update.json</code> に設定)。設定で別の取得元を指定できます。自動確認もそこでオフにできます。</li>
 </ul>
 <h3>公開(例: GitHub)</h3>
-<p>プログラムフォルダー内のファイル <code>.gitignore</code> は、公開してはならないものや個人的なものをすべて除外します: <code>userdata</code>、モデル、アイコン、マップ画像、FModel、3D エディター、設計図/セーブデータ。ヘルプには固定のパスは含まれておらず、常にあなた自身の設定にあるフォルダーを表示します。</p>
+<p>プログラムフォルダー内のファイル <code>.gitignore</code> は、公開してはならないものや個人的なものをすべて除外します: <code>userdata</code>、モデル、アイコン、マップ画像、FModel、設計図/セーブデータ。ヘルプには固定のパスは含まれておらず、常にあなた自身の設定にあるフォルダーを表示します。</p>
 <p><b>アップデートの公開:</b> <code>app\server.mjs</code>(<code>VERSION</code>)と <code>app\public\js\main.js</code>(<code>APP_VERSION</code>)のバージョン番号を上げてアップロードし(GitHub Desktop: <i>Commit</i> → <i>Push</i>)、GitHub の <i>Releases → Draft a new release</i> でタグ <code>v</code> + バージョン番号(例: <code>v1.1.0</code>)と新機能の短い説明を付けてリリースを公開します。インストール済みのすべてのアプリが次回起動時にアップデートを提案します。</p>
 
 <h2 class="sec" id="einstellungen">設定</h2>
