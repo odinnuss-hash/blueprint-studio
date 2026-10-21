@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">About the app</h2>
 <table>
   <tr><th style="width:200px">Program</th><td><b>Blueprint Studio</b> – blueprint tool for Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version" data-version>1.4.1</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.4.2</td></tr>
   <tr><th>Author</th><td><b>ODINnuss</b> – idea, concept and design</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. All rights reserved.</td></tr>
   <tr><th>Implementation</th><td>Programmed on behalf of the author with AI assistance (Claude, Anthropic).</td></tr>
@@ -262,9 +262,9 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Renaming when moving:</b> if you drag a blueprint into a folder of another group (e.g. from <code>1_1</code> to <code>2_6</code>), the app adjusts the group code at the front of the name: <code>1_1_House</code> → <code>2_6_House</code>. Topic subfolders use the code of their folder; names and folders without a code stay unchanged.</li>
 </ul>
 <h3 id="spiel-kategorien">Categories in the game (blueprint menu)</h3>
-<p>When you bring blueprints from the archive into the game, the app sorts them into the <b>game’s blueprint menu</b> right away: main group → <b>category</b> (e.g. “Building”), subgroup → <b>subcategory</b> (e.g. “Buildings &amp; halls”); the topic subfolders of the archive do not exist in the game. The game stores this layout <b>in the save</b> – so the app changes the <b>newest save</b> of the session (often an autosave) and backs up <b>the original once</b> to <code>userdata\sicherungen\spielstaende</code> beforehand.</p>
+<p>When you bring blueprints from the archive into the game, the app sorts them into the <b>game’s blueprint menu</b> right away: main group → <b>category</b> (e.g. “Building”), subgroup → <b>subcategory</b> (e.g. “Buildings &amp; halls”); the topic subfolders of the archive do not exist in the game. The game stores this layout <b>in the save</b> – so the app changes <b>all saves of the session</b> (there is no telling which one you load next) and backs up <b>each original once</b> to <code>userdata\sicherungen\spielstaende</code> beforehand.</p>
 <ul>
-  <li><b>Keep the game closed:</b> if the game is running, the app remembers the change and applies it as soon as the game is closed (keep the app open). Then load the newest save.</li>
+  <li><b>The game may be running:</b> the app writes right away. The game only reads the layout when loading – so <b>reload</b> the save in the game. Saves the game is writing at that moment are skipped.</li>
   <li><b>Icons:</b> set an icon once per category in the game (“Change”) – the app reads it next time and uses it for new saves as well. The default is the house.</li>
   <li>Categories you created yourself in the game are kept. Blueprints without a group are listed under “Undefined”.</li>
 </ul>
@@ -601,7 +601,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Models are rotated/offset in the app</td><td>The FModel mesh format must be <code>glTF 2.0 (binary)</code>; run the tool again.</td></tr>
   <tr><td>Gray boxes instead of models</td><td>A model is missing for this part (see the tool's message) – or it is a belt/pipeline/railway/lift (intentionally without a model).</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.4.1</span> · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.4.2</span> · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

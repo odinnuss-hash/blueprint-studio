@@ -384,8 +384,7 @@ export class AblageUI {
     try {
       const r = await post('spielkategorien', { session });
       if (r.laeuft) return; // läuft schon – wird danach noch einmal gemacht
-      if (r.wartet) { this.app.toast('Das Spiel läuft – die Kategorien im Spiel werden gesetzt, sobald es geschlossen ist (App dabei offen lassen).'); return; }
-      this.app.toast(`Kategorien im Spiel gesetzt: Spielstand „${r.spielstand}“${r.grund ? ` (${r.grund})` : ''}, ${r.zugeordnet} Blaupausen.`, 'ok');
+      this.app.toast(`Kategorien im Spiel gesetzt – in allen ${r.anzahl} Spielständen der Sitzung${r.uebersprungen ? ` (${r.uebersprungen} übersprungen)` : ''}, ${r.zugeordnet} Blaupausen.${r.spielLaeuft ? ' Im Spiel den Spielstand neu laden, damit sie erscheinen.' : ''}`, 'ok');
     } catch (e) { this.app.toast('Kategorien im Spiel: ' + e.message, 'err'); }
   }
   ordnerSchalten(k, aktiv) {

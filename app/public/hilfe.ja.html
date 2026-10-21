@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">アプリについて</h2>
 <table>
   <tr><th style="width:200px">プログラム</th><td><b>Blueprint Studio</b> – Satisfactory 用の設計図ツール</td></tr>
-  <tr><th>バージョン</th><td id="za-version" data-version>1.4.1</td></tr>
+  <tr><th>バージョン</th><td id="za-version" data-version>1.4.2</td></tr>
   <tr><th>作者</th><td><b>ODINnuss</b>– アイデア、コンセプト、デザイン</td></tr>
   <tr><th>著作権</th><td>© 2026 ODINnuss. 無断複製・転載を禁じます。</td></tr>
   <tr><th>実装</th><td>作者の依頼により AI の支援(Claude、Anthropic)を受けてプログラミングされました。</td></tr>
@@ -262,9 +262,9 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>移動時の名前変更：</b>設計図を別グループのフォルダーへドラッグすると（例：<code>1_1</code>から<code>2_6</code>）、名前の先頭のグループコードを調整します：<code>1_1_Haus</code> → <code>2_6_Haus</code>。テーマ用サブフォルダーは親フォルダーのコードを使い、コードのない名前やフォルダーは変わりません。</li>
 </ul>
 <h3 id="spiel-kategorien">ゲーム内のカテゴリ（設計図メニュー）</h3>
-<p>保管庫から設計図をゲームへ戻すと、アプリは<b>ゲームの設計図メニュー</b>でもすぐに振り分けます：メイングループ → <b>カテゴリ</b>、サブグループ → <b>サブカテゴリ</b>。保管庫のテーマ別サブフォルダーはゲームにはありません。ゲームはこの分類を<b>セーブデータの中</b>に保存するため、アプリはそのセッションの<b>最新のセーブデータ</b>（多くはオートセーブ）を変更し、事前に<b>一度だけ元のファイル</b>を <code>userdata\sicherungen\spielstaende</code> にバックアップします。</p>
+<p>保管庫から設計図をゲームへ戻すと、アプリは<b>ゲームの設計図メニュー</b>でもすぐに振り分けます：メイングループ → <b>カテゴリ</b>、サブグループ → <b>サブカテゴリ</b>。保管庫のテーマ別サブフォルダーはゲームにはありません。ゲームはこの分類を<b>セーブデータの中</b>に保存するため、アプリはそのセッションの<b>すべてのセーブデータ</b>を変更し（次にどれを読み込むかは分からないため）、事前にそれぞれ<b>一度だけ元のファイル</b>を <code>userdata\sicherungen\spielstaende</code> にバックアップします。</p>
 <ul>
-  <li><b>ゲームは閉じておく：</b>ゲームの起動中は変更を記憶し、終了したらすぐに反映します（アプリは開いたままにしてください）。その後、最新のセーブデータを読み込みます。</li>
+  <li><b>ゲーム起動中でも可：</b>アプリはすぐに書き込みます。ゲームは読み込み時にのみ分類を読むため、ゲーム内でセーブデータを<b>読み込み直して</b>ください。ゲームが保存中のセーブデータはスキップされます。</li>
   <li><b>アイコン：</b>ゲーム内でカテゴリごとに一度アイコンを設定してください（「変更」）。アプリは次回それを読み取り、新しいセーブデータにも使います。既定は家のアイコンです。</li>
   <li>ゲーム内で自分で作ったカテゴリはそのまま残ります。グループのない設計図は「未分類」に入ります。</li>
 </ul>
@@ -601,7 +601,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>アプリ内でモデルが回転/ずれている</td><td>FModel の Mesh Format は <code>glTF 2.0 (binary)</code> である必要があります。ツールを再度実行してください。</td></tr>
   <tr><td>モデルの代わりに灰色の箱が表示される</td><td>このパーツのモデルがありません(ツールのメッセージ参照)– またはベルト/パイプ/線路/リフトです(意図的にモデルなし)。</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.4.1</span> · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.4.2</span> · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

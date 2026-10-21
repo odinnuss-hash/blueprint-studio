@@ -1,6 +1,7 @@
 // 3D-Ansicht mit WebGL 2: echte Spielmodelle (aus FModel aufbereitet, siehe werkzeuge/modelle-aufbereiten.mjs),
 // Kaesten fuer alles ohne Modell, Splines (Foerderbaender, Rohre, Schienen) als Segmente.
 // Linke Maustaste: drehen · rechte/mittlere: verschieben · Mausrad: Zoom · Klick: auswaehlen.
+import { teileDynamisch } from './teile.js';
 
 const VS = `#version 300 es
 layout(location=0) in vec3 aPos;
@@ -259,7 +260,11 @@ export class View3DGL {
     return this.models.promise;
   }
   partsFor(o) {
-    if (!this.useModels || this.models.state !== 'bereit' || o.sp || o.lt || NO_MESH.test(o.cls)) return null;
+    if (!this.useModels || this.models.state !== 'bereit' || o.sp || NO_MESH.test(o.cls)) return null;
+    // Lifte und Stützen/Masten wie im Spiel aus Teilen (Höhe aus der Blaupause; js/teile.js)
+    const dyn = teileDynamisch(this.models.index, o.cls, o.lt ? o.lt[2] : (o.pv != null ? (o.pv + 1) * 100000 : 0) + (o.h || 0));
+    if (dyn) return dyn;
+    if (o.lt) return null;
     return this.models.index.klassen[o.cls] || null;
   }
 

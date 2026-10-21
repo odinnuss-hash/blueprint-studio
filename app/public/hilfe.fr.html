@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">À propos de l'app</h2>
 <table>
   <tr><th style="width:200px">Programme</th><td><b>Blueprint Studio</b> – outil de plans pour Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version" data-version>1.4.1</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.4.2</td></tr>
   <tr><th>Auteur</th><td><b>ODINnuss</b> – idée, concept et conception</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Tous droits réservés.</td></tr>
   <tr><th>Réalisation</th><td>Programmé pour le compte de l'auteur avec l'aide de l'IA (Claude, Anthropic).</td></tr>
@@ -262,9 +262,9 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Renommer en déplaçant :</b> si tu glisses un plan dans un dossier d’un autre groupe (p. ex. de <code>1_1</code> vers <code>2_6</code>), l’application adapte le code de groupe au début du nom : <code>1_1_Maison</code> → <code>2_6_Maison</code>. Les sous-dossiers thématiques reprennent le code de leur dossier ; les noms et dossiers sans code restent inchangés.</li>
 </ul>
 <h3 id="spiel-kategorien">Catégories dans le jeu (menu des plans)</h3>
-<p>Quand vous ramenez des plans de la réserve dans le jeu, l’application les range aussitôt dans le <b>menu des plans du jeu</b> : groupe principal → <b>catégorie</b>, sous-groupe → <b>sous-catégorie</b> ; les sous-dossiers thématiques de la réserve n’existent pas dans le jeu. Le jeu enregistre ce classement <b>dans la sauvegarde</b> – l’application modifie donc la <b>sauvegarde la plus récente</b> de la session (souvent une sauvegarde automatique) et copie <b>une seule fois l’original</b> dans <code>userdata\sicherungen\spielstaende</code> auparavant.</p>
+<p>Quand vous ramenez des plans de la réserve dans le jeu, l’application les range aussitôt dans le <b>menu des plans du jeu</b> : groupe principal → <b>catégorie</b>, sous-groupe → <b>sous-catégorie</b> ; les sous-dossiers thématiques de la réserve n’existent pas dans le jeu. Le jeu enregistre ce classement <b>dans la sauvegarde</b> – l’application modifie donc <b>toutes les sauvegardes de la session</b> (impossible de savoir laquelle sera chargée ensuite) et copie <b>une seule fois chaque original</b> dans <code>userdata\sicherungen\spielstaende</code> auparavant.</p>
 <ul>
-  <li><b>Garder le jeu fermé :</b> si le jeu tourne, l’application retient la modification et l’applique dès sa fermeture (laissez l’application ouverte). Chargez ensuite la sauvegarde la plus récente.</li>
+  <li><b>Le jeu peut tourner :</b> l’application écrit immédiatement. Le jeu ne lit le classement qu’au chargement – <b>rechargez</b> donc la sauvegarde dans le jeu. Les sauvegardes que le jeu est en train d’écrire sont ignorées.</li>
   <li><b>Icônes :</b> choisissez une fois une icône par catégorie dans le jeu (« Modifier ») – l’application la lit la fois suivante et l’utilise aussi pour les nouvelles sauvegardes. Par défaut : la maison.</li>
   <li>Les catégories créées vous-même dans le jeu sont conservées. Les plans sans groupe figurent sous « Non défini ».</li>
 </ul>
@@ -601,7 +601,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Les modèles sont tournés/décalés dans l'app</td><td>Le format de mesh de FModel doit être <code>glTF 2.0 (binary)</code> ; relancez l'outil.</td></tr>
   <tr><td>Boîtes grises au lieu des modèles</td><td>Il manque un modèle pour cet élément (voir le message de l'outil) – ou il s'agit d'un convoyeur/tuyau/rail/ascenseur (volontairement sans modèle).</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.4.1</span> · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.4.2</span> · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

@@ -30,7 +30,6 @@ import { bereichAlsBlaupause } from './lib/extrahieren.mjs';
 import { scannen, planen, anwenden, rueckgaengig, vorschau, GRUPPEN, GRUPPE_NAME, GRUPPEN_STANDARD, GRUPPEN_NEU, setGruppen, setPraefixe, setThemenUebersetzung, MAXLEN, pass, merkmale, lernen, vorschlagGelernt, ablageOrdner, strukturOrdner } from './lib/ordnen.mjs';
 import { Ablage } from './lib/ablage.mjs';
 import { kategorienSchreiben, SYMBOL_STANDARD } from './lib/spielkategorien.mjs';
-import { zuletztGeladen, zielWaehlen } from './lib/spielziel.mjs';
 import { Einrichtung, findeSpielOrdner, ordnerWaehlen } from './lib/einrichtung.mjs';
 import { Updater } from './lib/update.mjs';
 
@@ -44,7 +43,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '1.4.1';
+const VERSION = '1.4.2';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 
@@ -253,6 +252,8 @@ function bpToClient(bp, session, name, cfg) {
     if (o.swatch) e.w = o.swatch;
     if (o.spline) e.sp = o.spline;
     if (o.liftTop) e.lt = o.liftTop;
+    if (o.hoehe !== undefined) e.h = r1(o.hoehe); // Stützen/Masten: Höhe und gewählte Stangen-Variante (3D-Modell)
+    if (o.stangeNr !== undefined) e.pv = o.stangeNr;
     if (o.length) e.len = o.length;
     ents.push(e);
   }
@@ -720,8 +721,11 @@ async function spielstaende() {
   return out.sort((a, b) => b.geaendert - a.geaendert);
 }
 // ------------------------------------------------------------------ Kategorien im Bauplan-Menü des Spiels
-// Das Spiel speichert die Einteilung je Spielstand. Beim Holen ins Spiel wird der Spielstand angepasst, mit dem gespielt wird
-// (lib/spielziel.mjs: zuletzt im Spiel geladener bzw. danach vom Spiel gespeicherter Stand der Sitzung, laut Spielprotokoll)
+// Das Spiel speichert die Einteilung je Spielstand. Beim Holen ins Spiel werden ALLE Spielstände der Sitzung angepasst –
+// welcher als Nächstes geladen wird, lässt sich nicht vorhersagen (gemessen 21.10.2026: geschrieben in den zuletzt geladenen,
+// geladen wurde ein anderer). Neue Speicherstände des Spiels übernehmen die Einteilung vom geladenen Stand.
+// Auch bei laufendem Spiel wird sofort geschrieben: Das Spiel liest einen Stand erst beim Laden, im Spiel genügt also neu laden.
+// Stände, die das Spiel gerade speichert (jünger als 15 s oder während des Schreibens verändert), werden übersprungen.
 // (vorher einmalig als Original in userdata\sicherungen\spielstaende gesichert); Hauptgruppe → Kategorie, Untergruppe →
 // Unterkategorie, Namen ohne Nummer. Symbole: im Spiel einmal einstellen – die App merkt sie sich (settings.spielSymbole).
 const SPIEL_SICHERUNG = () => path.join(DATA_DIR, 'sicherungen', 'spielstaende');
@@ -757,40 +761,45 @@ function spielZuordnung(session) {
 /** gemerkte Symbole (je Hauptgruppen-Nummer) → { Kategoriename in der aktuellen Struktur: IconID } */
 const symboleNachName = () => Object.fromEntries(Object.entries(settings.spielSymbole || {}).map(([c, id]) => [GRUPPE_NAME[c] ?? c, id]));
 let spielKatLauf = null, spielKatNochmal = new Set();
-// Läuft das Spiel, wird gewartet: alle 20 s prüfen, dann für die vorgemerkten Sitzungen nachholen
-const spielKatWartet = new Set();
-setInterval(async () => {
-  if (!spielKatWartet.size || spielKatLauf || (await spielLaeuft())) return;
-  const l = [...spielKatWartet]; spielKatWartet.clear();
-  for (const s of l) await spielKategorienSetzen(s).catch((e) => log('Kategorien: ' + e.message));
-}, 20000).unref();
 async function spielKategorienSetzen(session) {
   if (spielKatLauf) { spielKatNochmal.add(session); return { laeuft: true }; }
   spielKatLauf = (async () => {
-    if (await spielLaeuft()) { spielKatWartet.add(session); log(`Kategorien für „${session}“ vorgemerkt – Spiel läuft.`); return { wartet: true }; }
-    const ziel = zielWaehlen((await spielstaende()).filter((s) => s.sitzung === session), zuletztGeladen(path.join(path.dirname(settings.saveDir), 'Logs')), new Set(settings.appSpielstaende || []));
-    const stand = ziel?.stand;
-    if (!stand) throw Object.assign(new Error(`Kein Spielstand der Sitzung „${session}“ gefunden.`), { status: 404 });
-    const datei = path.join(settings.saveDir, ...stand.id.split('/'));
-    // einmalig das Original sichern (je Spielstand-Datei)
-    const sich = path.join(SPIEL_SICHERUNG(), stand.id.replace(/[\\/]/g, '__'));
-    if (!fs.existsSync(sich)) { await fsp.mkdir(SPIEL_SICHERUNG(), { recursive: true }); await fsp.copyFile(datei, sich); log(`Spielstand gesichert: ${sich}`); }
+    const spielAn = await spielLaeuft();
+    const staende = (await spielstaende()).filter((st) => st.sitzung === session); // neueste zuerst
+    if (!staende.length) throw Object.assign(new Error(`Kein Spielstand der Sitzung „${session}“ gefunden.`), { status: 404 });
     const { namen, zuordnung } = spielZuordnung(session);
     const rang = {};
     for (const [c, n] of GRUPPEN) { const o = ablageOrdner(c).split('/'); if (c.includes('_')) rang[`${ohneNummer(o[0])}/${n}`] = +c.split('_')[1]; else rang[n] = +c; }
-    const buf = await fsp.readFile(datei);
-    const header = readSavHeader(buf);
-    const r = kategorienSchreiben(buf, header, { zuordnung, vorhanden: new Set(namen), leerWeg: new Set(GRUPPEN.filter(([c]) => !c.includes('_')).map(([, n]) => n)), symbole: symboleNachName(), rang, unbestimmtName: { en: 'Undefined', fr: 'Non défini', ja: '未分類' }[settings.sprache] || 'Unbestimmt' });
-    // im Spiel eingestellte Symbole merken (nur eigene Gruppen, Haus = Vorgabe zählt nicht)
-    // je Hauptgruppen-Nummer gemerkt (sprachunabhängig)
-    const neu = {};
-    for (const [n, id] of Object.entries(r.symbole)) { const g = GRUPPEN.find(([c, gn]) => !c.includes('_') && gn === n); if (g && id !== SYMBOL_STANDARD) neu[g[0]] = id; }
-    if (Object.keys(neu).some((c) => settings.spielSymbole?.[c] !== neu[c])) { settings.spielSymbole = { ...(settings.spielSymbole || {}), ...neu }; await saveSettings(); }
-    // erst in eine Nachbardatei schreiben, dann ersetzen
-    const tmp = datei + '.bs-neu';
-    await fsp.writeFile(tmp, r.ausgabe); await fsp.rename(tmp, datei);
-    log(`Kategorien gesetzt in ${stand.id} (${ziel.grund}): ${r.kategorien.filter((c) => !c.undef).map((c) => `${c.name} (${c.subs.length})`).join(', ')}`);
-    return { ok: true, spielstand: stand.name, grund: ziel.grund, zugeordnet: zuordnung.length, kategorien: r.kategorien };
+    const geschrieben = [], fehler = []; let kategorien = null;
+    for (const stand of staende) {
+      const datei = path.join(settings.saveDir, ...stand.id.split('/'));
+      try {
+        if (spielAn && Date.now() - stand.geaendert < 15000) throw new Error('wird gerade vom Spiel gespeichert');
+        const vorher = await fsp.stat(datei);
+        // einmalig das Original sichern (je Spielstand-Datei)
+        const sich = path.join(SPIEL_SICHERUNG(), stand.id.replace(/[\\/]/g, '__'));
+        if (!fs.existsSync(sich)) { await fsp.mkdir(SPIEL_SICHERUNG(), { recursive: true }); await fsp.copyFile(datei, sich); log(`Spielstand gesichert: ${sich}`); }
+        const buf = await fsp.readFile(datei);
+        const r = kategorienSchreiben(buf, readSavHeader(buf), { zuordnung, vorhanden: new Set(namen), leerWeg: new Set(GRUPPEN.filter(([c]) => !c.includes('_')).map(([, n]) => n)), symbole: symboleNachName(), rang, unbestimmtName: { en: 'Undefined', fr: 'Non défini', ja: '未分類' }[settings.sprache] || 'Unbestimmt' });
+        // im Spiel eingestellte Symbole merken – nur aus dem neuesten Stand (je Hauptgruppen-Nummer, Haus = Vorgabe zählt nicht)
+        if (!geschrieben.length) {
+          const neu = {};
+          for (const [n, id] of Object.entries(r.symbole)) { const g = GRUPPEN.find(([c, gn]) => !c.includes('_') && gn === n); if (g && id !== SYMBOL_STANDARD) neu[g[0]] = id; }
+          if (Object.keys(neu).some((c) => settings.spielSymbole?.[c] !== neu[c])) { settings.spielSymbole = { ...(settings.spielSymbole || {}), ...neu }; await saveSettings(); }
+          kategorien = r.kategorien;
+        }
+        // erst in eine Nachbardatei schreiben, dann ersetzen
+        const tmp = datei + '.bs-neu';
+        await fsp.writeFile(tmp, r.ausgabe);
+        const jetzt = await fsp.stat(datei);
+        if (jetzt.mtimeMs !== vorher.mtimeMs || jetzt.size !== vorher.size) { await fsp.rm(tmp, { force: true }); throw new Error('wurde währenddessen vom Spiel gespeichert'); }
+        await fsp.rename(tmp, datei);
+        geschrieben.push(stand.name);
+      } catch (e) { fehler.push(`${stand.name}: ${e.message}`); }
+    }
+    log(`Kategorien gesetzt in ${geschrieben.length} Spielständen der Sitzung „${session}“${fehler.length ? ` (${fehler.length} übersprungen: ${fehler.slice(0, 3).join('; ')})` : ''}`);
+    if (!geschrieben.length) throw Object.assign(new Error('Kategorien konnten in keinen Spielstand geschrieben werden: ' + fehler.slice(0, 3).join('; ')), { status: 422 });
+    return { ok: true, spielstand: geschrieben[0], anzahl: geschrieben.length, uebersprungen: fehler.length, zugeordnet: zuordnung.length, kategorien, spielLaeuft: spielAn };
   })();
   try { return await spielKatLauf; }
   finally {
@@ -924,7 +933,6 @@ async function weltSpielstand(body) {
   }
   await fsp.writeFile(ziel + '.neu', daten); await fsp.rename(ziel + '.neu', ziel);
   info.sicherung = sicherung ? path.basename(sicherung) : null;
-  if (!(settings.appSpielstaende || []).includes(name)) { settings.appSpielstaende = [...(settings.appSpielstaende || []), name].slice(-200); await saveSettings(); }
   log(`Welt → Spielstand${sicherung ? ` (überschrieben, alte Datei: ${sicherung})` : ''}: ${ziel} (${setzungen.length} Blaupausen, ${info.eingefuegt} Objekte eingefügt, ${loeschen.length} gelöscht, ${verschieben.length} verschoben, Quelle ${id})`);
   return { ok: true, name, datei: path.basename(ziel), info };
 }
