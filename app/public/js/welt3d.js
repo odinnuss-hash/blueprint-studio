@@ -114,6 +114,8 @@ const CUBE = (() => {
 const BEAM = /^Build_Beam(?!_Connector|_Support)/;
 const EINS = new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 const qmul = ([ax, ay, az, aw], [bx, by, bz, bw]) => [aw * bx + ax * bw + ay * bz - az * by, aw * by - ax * bz + ay * bw + az * bx, aw * bz + ax * by - ay * bx + az * bw, aw * bw - ax * bx - ay * by - az * bz];
+// Querschnitt (Breite, Höhe in cm) für Linien-Bauteile – grob nach Spielmodellen
+const LINIE_MASS = (cls) => (/RailroadTrack/.test(cls) ? [420, 40] : /PipeHyper/.test(cls) ? [260, 260] : /Pipeline/.test(cls) ? [110, 110] : [120, 25]);
 const hexRgb = (hex) => { const n = parseInt((hex || '#8a8f99').slice(1), 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
 
 export class Welt3D {
@@ -144,7 +146,7 @@ export class Welt3D {
     this.cubeVbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.cubeVbo); gl.bufferData(gl.ARRAY_BUFFER, CUBE.pos, gl.STATIC_DRAW);
     this.cubeIbo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.cubeIbo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, CUBE.idx, gl.STATIC_DRAW);
     this.vao = gl.createVertexArray();
-    this.saetze = Object.fromEntries(['spielstand', 'gesetzt', 'geist', 'auswahl'].map((k) => [k, { vbo: gl.createBuffer(), lineVbo: gl.createBuffer(), ranges: [], nLinie: 0 }]));
+    this.saetze = Object.fromEntries(['spielstand', 'gesetzt', 'geist', 'auswahl', 'gwahl'].map((k) => [k, { vbo: gl.createBuffer(), lineVbo: gl.createBuffer(), ranges: [], nLinie: 0 }]));
   }
   /** Gitter für eine Kachel: (N+3)² Punkte inkl. Schürze, gemeinsam für alle Kacheln */
   baueGitter(N) {
@@ -251,17 +253,17 @@ export class Welt3D {
     const m3 = (A, B) => { const C = new Array(9); for (let c = 0; c < 3; c++) for (let r = 0; r < 3; r++) C[c * 3 + r] = A[r] * B[c * 3] + A[3 + r] * B[c * 3 + 1] + A[6 + r] * B[c * 3 + 2]; return C; };
     const mv = (A, v) => [A[0] * v[0] + A[3] * v[1] + A[6] * v[2], A[1] * v[0] + A[4] * v[1] + A[7] * v[2], A[2] * v[0] + A[5] * v[1] + A[8] * v[2]];
     const L = [];
-    for (const { meta, w, dreh = 0, off = [0, 0, 0], ids = false, nur = null, ohne = null, delta = null } of quellen) {
+    for (const { meta, w, dreh = 0, off = [0, 0, 0], ids = false, id = 0, nur = null, ohne = null, delta = null } of quellen) {
       const a = dreh * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a), qd = [0, 0, Math.sin(a / 2), Math.cos(a / 2)];
       const lage = (x, y, z) => [ca * x - sa * y + off[0], sa * x + ca * y + off[1], z + off[2]];
       const farben = meta.klassen.map((c) => hexRgb(colorFor(kat[c], c)));
       const liste = nur ? [...nur] : null, nAlle = liste ? liste.length : meta.anzahl;
       for (let ii = 0; ii < nAlle; ii++) {
-        const i = liste ? liste[ii] : ii; if (ohne?.has(i)) continue;
+        const i = liste ? liste[ii] : ii; if (ohne?.has(i) || i >= meta.anzahl) continue;
         const o = i * 12, cls = meta.klassen[w[o + 10]], s = [w[o + 7] || 1, w[o + 8] || 1, w[o + 9] || 1];
-        const [p0, q0] = this.lageMit(w, i, delta?.get(i));
+        const [p0, q0] = this.lageMit(w, i, delta?.get(i), meta);
         const q = dreh ? qmul(qd, q0) : q0, p = lage(p0[0], p0[1], p0[2]);
-        const parts = models?.klassen?.[cls], col = [...farben[w[o + 10]].map((c) => c * 0.75 + 0.2), ids ? i + 2 : 1], R = qm(q, s);
+        const parts = models?.klassen?.[cls], col = [...farben[w[o + 10]].map((c) => c * 0.75 + 0.2), id || (ids ? i + 2 : 1)], R = qm(q, s);
         if (parts) {
           for (const [mesh, t, mq, s0] of parts) {
             let sk = s0;
@@ -274,8 +276,23 @@ export class Welt3D {
           push('#cube', [R[0] * ex[0], R[1] * ex[0], R[2] * ex[0], 0, R[3] * ex[1], R[4] * ex[1], R[5] * ex[1], 0, R[6] * ex[2], R[7] * ex[2], R[8] * ex[2], 0, p[0] + c0[0], p[1] + c0[1], p[2] + c0[2], 1, ...col]);
         }
       }
-      // Linien (Bänder, Rohre, Schienen) als Linienzüge
-      if (!nur) for (const l of meta.linien) for (let k = 1; k + 5 < l.length; k += 3) L.push(...lage(l[k], l[k + 1], l[k + 2] + 60), ...lage(l[k + 3], l[k + 4], l[k + 5] + 60));
+      // Bänder, Rohre, Schienen, Hypertubes: Abschnitte als flache/dicke Körper entlang der Kurve; Nummer = anzahl + Linie
+      const nL = meta.linien.length, lListe = liste ? liste.filter((i) => i >= meta.anzahl).map((i) => i - meta.anzahl) : null;
+      for (let jj = 0, nj = lListe ? lListe.length : nL; jj < nj; jj++) {
+        const li = lListe ? lListe[jj] : jj, i = meta.anzahl + li; if (ohne?.has(i)) continue;
+        const l = meta.linien[li], cls = meta.klassen[l[0]], [B, H] = LINIE_MASS(cls), d = delta?.get(i); const hv = /Pipe/.test(cls) ? 0.5 : 1; // Rohre mittig auf der Kurve, Bänder/Schienen darunter
+        const c = d ? Math.cos(d.a) : 1, sn = d ? Math.sin(d.a) : 0;
+        const pt = (k) => { let x = l[k], y = l[k + 1], z = l[k + 2]; if (d) { [x, y] = [c * x - sn * y + d.t[0], sn * x + c * y + d.t[1]]; z += d.t[2]; } return lage(x, y, z); };
+        const col = [...farben[l[0]].map((v) => v * 0.75 + 0.2), id || (ids ? i + 2 : 1)];
+        let a0 = pt(1);
+        for (let k = 4; k + 2 < l.length; k += 3) {
+          const b0 = pt(k), dv = [b0[0] - a0[0], b0[1] - a0[1], b0[2] - a0[2]], len = Math.hypot(...dv); if (len < 1) continue;
+          let sd = [dv[1], -dv[0], 0], sl = Math.hypot(sd[0], sd[1]); sd = sl > 1e-6 ? [sd[0] / sl, sd[1] / sl, 0] : [1, 0, 0];
+          const u = [sd[1] * dv[2] / len - 0, -sd[0] * dv[2] / len, (sd[0] * dv[1] - sd[1] * dv[0]) / len]; // oben = Seite × Richtung
+          push('#cube', [dv[0], dv[1], dv[2], 0, sd[0] * B, sd[1] * B, 0, 0, u[0] * H, u[1] * H, u[2] * H, 0, a0[0] - sd[0] * B / 2 - u[0] * H * hv, a0[1] - sd[1] * B / 2 - u[1] * H * hv, a0[2] - u[2] * H * hv, 1, ...col]);
+          a0 = b0;
+        }
+      }
     }
     let total = 0; for (const g of groups.values()) total += g.length;
     const data = new Float32Array(total), ranges = []; let off = 0;
@@ -309,8 +326,10 @@ export class Welt3D {
 
   // ------------------------------------------------------------ Bestehendes ändern (Stufe 4)
   /** Lage eines Bauteils mit Änderung d = { a (rad um Z), t [x,y,z] }: p' = Rz(a)·p + t, q' = qz(a)·q */
-  lageMit(w, i, d) {
-    const o = i * 12, p = [w[o], w[o + 1], w[o + 2]], q = [w[o + 3], w[o + 4], w[o + 5], w[o + 6]];
+  lageMit(w, i, d, meta = this.objekte?.meta) {
+    let p, q;
+    if (meta && i >= meta.anzahl) { const L = meta.linienLage, o = (i - meta.anzahl) * 7; p = [L[o], L[o + 1], L[o + 2]]; q = [L[o + 3], L[o + 4], L[o + 5], L[o + 6]]; }
+    else { const o = i * 12; p = [w[o], w[o + 1], w[o + 2]]; q = [w[o + 3], w[o + 4], w[o + 5], w[o + 6]]; }
     if (!d) return [p, q];
     const c = Math.cos(d.a), s = Math.sin(d.a);
     return [[c * p[0] - s * p[1] + d.t[0], s * p[0] + c * p[1] + d.t[1], p[2] + d.t[2]], qmul([0, 0, Math.sin(d.a / 2), Math.cos(d.a / 2)], q)];
@@ -325,11 +344,15 @@ export class Welt3D {
   /** Klick auf ein Bauteil: allein auswählen oder (zusatz) hinzufügen/abwählen */
   waehle(i, zusatz) {
     const O = this.objekte; if (!O) return;
-    if (O.meta.refs?.[i] == null) { this.app.toast?.('Dieses Bauteil liegt nicht im Haupt-Level und lässt sich hier nicht ändern.', 'err'); return; }
+    if (this.refVon(i) == null) { this.app.toast?.('Dieses Bauteil liegt nicht im Haupt-Level und lässt sich hier nicht ändern.', 'err'); return; }
     this.festigen();
     if (!zusatz) this.auswahl = new Set([i]); else if (this.auswahl.has(i)) this.auswahl.delete(i); else this.auswahl.add(i);
     this.spielstandNeu();
   }
+  /** Verweis eines Bauteils (Akteur-Pfad oder [Leichtbau-Klasse, Nr.]); Linien ab Nummer anzahl */
+  refVon(i) { const m = this.objekte?.meta; if (!m) return null; return i < m.anzahl ? m.refs?.[i] : m.linienRefs?.[i - m.anzahl]; }
+  /** Klassenname eines Bauteils (auch Linien) */
+  klasseVon(i) { const O = this.objekte; return i < O.meta.anzahl ? O.meta.klassen[O.w[i * 12 + 10]] : O.meta.klassen[O.meta.linien[i - O.meta.anzahl][0]]; }
   auswahlAufheben() { if (!this.auswahl?.size) return; this.festigen(); this.auswahl = new Set(); this.spielstandNeu(); }
   /** Mitte der Auswahl (Drehpunkt) */
   auswahlMitte() {
@@ -376,7 +399,7 @@ export class Welt3D {
   aenderungen() {
     this.festigen();
     const O = this.objekte; if (!O) return { loeschen: [], verschieben: [] };
-    const ref = (i) => { const r = O.meta.refs?.[i]; return r == null ? null : typeof r === 'string' ? { a: r } : { l: O.meta.lwTypen[r[0]], i: r[1] }; };
+    const ref = (i) => { const r = this.refVon(i); return r == null ? null : typeof r === 'string' ? { a: r } : { l: O.meta.lwTypen[r[0]], i: r[1] }; };
     const loeschen = [...this.geloescht].map(ref).filter(Boolean);
     const verschieben = [...this.delta.keys()].filter((i) => !this.geloescht.has(i) && ref(i)).map((i) => { const [pos, rot] = this.lageMit(O.w, i, this.delta.get(i)); return { ref: ref(i), pos, rot }; });
     return { loeschen, verschieben };
@@ -394,6 +417,8 @@ export class Welt3D {
       const meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, jl))), off = 4 + jl + ((4 - ((4 + jl) % 4)) % 4);
       d = { meta, w: new Float32Array(buf, off, meta.anzahl * 12) }; this.bpCache.set(key, d);
     }
+    const sv = this.objekte?.meta?.version, bv = d.meta.version;
+    if (sv && bv < Math.min(sv, 46)) throw new Error(`„${quelle.name}“ ist in einem sehr alten Format gespeichert (Version ${bv}, vor Spielversion 1.0) – das rechnet die App (noch) nicht um. Abhilfe: im Spiel im Blaupausen-Designer öffnen und neu speichern.`); // 46–52 rechnet der Server beim Speichern um
     await this.ladeModelle();
     this.fuelleSatz('geist', [d]);
     this.auswahlAufheben?.();
@@ -401,15 +426,43 @@ export class Welt3D {
     this.app.weltSetzenStatus?.(this);
     return d.meta;
   }
-  setzenBeenden() { this.setzen = null; this.fuelleSatz('geist', []); this.app.weltSetzenStatus?.(this); }
+  setzenBeenden() { const z = this.setzen?.zurueck; if (z) { this.gesetzt.push(z); this.gesetztNeu(); } this.setzen = null; this.fuelleSatz('geist', []); this.app.weltSetzenStatus?.(this); }
   legeAb() {
     const S = this.setzen; if (!S?.p) return;
     this.gesetzt.push({ quelle: S.quelle, daten: S.daten, x: S.p[0], y: S.p[1], z: S.p[2] + S.dz, dreh: S.dreh });
+    if (S.zurueck) { this.setzen = null; this.fuelleSatz('geist', []); } // verschobene Blaupause: einmal absetzen, fertig
     this.gesetztNeu();
   }
-  entferne(i) { this.gesetzt.splice(i, 1); this.gesetztNeu(); }
+  entferne(i) { this.gesetzt.splice(i, 1); if (this.gSel === i) this.gSel = null; else if (this.gSel > i) this.gSel--; this.gesetztNeu(); }
+  /** gesetzte Blaupause wählen (Klick in der Welt oder in der Liste); x/y = Mausposition fürs Menü */
+  gWaehle(i, x = null, y = null) { this.auswahlAufheben?.(); this.gSel = i; this.gesetztNeu(); this.app.weltGMenue?.(this, i, x, y); }
+  gAufheben() { if (this.gSel == null) return; this.gSel = null; this.gesetztNeu(); this.app.weltGMenue?.(this, null); }
+  /** gewählte Blaupause wieder an die Maus nehmen; Esc/Rechtsklick legt sie an den alten Platz zurück */
+  gVerschieben(i = this.gSel) {
+    const g = this.gesetzt[i]; if (!g) return;
+    this.gesetzt.splice(i, 1); this.gSel = null; this.gesetztNeu(); this.app.weltGMenue?.(this, null);
+    this.fuelleSatz('geist', [g.daten]);
+    this.setzen = { quelle: g.quelle, daten: g.daten, dreh: g.dreh, dz: 0, p: [g.x, g.y, g.z], zurueck: g };
+    this.app.weltSetzenStatus?.(this); this.zeichne();
+  }
+  /** Tasten für die gewählte gesetzte Blaupause: Pfeile/Bild/R wie beim Ändern, Entf löscht, Esc hebt auf */
+  gTaste(e) {
+    const g = this.gesetzt[this.gSel]; if (!g) return false; const k = e.key;
+    if (k === 'Escape') { this.gAufheben(); return true; }
+    if (k === 'Delete') { this.entferne(this.gSel); this.app.weltGMenue?.(this, null); return true; }
+    const f = this.richtung(), ach = Math.abs(f[0]) >= Math.abs(f[1]) ? [Math.sign(f[0]), 0] : [0, Math.sign(f[1])], re = [-ach[1], ach[0]], st = e.shiftKey ? 800 : 100;
+    if (k === 'ArrowUp') { g.x += ach[0] * st; g.y += ach[1] * st; } else if (k === 'ArrowDown') { g.x -= ach[0] * st; g.y -= ach[1] * st; }
+    else if (k === 'ArrowRight') { g.x += re[0] * st; g.y += re[1] * st; } else if (k === 'ArrowLeft') { g.x -= re[0] * st; g.y -= re[1] * st; }
+    else if (k === 'PageUp') g.z += e.shiftKey ? 400 : 100; else if (k === 'PageDown') g.z -= e.shiftKey ? 400 : 100;
+    else if (k === 'r' || k === 'R') g.dreh = (g.dreh + (e.shiftKey ? 15 : 90)) % 360;
+    else return false;
+    this.gesetztNeu(); this.app.weltGMenue?.(this, this.gSel); return true;
+  }
   gesetztNeu() {
-    this.fuelleSatz('gesetzt', this.gesetzt.map((g) => ({ meta: g.daten.meta, w: g.daten.w, dreh: g.dreh, off: [g.x, g.y, g.z] })));
+    if (this.gSel != null && !this.gesetzt[this.gSel]) this.gSel = null;
+    const q = (g, i) => ({ meta: g.daten.meta, w: g.daten.w, dreh: g.dreh, off: [g.x, g.y, g.z], id: 15000000 + i });
+    this.fuelleSatz('gesetzt', this.gesetzt.map(q).filter((_, i) => i !== this.gSel));
+    this.fuelleSatz('gwahl', this.gSel != null ? [q(this.gesetzt[this.gSel], this.gSel)] : []);
     this.app.weltSetzenStatus?.(this);
   }
   /** Mausstrahl → Punkt auf dem Gelände (aus den geladenen Kacheln) */
@@ -575,7 +628,7 @@ export class Welt3D {
       if (k('s')) { this.eye[0] -= f[0] * v; this.eye[1] -= f[1] * v; this.eye[2] -= f[2] * v; }
       if (k('a')) { this.eye[0] -= rr[0] * v; this.eye[1] -= rr[1] * v; }
       if (k('d')) { this.eye[0] += rr[0] * v; this.eye[1] += rr[1] * v; }
-      if (k('e')) this.eye[2] += v; if (k('q')) this.eye[2] -= v;
+      if (k('e') || k(' ')) this.eye[2] += v; if (k('q') || k('c')) this.eye[2] -= v; // steigen: Leertaste/E, sinken: C/Q
       this.eye[2] = Math.max(this.boden() + 200, this.eye[2]);
     }
     if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
@@ -603,6 +656,7 @@ export class Welt3D {
     // Bauteile: Spielstand, gesetzte Blaupausen (grünlich), Vorschau an der Maus (blau)
     this.zeichneSatz(VP, this.saetze.spielstand);
     this.zeichneSatz(VP, this.saetze.gesetzt, EINS, [0.3, 0.85, 0.45, 0.25]);
+    this.zeichneSatz(VP, this.saetze.gwahl, EINS, [1, 0.78, 0.15, 0.5]);
     this.zeichneSatz(VP, this.saetze.auswahl, this.auswahlMatrix(), [1, 0.78, 0.15, 0.5]);
     if (this.setzen?.p && !this.pick) this.zeichneSatz(VP, this.saetze.geist, this.geistMatrix(), [0.25, 0.6, 1, 0.55]);
   }
@@ -658,14 +712,26 @@ export class Welt3D {
     cv.addEventListener('pointerup', (e) => {
       drag = null;
       const klick = start && start.b === 0 && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 5;
-      if (klick && this.setzen) { this.setzenFolgen(e.clientX, e.clientY, true); this.legeAb(); }
-      else if (klick && this.objekte) { const t = this.pickTreffer(e.clientX, e.clientY); if (t && t[3] >= 2) this.waehle(Math.round(t[3]) - 2, e.ctrlKey || e.shiftKey); else this.auswahlAufheben(); }
+      const rechts = start && start.b === 2 && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 5;
+      if (rechts) { if (this.setzen) this.setzenBeenden(); else { this.gAufheben(); this.auswahlAufheben(); } } // Rechtsklick ohne Ziehen = fertig (wie im Spiel)
+      else if (klick && this.setzen) { this.setzenFolgen(e.clientX, e.clientY, true); this.legeAb(); }
+      else if (klick) {
+        const t = this.pickTreffer(e.clientX, e.clientY), n = t ? Math.round(t[3]) : 0;
+        if (n >= 15000000) this.gWaehle(n - 15000000, e.clientX, e.clientY);
+        else { this.gAufheben(); if (this.objekte) { if (n >= 2) this.waehle(n - 2, e.ctrlKey || e.shiftKey); else this.auswahlAufheben(); } }
+      }
       start = null;
     });
     cv.addEventListener('wheel', (e) => { e.preventDefault(); const f = this.richtung(), hoehe = Math.max(2000, this.eye[2] - this.boden()), v = -Math.sign(e.deltaY) * hoehe * 0.25;
       this.eye = this.eye.map((x, i) => x + f[i] * v); this.eye[2] = Math.max(this.boden() + 200, this.eye[2]); this.zeichne(); }, { passive: false });
     const taste = (e) => (e.key === 'Shift' ? 'Shift' : e.key.toLowerCase());
-    cv.addEventListener('keydown', (e) => {
+    cv.addEventListener('contextmenu', (e) => e.preventDefault());
+    // beim Setzen: Fokus in die Ansicht, sobald die Maus darüber ist (dann gehen auch W A S D ohne Klick)
+    cv.addEventListener('pointerenter', () => { if (this.setzen && !document.activeElement?.closest?.('input, textarea, select')) cv.focus({ preventScroll: true }); });
+    // Setzen-/Auswahl-Tasten gelten in der ganzen Welt-Ansicht – nicht nur, wenn die 3D-Fläche den Fokus hat
+    document.addEventListener('keydown', (e) => {
+      if (!cv.isConnected || !cv.clientWidth || document.querySelector('dialog[open]') || e.target.closest?.('input, textarea, select, [contenteditable]')) return;
+      if (!this.setzen && this.gSel != null && this.gTaste(e)) { e.preventDefault(); return; }
       if (!this.setzen && this.auswahlTaste(e)) { e.preventDefault(); return; }
       const S = this.setzen, k0 = e.key.toLowerCase();
       if (S && (k0 === 'r' || k0 === 'pageup' || k0 === 'pagedown' || k0 === 'escape')) {
@@ -676,9 +742,10 @@ export class Welt3D {
         this.app.weltSetzenStatus?.(this); this.zeichne(); return;
       }
     });
-    cv.addEventListener('keydown', (e) => { const k = taste(e); if (!['w', 'a', 's', 'd', 'q', 'e', 'Shift'].includes(k)) return; e.preventDefault(); if (!this.tasten.has(k)) { this.tasten.add(k); this.zeichne(); } });
-    cv.addEventListener('keyup', (e) => { this.tasten.delete(taste(e)); });
-    cv.addEventListener('blur', () => this.tasten.clear());
+    const frei = (e) => cv.isConnected && cv.clientWidth && !document.querySelector('dialog[open]') && !e.target.closest?.('input, textarea, select, [contenteditable]');
+    document.addEventListener('keydown', (e) => { const k = taste(e); if (e.ctrlKey || e.metaKey || e.altKey || !['w', 'a', 's', 'd', 'q', 'e', ' ', 'c', 'Shift'].includes(k) || !frei(e)) return; e.preventDefault(); if (!this.tasten.has(k)) { this.tasten.add(k); this.zeichne(); } });
+    document.addEventListener('keyup', (e) => { this.tasten.delete(taste(e)); });
+    window.addEventListener('blur', () => this.tasten.clear());
     new ResizeObserver(() => this.zeichne()).observe(cv);
   }
 }

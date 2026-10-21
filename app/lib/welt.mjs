@@ -71,7 +71,7 @@ export function weltDaten(buf) {
   const haupt = levels.length - 1, refs = [], lwTypen = [], lwIdx = new Map(); // Verweise für Stufe 4 (ändern): nur Haupt-Level
   const klassen = [], kIdx = new Map();
   const ki = (c) => { let i = kIdx.get(c); if (i === undefined) { i = klassen.length; klassen.push(c); kIdx.set(c, i); } return i; };
-  const werte = [], linien = [], spieler = [];
+  const werte = [], linien = [], spieler = [], linienRefs = [], linienLage = [];
   let leicht = 0;
   for (const o of objects) {
     if (o.kind !== 1) continue;
@@ -89,11 +89,11 @@ export function weltDaten(buf) {
     if (cls === 'Char_Player_C') { spieler.push(o.pos.map(Math.round)); continue; }
     if (!/^Build_/.test(cls) || cls === 'Build_PowerLine_C') continue;
     if (RX_SPLINE.test(cls) || /Beam/.test(cls)) readProps(body, o);
-    if (o.spline?.length > 1) { linien.push([ki(cls), ...spline3d(o)]); continue; }
+    if (o.spline?.length > 1) { linien.push([ki(cls), ...spline3d(o)]); linienRefs.push(o.level === haupt ? o.pathName : null); linienLage.push(...o.pos, ...o.rot); continue; }
     werte.push(o.pos[0], o.pos[1], o.pos[2], ...o.rot, ...(o.scale || [1, 1, 1]), ki(cls), o.length || 0);
     refs.push(o.level === haupt ? o.pathName : null);
   }
-  const meta = { refs, lwTypen, name: header.saveName || header.sessionName, sitzung: header.sessionName, version: header.saveVersion, anzahl: werte.length / 12, leichtbau: leicht, klassen, linien, spieler, dauer: Date.now() - t0 };
+  const meta = { refs, lwTypen, linienRefs, linienLage, name: header.saveName || header.sessionName, sitzung: header.sessionName, version: header.saveVersion, anzahl: werte.length / 12, leichtbau: leicht, klassen, linien, spieler, dauer: Date.now() - t0 };
   return { meta, werte: new Float32Array(werte) };
 }
 

@@ -26,6 +26,9 @@ export function kopiere(m, filter, trafo) {
     namen.set(o.instance, mm ? mm[1] + (z.length >= mm[2].length ? z.slice(-mm[2].length) : z.padStart(mm[2].length, '1')) : o.instance);
   }
   const neu = (inst) => { for (const [a, b] of namen) if (inst === a || inst.startsWith(a + '.')) return b + inst.slice(a.length); return inst; };
+  // Spielstände ab 1.0 verlangen Objekt-Flags im Kopf; Blaupausen vor 1.0 (Format < 46) haben keine → Werte wie im Spiel ergänzen
+  // (gemessen: Bauteile 8; Komponenten 262152 für Inventar/Strominfo/Schienen, sonst 2097152)
+  const flags = (o) => (m.bp.hasFlags ? o.flags : o.kind === 'entity' ? 8 : /Inventory|PowerInfo|Railroad|TrainPlatform/.test(o.typePath) ? 262152 : 2097152);
   for (const { o, data } of m.objs) {
     const besitzer = o.kind === 'entity' ? o.instance : o.parent;
     if (!namen.has(besitzer)) continue;
@@ -34,8 +37,8 @@ export function kopiere(m, filter, trafo) {
     let head;
     if (o.kind === 'entity') {
       const { pos, rot } = trafo(o);
-      head = Buffer.concat([i32(1), fstr(o.typePath), fstr(o.root), fstr(neu(o.instance)), ...(m.bp.hasFlags ? [i32(o.flags)] : []), i32(o.needTransform), f32s([...rot, ...pos, ...o.scale]), i32(o.placedInLevel)]);
-    } else head = Buffer.concat([i32(0), fstr(o.typePath), fstr(o.root), fstr(neu(o.instance)), ...(m.bp.hasFlags ? [i32(o.flags)] : []), fstr(neu(o.parent))]);
+      head = Buffer.concat([i32(1), fstr(o.typePath), fstr(o.root), fstr(neu(o.instance)), i32(flags(o)), i32(o.needTransform), f32s([...rot, ...pos, ...o.scale]), i32(o.placedInLevel)]);
+    } else head = Buffer.concat([i32(0), fstr(o.typePath), fstr(o.root), fstr(neu(o.instance)), i32(flags(o)), fstr(neu(o.parent))]);
     out.push({ head, data: d, cls: o.cls, ver: m.version });
   }
   return out;

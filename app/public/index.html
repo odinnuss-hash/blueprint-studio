@@ -300,15 +300,16 @@
       <label class="check"><input type="checkbox" id="w-bild" checked> Kartenbild auf dem Gelände</label>
       <label class="check"><input type="checkbox" id="w-maus"> Maus links/rechts umkehren</label>
       <div class="label">Steuerung</div>
-      <div class="hint">Erst in die Ansicht klicken. <b>W A S D</b> fliegen · <b>Q / E</b> runter / hoch · <b>Umschalt</b> schneller · Maus ziehen = umsehen · Mausrad = vor / zurück. Das Tempo passt sich der Flughöhe an.</div>
+      <div class="hint">Erst in die Ansicht klicken. <b>W A S D</b> fliegen · <b>Leertaste / C</b> (oder <b>E / Q</b>) hoch / runter · <b>Umschalt</b> schneller · Maus ziehen = umsehen · Mausrad = vor / zurück. Das Tempo passt sich der Flughöhe an.</div>
       <div class="label">Blaupausen setzen</div>
+      <button type="button" class="btn primary" id="w-bp-ablage" title="Großes Ablage-Fenster mit 3D-Vorschau öffnen – Klick auf eine Kachel wählt die Blaupause">Aus der Ablage wählen …</button>
       <input id="w-bp" type="search" list="w-bp-liste" placeholder="Blaupause suchen (Ablage oder Spiel) …" aria-label="Blaupause" autocomplete="off">
       <datalist id="w-bp-liste"></datalist>
       <button type="button" class="btn" id="w-bp-setzen" disabled>Setzen</button>
-      <div class="hint" id="w-bp-hilfe">Blaupause wählen, <b>Setzen</b>, dann in der Ansicht: Maus = Vorschau verschieben · <b>Klick</b> = absetzen (mehrmals möglich) · <b>R</b> = 90° drehen (<b>Umschalt+R</b> = 15°) · <b>Bild↑ / Bild↓</b> = Höhe ±1 m (mit Umschalt ±4 m) · <b>Esc</b> = fertig.</div>
+      <div class="hint" id="w-bp-hilfe">Blaupause wählen, <b>Setzen</b>, dann in der Ansicht: Maus = Vorschau verschieben · <b>Klick</b> = absetzen (mehrmals möglich) · <b>R</b> = 90° drehen (<b>Umschalt+R</b> = 15°) · <b>Bild↑ / Bild↓</b> = Höhe ±1 m (mit Umschalt ±4 m) · <b>Esc</b> oder <b>Rechtsklick</b> = fertig.</div>
       <div id="w-gesetzt" class="w-gesetzt"></div>
       <div class="label">Bestehendes ändern</div>
-      <div class="hint">Nach dem Laden eines Spielstands: <b>Klick</b> auf ein Bauteil wählt es aus (<b>Strg+Klick</b> = dazu/weg) · <b>Pfeiltasten</b> = 1 m verschieben (<b>Umschalt</b> = 8 m) · <b>Bild↑ / Bild↓</b> = Höhe · <b>R</b> = 90° drehen (<b>Umschalt+R</b> = 15°) · <b>Entf</b> = löschen · <b>Esc</b> / Klick ins Gelände = Auswahl fertig.</div>
+      <div class="hint">Nach dem Laden eines Spielstands: <b>Klick</b> auf ein Bauteil wählt es aus (<b>Strg+Klick</b> = dazu/weg) · <b>Pfeiltasten</b> = 1 m verschieben (<b>Umschalt</b> = 8 m) · <b>Bild↑ / Bild↓</b> = Höhe · <b>R</b> = 90° drehen (<b>Umschalt+R</b> = 15°) · <b>Entf</b> = löschen · <b>Esc</b>, <b>Rechtsklick</b> oder Klick ins Gelände = Auswahl fertig.</div>
       <div id="w-aendern" class="w-gesetzt"></div>
       <div class="w-speichern" id="w-speichern-feld" hidden>
         <label for="w-neu-name" class="label">Neuer Spielstand</label>

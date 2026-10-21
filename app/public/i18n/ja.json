@@ -1726,5 +1726,14 @@
  "Noch nichts gesetzt oder geändert.": "まだ何も配置・変更されていません。",
  "Dieses Bauteil liegt nicht im Haupt-Level und lässt sich hier nicht ändern.": "この部品はメインレベルにないため、ここでは変更できません。",
  "Welt": "ワールド",
- "Ganze Karte in 3D mit Gelände und Spielstand": "地形とセーブデータ付きのマップ全体を 3D で表示"
+ "Ganze Karte in 3D mit Gelände und Spielstand": "地形とセーブデータ付きのマップ全体を 3D で表示",
+ "Gelände & Felsen (Welt-Ansicht)": "地形と岩(ワールドビュー)",
+ "Erzeugen": "作成",
+ "Neu erzeugen": "再作成",
+ "vorhanden (aus deinem Spiel)": "あり(あなたのゲームから)",
+ "Aus der Ablage wählen …": "保管庫から選ぶ …",
+ "Blaupause zum Setzen wählen – Klick auf eine Kachel": "配置する設計図を選択 – タイルをクリック",
+ "Verschieben": "移動",
+ "Drehen 90°": "90° 回転",
+ "Teile-Limit (große Fabriken)": "オブジェクト上限(巨大工場向け)"
 }

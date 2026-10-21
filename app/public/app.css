@@ -706,3 +706,12 @@ dialog.dlg-ablage[open] { display: flex; flex-direction: column; }
 .w-gesetzt .w-g { display: flex; align-items: center; gap: 6px; font-size: 12px; }
 .w-gesetzt .w-g span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .w-gesetzt .w-g .btn { width: auto; margin: 0; }
+.dlg-ablage.waehlen .dlg-ablage-kopf h2 { color: var(--accent, #c0607a); }
+.dlg-ablage.waehlen .ab-file { cursor: pointer; }
+#view-welt .w-gesetzt .w-g .btn { width: auto; flex: none; margin: 0; }
+.w-gesetzt .w-g .w-g-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: 12px; color: inherit; padding: 0; }
+.w-gesetzt .w-g.gewaehlt .w-g-name { font-weight: 700; color: var(--accent, #e0a020); }
+.w-gmenue { position: absolute; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 250px; padding: 8px 10px; background: var(--panel, #1b1e24); border: 1px solid var(--line, #333); border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.35); }
+.w-gmenue b { flex: 1 0 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.w-gmenue .muted { flex: 1 0 100%; font-size: 11px; }
+#view-welt .w-gmenue .btn { width: auto; margin: 0; }

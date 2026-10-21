@@ -32,7 +32,7 @@ async function api(path, body) {
 
 // W/A/S/D: [vor, seitlich] (e.code = Tastenposition, unabhängig vom Tastaturlayout)
 const FAHR = { KeyW: [1, 0], KeyS: [-1, 0], KeyA: [0, -1], KeyD: [0, 1] };
-const APP_VERSION = '1.3.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
+const APP_VERSION = '1.4.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
 
 class App {
   constructor() {
@@ -816,6 +816,11 @@ class App {
     $('w-bp-liste').innerHTML = opts.map((l) => `<option value="${esc(l)}"></option>`).join('');
     const pruefe = () => { $('w-bp-setzen').disabled = !wahl.has($('w-bp').value); };
     $('w-bp').addEventListener('input', pruefe);
+    const setzen = async (q) => {
+      try { const m = await this.welt.waehleBlaupause(q); this.toast(`${m.name}: ${m.anzahl + m.linien.length} Bauteile – in die Ansicht zeigen und klicken zum Absetzen.`, 'ok'); $('w-canvas').focus(); }
+      catch (e) { this.toast(e.message, 'err'); }
+    };
+    $('w-bp-ablage').addEventListener('click', () => this.ablage.grossesFenster((q) => { $('w-bp').value = [...wahl].find(([, v]) => v.name === q.name && v.ablage === q.ablage && v.session === q.session)?.[0] || ''; pruefe(); setzen(q); }));
     $('w-bp-setzen').addEventListener('click', async () => {
       const q = wahl.get($('w-bp').value); if (!q) return;
       $('w-bp-setzen').disabled = true;
@@ -826,30 +831,56 @@ class App {
       const w = this.welt, id = $('w-spielstand').value, name = $('w-neu-name').value.trim();
       if (!w.objekte || !id) { this.toast('Bitte zuerst oben einen Spielstand laden – die Blaupausen kommen in eine Kopie davon.', 'err'); return; }
       if (!name) { this.toast('Bitte einen Namen für den neuen Spielstand eingeben.', 'err'); $('w-neu-name').focus(); return; }
+      let ueberschreiben = false;
+      try {
+        const da = await (await fetch(`/api/welt/spielstand-da?id=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`, { cache: 'no-store' })).json();
+        if (da.da) {
+          ueberschreiben = await frage({ art: 'warnung', titel: `„${name}“ überschreiben?`, text: `Den Spielstand „${name}“ gibt es schon${da.original ? ' – es ist der gerade geladene Spielstand' : ''}. Die alte Datei wird vorher gesichert (userdata\\spielstand-sicherung) und lässt sich von dort zurückholen. Im Spiel diesen Stand dabei nicht geladen haben.`, ok: 'Überschreiben', abbrechen: 'Anderen Namen wählen' });
+          if (!ueberschreiben) { $('w-neu-name').focus(); $('w-neu-name').select(); return; }
+        }
+      } catch { /* Prüfung nicht möglich – der Server lehnt Doppel ohne Freigabe ohnehin ab */ }
       $('w-speichern').disabled = true;
       try {
         const setzungen = w.gesetzt.map((g) => ({ ...g.quelle, x: g.x, y: g.y, z: g.z, dreh: g.dreh })), { loeschen, verschieben } = w.aenderungen();
         $('w-speichern').textContent = 'Wird gespeichert …';
-        const r = await api('welt/spielstand', { id, name, setzungen, loeschen, verschieben }), i = r.info;
+        const r = await api('welt/spielstand', { id, name, setzungen, loeschen, verschieben, ueberschreiben }), i = r.info;
         const teile = [i.blaupausen ? `${i.blaupausen} Blaupausen (${i.eingefuegt.toLocaleString('de-DE')} Objekte)` : '', i.verschoben ? `${i.verschoben} verschoben` : '', (i.akteureGeloescht || 0) + (i.leichtbauGeloescht || 0) ? `${i.akteureGeloescht + i.leichtbauGeloescht} gelöscht${i.kabelGeloescht ? ` (+${i.kabelGeloescht} Kabel)` : ''}` : ''].filter(Boolean);
-        this.toast(`Neuer Spielstand „${r.name}“ gespeichert: ${teile.join(', ')}. Im Spiel laden zum Prüfen.`, 'ok');
+        this.toast(`Neuer Spielstand „${r.name}“ gespeichert: ${teile.join(', ')}. Im Spiel laden zum Prüfen.${i.sicherung ? ` Alte Datei gesichert: ${i.sicherung}` : ''}`, 'ok');
       } catch (e) { this.toast(e.message, 'err'); } finally { $('w-speichern').disabled = false; $('w-speichern').textContent = 'In Spielstand speichern'; }
     });
     this.weltSetzenStatus(this.welt);
   }
   weltSetzenStatus(w) {
     const el = $('w-gesetzt'); if (!el || !w) return;
-    el.innerHTML = w.gesetzt.map((g, i) => `<div class="w-g"><span title="${esc(g.quelle.name)}">${i + 1}. ${esc(g.quelle.name)} · ${g.dreh}°</span><button type="button" class="btn small" data-weg="${i}" title="Entfernen" aria-label="Entfernen">✕</button></div>`).join('')
+    el.innerHTML = w.gesetzt.map((g, i) => `<div class="w-g${w.gSel === i ? ' gewaehlt' : ''}"><button type="button" class="linkbtn w-g-name" data-wahl="${i}" title="${esc(g.quelle.name)} – anklicken zum Auswählen">${i + 1}. ${esc(g.quelle.name)} · ${g.dreh}°</button><button type="button" class="btn small" data-weg="${i}" title="${esc(g.quelle.name)} entfernen" aria-label="${esc(g.quelle.name)} entfernen">✕</button></div>`).join('')
       + (w.setzen ? `<div class="hint">Setzt gerade: <b>${esc(w.setzen.quelle.name)}</b> · ${w.setzen.dreh}°${w.setzen.dz ? ` · ${w.setzen.dz > 0 ? '+' : ''}${w.setzen.dz / 100} m` : ''} – Esc = fertig</div>` : '');
-    el.querySelectorAll('[data-weg]').forEach((b) => b.addEventListener('click', () => w.entferne(+b.dataset.weg)));
+    el.querySelectorAll('[data-weg]').forEach((b) => b.addEventListener('click', () => { w.entferne(+b.dataset.weg); this.weltGMenue(w, null); }));
+    el.querySelectorAll('[data-wahl]').forEach((b) => b.addEventListener('click', () => w.gWaehle(+b.dataset.wahl)));
     this.weltAendernStatus(w);
+  }
+  /** kleines Menü an der Maus für eine gesetzte Blaupause (i = null: schließen) */
+  weltGMenue(w, i, x = null, y = null) {
+    let m = $('w-gmenue');
+    if (i == null || !w.gesetzt[i]) { if (m) m.hidden = true; this.weltSetzenStatus(w); return; }
+    if (!m) { m = document.createElement('div'); m.id = 'w-gmenue'; m.className = 'w-gmenue'; $('w-canvas').parentElement.appendChild(m); }
+    const g = w.gesetzt[i];
+    m.innerHTML = `<b title="${esc(g.quelle.name)}">${esc(g.quelle.name)}</b><span class="muted">${g.dreh}° · Pfeile/Bild/R/Entf</span>
+      <button type="button" class="btn small" data-g="schieben">Verschieben</button><button type="button" class="btn small" data-g="drehen">Drehen 90°</button><button type="button" class="btn small" data-g="weg">Löschen</button><button type="button" class="btn small" data-g="zu" aria-label="Schließen">✕</button>`;
+    if (x != null) { const r = m.parentElement.getBoundingClientRect(); m.style.left = `${Math.min(Math.max(8, x - r.left + 12), r.width - 260)}px`; m.style.top = `${Math.min(Math.max(8, y - r.top + 12), r.height - 120)}px`; }
+    m.hidden = false;
+    m.querySelectorAll('[data-g]').forEach((b) => b.addEventListener('click', () => {
+      const a = b.dataset.g;
+      if (a === 'schieben') w.gVerschieben(i); else if (a === 'drehen') w.gTaste({ key: 'r', shiftKey: false }); else if (a === 'weg') { w.entferne(i); m.hidden = true; } else w.gAufheben();
+      w.cv.focus({ preventScroll: true });
+    }));
+    this.weltSetzenStatus(w);
   }
   weltAendernStatus(w) {
     const el = $('w-aendern'); if (!el || !w) return;
     const O = w.objekte, nA = w.auswahl?.size || 0, nG = w.geloescht?.size || 0, nV = [...(w.delta?.keys() || [])].filter((i) => !w.geloescht.has(i)).length;
     let html = '';
     if (nA && O) {
-      const arten = new Map(); for (const i of w.auswahl) { const c = O.meta.klassen[O.w[i * 12 + 10]]; arten.set(c, (arten.get(c) || 0) + 1); }
+      const arten = new Map(); for (const i of w.auswahl) { const c = w.klasseVon(i); arten.set(c, (arten.get(c) || 0) + 1); }
       const kat = this.kat?.gebaeude || {}, B = w.bewegung;
       html += `<div class="hint">Ausgewählt: <b>${[...arten].map(([c, n]) => `${n > 1 ? n + '× ' : ''}${esc(kat[c]?.name || c.replace(/^Build_|_C$/g, ''))}`).join(', ')}</b>${B ? ` · ${(B.t[0] / 100).toFixed(0)} / ${(B.t[1] / 100).toFixed(0)} / ${(B.t[2] / 100).toFixed(0)} m, ${Math.round(B.a * 180 / Math.PI)}°` : ''}</div>`;
     }

@@ -17,6 +17,7 @@ import { bauePixelbild } from './lib/pixelbild.mjs';
 import { ladeMuster, kopiere, qmul, qrot, qz } from './lib/muster.mjs';
 import { objekteEinfuegen } from './lib/spielstand-einfuegen.mjs';
 import { spielstandAendern } from './lib/spielstand-aendern.mjs';
+import { musterUmrechnen, UMRECHNEN_AB } from './lib/umrechnen.mjs';
 import { ladeHoehen, kachel as weltKachel, weltDaten, blaupauseDaten, KACHEL } from './lib/welt.mjs';
 import { masterclassEinlesen, masterclassDatei, masterclassExport, masterclassImport, masterclassAblegen } from './lib/masterclass.mjs';
 import { rechne as planRechnen, vorstufen } from './public/js/planer-rechner.js';
@@ -42,7 +43,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '1.3.0';
+const VERSION = '1.4.0';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 
@@ -874,7 +875,11 @@ async function karteZuBlaupause({ id, bereich, ohne = [], session, name }) {
 }
 // ------------------------------------------------------------------ Welt-Ansicht (3D mit Gelände)
 let weltHoehenCache;
-const weltHoehen = () => { if (weltHoehenCache === undefined) { const st = path.join(DATA_DIR, 'gelaende', 'hoehen1m'); weltHoehenCache = fs.existsSync(st + '.json') ? ladeHoehen(st) : null; } return weltHoehenCache; };
+const weltHoehen = () => { // neu laden, sobald die Datei neu erzeugt wurde
+  const st = path.join(DATA_DIR, 'gelaende', 'hoehen1m'); let t = 0; try { t = fs.statSync(st + '.json').mtimeMs; } catch { /* fehlt */ }
+  if (!weltHoehenCache || weltHoehenCache.t !== t) weltHoehenCache = { t, h: t ? ladeHoehen(st) : null };
+  return weltHoehenCache.h;
+};
 // Welt-Ansicht Stufe 3: Blaupausen in der Welt setzen und als neue Spielstand-Kopie speichern
 /** Blaupausen-Datei aus Spiel-Sitzung ({session, name}) oder Ablage ({ablage, name}) */
 function weltBpPfad(q) {
@@ -890,11 +895,16 @@ async function weltSpielstand(body) {
   if (!safeName(name)) throw Object.assign(new Error('Bitte einen gültigen Namen für den neuen Spielstand angeben.'), { status: 400 });
   if (!setzungen.length && !loeschen.length && !verschieben.length) throw Object.assign(new Error('Noch nichts gesetzt oder geändert.'), { status: 400 });
   const quelle = path.join(settings.saveDir, ...id.split('/')), ziel = path.join(path.dirname(quelle), name + '.sav');
-  if (fs.existsSync(ziel)) throw Object.assign(new Error(`Den Spielstand „${name}“ gibt es schon. Bitte einen anderen Namen wählen.`), { status: 409 });
+  const ueberschreiben = fs.existsSync(ziel);
+  if (ueberschreiben && !body.ueberschreiben) throw Object.assign(new Error(`Den Spielstand „${name}“ gibt es schon.`), { status: 409 });
   const muster = new Map(), objs = []; let version = 0;
+  const sv = setzungen.length ? readSavHeader(await fsp.readFile(quelle)).saveVersion : 0;
   for (const st of setzungen) {
     const datei = weltBpPfad(st); let m = muster.get(datei);
     if (!m) muster.set(datei, m = ladeMuster(datei));
+    // Format 46–52 (Spiel 1.0/1.1) in die Kodierung von Format 60 umrechnen (lib/umrechnen.mjs); älter bleibt gesperrt
+    if (m.version < sv && m.version >= UMRECHNEN_AB && sv >= 60 && !m.altVersion) { try { musterUmrechnen(m); } catch (x) { throw Object.assign(new Error(`„${st.name}“ ließ sich nicht ins aktuelle Format umrechnen (${x.message}). Bitte im Spiel im Blaupausen-Designer öffnen und neu speichern.`), { status: 422 }); } }
+    if (m.version < sv) { const bv = m.version; throw Object.assign(new Error(`„${st.name}“ ist in einem sehr alten Format gespeichert (Version ${bv}, vor Spielversion 1.0) – das rechnet die App (noch) nicht um. Abhilfe: im Spiel im Blaupausen-Designer öffnen und neu speichern.`), { status: 422 }); }
     version = Math.max(version, m.version);
     const q = qz(((+st.dreh || 0) * Math.PI) / 180), off = [+st.x, +st.y, +st.z];
     if (!off.every(Number.isFinite)) throw Object.assign(new Error('Ungültige Lage'), { status: 400 });
@@ -904,8 +914,14 @@ async function weltSpielstand(body) {
   let daten = await fsp.readFile(quelle), info = { blaupausen: setzungen.length, eingefuegt: 0 };
   if (loeschen.length || verschieben.length) { const a = spielstandAendern(daten, { loeschen, verschieben, speichername: name }); daten = a.ausgabe; Object.assign(info, a.info); }
   if (objs.length) { const e = objekteEinfuegen(daten, objs, { musterVersion: version, speichername: name }); daten = e.ausgabe; Object.assign(info, e.info); }
-  await fsp.writeFile(ziel, daten);
-  log(`Welt → Spielstand: ${ziel} (${setzungen.length} Blaupausen, ${info.eingefuegt} Objekte eingefügt, ${loeschen.length} gelöscht, ${verschieben.length} verschoben, Quelle ${id})`);
+  let sicherung = null;
+  if (ueberschreiben) { // alte Datei zuerst sichern (wiederherstellbar), dann ersetzen
+    const sdir = path.join(DATA_DIR, 'spielstand-sicherung'); await fsp.mkdir(sdir, { recursive: true });
+    sicherung = path.join(sdir, `${name}_${new Date().toISOString().replace(/[:.]/g, '-')}.sav`); await fsp.copyFile(ziel, sicherung);
+  }
+  await fsp.writeFile(ziel + '.neu', daten); await fsp.rename(ziel + '.neu', ziel);
+  info.sicherung = sicherung ? path.basename(sicherung) : null;
+  log(`Welt → Spielstand${sicherung ? ` (überschrieben, alte Datei: ${sicherung})` : ''}: ${ziel} (${setzungen.length} Blaupausen, ${info.eingefuegt} Objekte eingefügt, ${loeschen.length} gelöscht, ${verschieben.length} verschoben, Quelle ${id})`);
   return { ok: true, name, datei: path.basename(ziel), info };
 }
 // ------------------------------------------------------------------ Master Class (Lehrbuch-Fabriken als Vorlagen)
@@ -1268,6 +1284,12 @@ const server = http.createServer(async (req, res) => {
         const q = { name: url.searchParams.get('name'), session: url.searchParams.get('session'), ablage: url.searchParams.get('ablage') ?? undefined };
         const d = packen(blaupauseDaten(await loadBpFile(weltBpPfad(q)), q.name));
         res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store', 'Content-Length': d.length }); return res.end(d);
+      }
+      if (p === '/api/welt/spielstand-da') { // gibt es den Namen schon? (Rückfrage vor dem Überschreiben)
+        const id = url.searchParams.get('id') || '', name = url.searchParams.get('name') || '';
+        if (!/^[^\\/:*?"<>|]+\/[^\\/:*?"<>|]+\.sav$/i.test(id) || !safeName(name)) return sendJson(res, 200, { da: false });
+        const ziel = path.join(settings.saveDir, id.split('/')[0], name + '.sav');
+        return sendJson(res, 200, { da: fs.existsSync(ziel), original: path.basename(id, '.sav') === name });
       }
       if (p === '/api/welt/spielstand' && req.method === 'POST') return sendJson(res, 200, await weltSpielstand(await readJsonBody(req)));
       if (p === '/api/karte/daten') {

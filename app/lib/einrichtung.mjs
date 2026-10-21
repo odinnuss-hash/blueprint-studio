@@ -1,6 +1,7 @@
 // Einrichtung: Voraussetzungen pruefen und fehlende Teile (soweit erlaubt) automatisch installieren.
 //
 // Automatisch:  Kartenbild (Kacheln aus dem satisfactory-3d-map-Repository), Desktop-Verknuepfung.
+// Gelände & Felsen für die Welt-Ansicht: werkzeuge\gelaende (ebenfalls CUE4Parse) → userdata\gelaende\hoehen1m.*, userdata\welt\felsen\*.
 // 3D-Modelle und Icons: automatisch mit dem eigenen Extraktor (werkzeuge\extraktor, baut sich beim ersten Mal
 //               selbst mit dem .NET-10-SDK und CUE4Parse) oder angeleitet per FModel – immer aus der eigenen
 //               Spielinstallation, Spielinhalte von Coffee Stain duerfen nicht mitgeliefert werden.
@@ -10,6 +11,41 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { spawn } from 'node:child_process';
+
+// Teile-Limit (Satisfactory-Wiki „Tutorial:Unreal Engine Entity Limit“): Standard 2.162.688 UObjects; sehr große Fabriken stürzen ab mit
+// „Maximum number of UObjects … exceeded“. Abhilfe: in Saved\Config\Windows\Engine.ini [/Script/Engine.GarbageCollectionSettings]
+// gc.MaxObjectsInEditor / gc.MaxObjectsInGame setzen (Wiki: 100000000). Das Wiki rät, nur bei diesem Absturz zu erhöhen.
+export const TEILELIMIT_STANDARD = 2162688, TEILELIMIT_WIKI = 100000000;
+const GC_ABSCHNITT = '[/Script/Engine.GarbageCollectionSettings]', GC_SCHLUESSEL = ['gc.MaxObjectsInEditor', 'gc.MaxObjectsInGame'];
+/** Werte aus dem Text der Engine.ini (null = nicht gesetzt) */
+export function teileLimitLesen(text) {
+  const w = {}; let drin = false;
+  for (const z of String(text || '').split(/\r?\n/)) {
+    const t = z.trim(); if (t.startsWith('[')) { drin = t.toLowerCase() === GC_ABSCHNITT.toLowerCase(); continue; }
+    const m = drin && /^(gc\.MaxObjectsIn(?:Editor|Game))\s*=\s*(\d+)/i.exec(t); if (m) w[m[1].toLowerCase()] = +m[2];
+  }
+  return { editor: w['gc.maxobjectsineditor'] ?? null, spiel: w['gc.maxobjectsingame'] ?? null };
+}
+/** Text mit neuem Limit (wert = null: Zeilen entfernen → Spiel-Standard); alles andere bleibt unverändert */
+export function teileLimitSetzen(text, wert) {
+  const eol = /\r\n/.test(text) ? '\r\n' : '\n', zeilen = String(text || '').split(/\r?\n/), aus = [];
+  let drin = false, abschnitt = -1;
+  for (const z of zeilen) {
+    const t = z.trim();
+    if (t.startsWith('[')) { drin = t.toLowerCase() === GC_ABSCHNITT.toLowerCase(); aus.push(z); if (drin) abschnitt = aus.length - 1; continue; }
+    if (drin && /^gc\.MaxObjectsIn(?:Editor|Game)\s*=/i.test(t)) continue; // alte Werte raus
+    aus.push(z);
+  }
+  if (wert != null) {
+    const neu = GC_SCHLUESSEL.map((k) => `${k}=${wert}`);
+    if (abschnitt >= 0) aus.splice(abschnitt + 1, 0, ...neu);
+    else { while (aus.length && aus.at(-1).trim() === '') aus.pop(); aus.push('', GC_ABSCHNITT, ...neu, ''); }
+  } else if (abschnitt >= 0) { // leeren Abschnitt mit entfernen
+    let j = abschnitt + 1; while (j < aus.length && aus[j].trim() === '') j++;
+    if (j >= aus.length || aus[j].trim().startsWith('[')) aus.splice(abschnitt, j - abschnitt);
+  }
+  return aus.join(eol);
+}
 
 export const QUELLEN = {
   kachel: (n) => `https://raw.githubusercontent.com/moritz-h/satisfactory-3d-map/master/map/resources/textures/Map/${n}.png`,
@@ -177,6 +213,15 @@ export class Einrichtung {
     add('icons', 'Gebäude-Icons', nIcons > 100 ? 'ok' : 'warnung', nIcons > 100 ? `${nIcons} Icons` : 'fehlen – Katalog ohne Bilder. Im Einrichtungs-Assistenten (Schritt „Spielmodelle“) automatisch holen.', { hilfe: 'fm-icons' });
     const kacheln = ['Map_0-0', 'Map_0-1', 'Map_1-0', 'Map_1-1'].every((n) => c.kartenKachel(n));
     add('kartenbild', 'Kartenbild (Spielwelt)', kacheln ? 'ok' : 'warnung', kacheln ? 'vorhanden' : 'fehlt – Karte ohne Hintergrund', { aktion: kacheln ? null : 'kartenbild', aktionText: 'Herunterladen' });
+    const welt = this.weltDa(), jw = this.job?.art === 'gelaende' && this.job.laeuft ? this.job : null;
+    add('welt', 'Gelände & Felsen (Welt-Ansicht)', welt ? 'ok' : 'warnung', jw ? `wird erzeugt – Schritt ${jw.nr}/${jw.von}: ${jw.schritt}` : welt ? 'vorhanden (aus deinem Spiel)' : 'fehlen – die Welt-Ansicht braucht sie. „Erzeugen“ holt sie einmalig aus deinem Spiel (ca. 1–2 Minuten; geschieht auch automatisch beim Holen der Spielmodelle).', { aktion: jw ? null : 'gelaende', aktionText: welt ? 'Neu erzeugen' : 'Erzeugen' });
+    if (process.platform === 'win32') {
+      const tl = this.teileLimit(), wert = Math.min(tl.editor ?? TEILELIMIT_STANDARD, tl.spiel ?? TEILELIMIT_STANDARD), hoch = wert > TEILELIMIT_STANDARD;
+      add('teilelimit', 'Teile-Limit (große Fabriken)', tl.da ? 'ok' : 'warnung', !tl.da ? 'Engine.ini des Spiels noch nicht vorhanden – Satisfactory einmal starten.'
+        : hoch ? `angehoben auf ${wert.toLocaleString('de-DE')} Objekte (Spiel-Standard ${TEILELIMIT_STANDARD.toLocaleString('de-DE')})`
+        : `Spiel-Standard (${TEILELIMIT_STANDARD.toLocaleString('de-DE')} Objekte) – reicht fast immer. Nur anheben, wenn das Spiel bei einer riesigen Fabrik mit „Maximum number of UObjects … exceeded“ abstürzt.`,
+        { aktion: tl.da ? (hoch ? 'teilelimitAus' : 'teilelimitAn') : null, aktionText: hoch ? 'Zurücksetzen' : 'Anheben', link: 'https://satisfactory.fandom.com/wiki/Tutorial:Unreal_Engine_Entity_Limit' });
+    }
     if (process.platform === 'win32') {
       const lnk = this.desktopLnk();
       add('verknuepfung', 'Desktop-Verknüpfung', lnk ? 'ok' : 'warnung', lnk ? lnk : 'keine Verknüpfung auf dem Desktop', { aktion: 'verknuepfung', aktionText: lnk ? 'Neu anlegen' : 'Anlegen' });
@@ -192,24 +237,20 @@ export class Einrichtung {
   jobStatus() { const j = this.job; return j ? { art: j.art, laeuft: j.laeuft, ok: j.ok, schritt: j.schritt, nr: j.nr, von: j.von, fortschritt: j.fortschritt, text: j.text, log: j.log.slice(-60), start: j.start, ende: j.ende } : { laeuft: false }; }
   jobStarten(art) {
     if (this.job?.laeuft) throw Object.assign(new Error('Es läuft bereits ein Vorgang.'), { status: 409 });
-    if (art !== 'automatisch') throw Object.assign(new Error('Unbekannter Vorgang'), { status: 400 });
-    const j = this.job = { art, laeuft: true, ok: null, schritt: 'Start …', nr: 0, von: 5, fortschritt: null, text: '', log: [], start: Date.now(), ende: null };
+    if (art !== 'automatisch' && art !== 'gelaende') throw Object.assign(new Error('Unbekannter Vorgang'), { status: 400 });
+    const j = this.job = { art, laeuft: true, ok: null, schritt: 'Start …', nr: 0, von: art === 'gelaende' ? 5 : 6, fortschritt: null, text: '', log: [], start: Date.now(), ende: null };
     const zeile = (z) => { j.log.push(z); if (j.log.length > 600) j.log.splice(0, j.log.length - 600); };
-    this.automatisch(j, zeile)
+    (art === 'gelaende' ? this.gelaendeJob(j, zeile) : this.automatisch(j, zeile))
       .then((t) => { j.ok = true; j.text = t; })
-      .catch((e) => { j.ok = false; j.text = e.message; zeile('FEHLER ' + e.message); this.c.log('Automatische Modelle: ' + e.message); })
+      .catch((e) => { j.ok = false; j.text = e.message; zeile('FEHLER ' + e.message); this.c.log((art === 'gelaende' ? 'Gelände & Felsen: ' : 'Automatische Modelle: ') + e.message); })
       .finally(() => { j.laeuft = false; j.ende = Date.now(); j.fortschritt = null; });
     return this.jobStatus();
   }
 
-  async automatisch(j, zeile) {
-    const c = this.c, dir = this.extraktorDir();
-    const schritt = (nr, t) => { j.nr = nr; j.schritt = t; j.fortschritt = null; zeile(`== ${t}`); };
-    if (!c.settings.gameDir || !fs.existsSync(path.join(c.settings.gameDir, 'FactoryGame', 'Content', 'Paks'))) throw new Error('Satisfactory-Installationsordner fehlt oder stimmt nicht (Einstellungen bzw. Schritt „Ordner“).');
-    if (!fs.existsSync(path.join(dir, 'BsExtraktor.csproj'))) throw new Error('werkzeuge\\extraktor fehlt – bitte die App vollständig (neu) herunterladen.');
-    const env = { ...process.env, DOTNET_CLI_TELEMETRY_OPTOUT: '1', DOTNET_NOLOGO: '1', DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1', CUE4PARSE_SKIP_NATIVE: 'true' };
-
-    // 1. .NET-SDK
+  dotnetEnv() { return { ...process.env, DOTNET_CLI_TELEMETRY_OPTOUT: '1', DOTNET_NOLOGO: '1', DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1', CUE4PARSE_SKIP_NATIVE: 'true' }; }
+  /** Schritte 1–2 für Extraktor und Gelände-Werkzeug: .NET 10 SDK und CUE4Parse-Quelltext */
+  async vorbereiten(j, zeile, schritt) {
+    const dir = this.extraktorDir();
     schritt(1, '.NET 10 SDK prüfen');
     if (!(await sdkDa())) {
       if (process.platform !== 'win32') throw new Error('Bitte das .NET 10 SDK installieren: ' + QUELLEN.dotnet);
@@ -231,6 +272,66 @@ export class Einrichtung {
       if (!fs.existsSync(path.join(quelle, 'CUE4Parse-Conversion', 'CUE4Parse-Conversion.csproj'))) throw new Error('CUE4Parse wurde geladen, aber nicht wie erwartet entpackt: ' + quelle);
     } else zeile('schon vorhanden.');
 
+  }
+  engineIni() { return this.c.engineIni || path.join(process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'), 'FactoryGame', 'Saved', 'Config', 'Windows', 'Engine.ini'); }
+  teileLimit() { const f = this.engineIni(); let t = null; try { t = fs.readFileSync(f, 'utf8'); } catch { /* fehlt */ } return { datei: f, da: t != null, ...teileLimitLesen(t) }; }
+  /** Engine.ini ändern (wert = null: Standard) – vorher Sicherung nach userdata/engine-ini-sicherung */
+  teileLimitAendern(wert) {
+    const f = this.engineIni(); if (!fs.existsSync(f)) throw new Error('Engine.ini des Spiels nicht gefunden – Satisfactory einmal starten und beenden, dann erneut versuchen.');
+    const alt = fs.readFileSync(f, 'utf8'), neu = teileLimitSetzen(alt, wert);
+    const sdir = path.join(this.c.DATA_DIR, 'engine-ini-sicherung'); fs.mkdirSync(sdir, { recursive: true });
+    const sich = path.join(sdir, `Engine_${new Date().toISOString().replace(/[:.]/g, '-')}.ini`); fs.writeFileSync(sich, alt);
+    fs.writeFileSync(f, neu);
+    const pr = teileLimitLesen(fs.readFileSync(f, 'utf8'));
+    if ((wert == null && (pr.editor != null || pr.spiel != null)) || (wert != null && (pr.editor !== wert || pr.spiel !== wert))) throw new Error('Engine.ini wurde nicht wie erwartet geändert – Sicherung liegt in ' + sich);
+    return sich;
+  }
+  weltDa() { const d = this.c.DATA_DIR; return fs.existsSync(path.join(d, 'gelaende', 'hoehen1m.json')) && fs.existsSync(path.join(d, 'welt', 'felsen', 'index.json')); }
+  /** Gelände (1-m-Raster) und Fels-Modelle aus dem eigenen Spiel – Schritte ab nr (Werkzeug bauen, Gelände, Felsen) */
+  async weltDatenErzeugen(j, zeile, schritt, nr) {
+    const c = this.c, wdir = path.join(c.ROOT, 'werkzeuge', 'gelaende'), env = this.dotnetEnv(), daten = path.join(this.extraktorDir(), 'daten');
+    if (!fs.existsSync(path.join(wdir, 'Gelaende.csproj'))) throw new Error('werkzeuge\\gelaende fehlt – bitte die App vollständig (neu) herunterladen.');
+    if (!['FactoryGame-angepasst.usmap', 'oodle-data-shared.dll'].every((n) => fs.existsSync(path.join(daten, n)))) throw new Error('Hilfsdaten des Extraktors fehlen – bitte zuerst im Schritt „Spielmodelle“ die Modelle automatisch holen.');
+    schritt(nr, 'Gelände-Werkzeug bauen (beim ersten Mal ca. 1 Minute)');
+    const bin = path.join(wdir, 'bin'), dll = path.join(bin, 'Gelaende.dll');
+    const zeit = (f) => { try { return fs.statSync(f).mtimeMs; } catch { return 0; } };
+    if (!fs.existsSync(dll) || Math.max(zeit(path.join(wdir, 'Program.cs')), zeit(path.join(wdir, 'Gelaende.csproj'))) > zeit(dll)) {
+      const letzte = [];
+      const code = await laufZeilen(dotnetExe(), ['build', path.join(wdir, 'Gelaende.csproj'), '-c', 'Release', '-o', bin, '-nologo', '-v', 'minimal', '-p:CUE4PARSE_SKIP_NATIVE=true'], { cwd: wdir, env },
+        (z) => { letzte.push(z); if (letzte.length > 40) letzte.shift(); if (/error|Fehler|Build succeeded|Der Buildvorgang/i.test(z) || /->/.test(z)) zeile(z.trim().slice(0, 400)); });
+      if (code !== 0 || !fs.existsSync(dll)) { letzte.slice(-25).forEach((z) => zeile(z)); throw new Error('Das Gelände-Werkzeug konnte nicht gebaut werden – Ausgabe siehe unten.'); }
+      zeile('gebaut.');
+    } else zeile('schon gebaut.');
+    const lauf = async (n, titel, extra) => {
+      schritt(n, titel); let fertig = '';
+      const code = await laufZeilen(dotnetExe(), [dll, '--spiel', c.settings.gameDir, '--daten', daten, ...extra], { cwd: wdir, env }, (z) => {
+        const m = /^FORTSCHRITT (\d+) (\d+)/.exec(z); if (m) { j.fortschritt = [+m[1], +m[2]]; return; }
+        if (z.startsWith('FERTIG ')) fertig = z.slice(7);
+        if (!/Treffer für|^\d+ Dateien$/.test(z)) zeile(z.slice(0, 400));
+      });
+      if (code !== 0) throw new Error(`Das Gelände-Werkzeug hat mit Fehler ${code} aufgehört – Ausgabe siehe unten.`);
+      return fertig;
+    };
+    fs.mkdirSync(path.join(c.DATA_DIR, 'gelaende'), { recursive: true });
+    const g = await lauf(nr + 1, 'Gelände aus dem Spiel lesen (1-m-Raster, ca. 30 Sekunden)', ['--export', path.join(c.DATA_DIR, 'gelaende', 'hoehen1m'), '--raster', '100']);
+    const f = await lauf(nr + 2, 'Felsen und Klippen als Modelle holen (ca. 30 Sekunden)', ['--felsen-modelle', path.join(c.DATA_DIR, 'welt', 'felsen')]);
+    return `Gelände: ${g || 'fertig'} · Felsen: ${f || 'fertig'}`;
+  }
+  async gelaendeJob(j, zeile) {
+    const c = this.c, schritt = (nr, t) => { j.nr = nr; j.schritt = t; j.fortschritt = null; zeile(`== ${t}`); };
+    if (!c.settings.gameDir || !fs.existsSync(path.join(c.settings.gameDir, 'FactoryGame', 'Content', 'Paks'))) throw new Error('Satisfactory-Installationsordner fehlt oder stimmt nicht (Einstellungen bzw. Schritt „Ordner“).');
+    await this.vorbereiten(j, zeile, schritt);
+    const t = await this.weltDatenErzeugen(j, zeile, schritt, 3);
+    return 'Fertig – Gelände und Felsen für die Welt-Ansicht sind da (' + t + ').';
+  }
+
+  async automatisch(j, zeile) {
+    const c = this.c, dir = this.extraktorDir();
+    const schritt = (nr, t) => { j.nr = nr; j.schritt = t; j.fortschritt = null; zeile(`== ${t}`); };
+    if (!c.settings.gameDir || !fs.existsSync(path.join(c.settings.gameDir, 'FactoryGame', 'Content', 'Paks'))) throw new Error('Satisfactory-Installationsordner fehlt oder stimmt nicht (Einstellungen bzw. Schritt „Ordner“).');
+    if (!fs.existsSync(path.join(dir, 'BsExtraktor.csproj'))) throw new Error('werkzeuge\\extraktor fehlt – bitte die App vollständig (neu) herunterladen.');
+    const env = this.dotnetEnv();
+    await this.vorbereiten(j, zeile, schritt);
     // 3. Extraktor bauen (nur wenn nötig)
     schritt(3, 'Extraktor bauen (beim ersten Mal 1–3 Minuten)');
     const bin = path.join(dir, 'bin'), dll = path.join(bin, 'BsExtraktor.dll');
@@ -262,11 +363,16 @@ export class Einrichtung {
       const k = await laufZeilen(process.execPath, [path.join(c.ROOT, 'werkzeuge', w), exportDir], { cwd: c.ROOT }, (z) => zeile(z.slice(0, 600)));
       if (k !== 0) throw new Error(`${w} hat mit Fehler ${k} aufgehört.`);
     }
-    return `Fertig: ${fertig || 'Daten exportiert'} – Icons und 3D-Modelle sind in der App.`;
+    // 6. Gelände & Felsen für die Welt-Ansicht (eigenes Werkzeug; Fehler hier lassen die Modelle gelten)
+    let welt = '';
+    try { j.von = 8; await this.weltDatenErzeugen(j, zeile, schritt, 6); welt = ' Gelände und Felsen für die Welt-Ansicht ebenfalls.'; }
+    catch (e) { zeile('HINWEIS Gelände & Felsen: ' + e.message); welt = ' Gelände & Felsen fehlen noch (Einstellungen → Voraussetzungen → „Erzeugen“).'; }
+    return `Fertig: ${fertig || 'Daten exportiert'} – Icons und 3D-Modelle sind in der App.${welt}`;
   }
 
   async ausfuehren(aktion) {
     const c = this.c;
+    if (aktion === 'gelaende') { this.jobStarten('gelaende'); return { ok: true, text: 'Gelände & Felsen werden im Hintergrund erzeugt (1–2 Minuten). Danach die Welt-Ansicht neu öffnen.' }; }
     if (aktion === 'kartenbild') {
       const dir = path.join(c.DATA_DIR, 'kartenbild');
       let n = 0;
@@ -314,6 +420,11 @@ export class Einrichtung {
         ausgabe.push(`== ${w} (Code ${r.code})`, r.out.trim().split(/\r?\n/).slice(-14).join('\n'));
       }
       return { ok: true, text: 'Icons und 3D-Modelle übernommen – Ausgabe siehe unten.', ausgabe: ausgabe.join('\n') };
+    }
+    if (aktion === 'teilelimitAn' || aktion === 'teilelimitAus') {
+      const an = aktion === 'teilelimitAn', sich = this.teileLimitAendern(an ? TEILELIMIT_WIKI : null);
+      c.log(`Teile-Limit ${an ? 'angehoben' : 'zurückgesetzt'} (Sicherung ${sich})`);
+      return { ok: true, text: an ? `Teile-Limit auf ${TEILELIMIT_WIKI.toLocaleString('de-DE')} angehoben – wirkt beim nächsten Spielstart. Alte Engine.ini gesichert.` : 'Teile-Limit auf Spiel-Standard zurückgesetzt – wirkt beim nächsten Spielstart. Alte Engine.ini gesichert.' };
     }
     if (aktion === 'verknuepfung') {
       if (process.platform !== 'win32') throw new Error('Nur unter Windows.');

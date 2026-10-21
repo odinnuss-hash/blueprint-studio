@@ -275,12 +275,12 @@ export class AssistentUI {
   async s_extras(el) {
     el.innerHTML = '<p class="muted">Prüfe …</p>';
     let j; try { j = await get('einrichtung'); } catch (e) { el.innerHTML = `<p class="err">${esc(e.message)}</p>`; return; }
-    const zeig = j.liste.filter((x) => ['kartenbild', 'verknuepfung', 'browser', 'node'].includes(x.id));
+    const zeig = j.liste.filter((x) => ['kartenbild', 'welt', 'teilelimit', 'verknuepfung', 'browser', 'node'].includes(x.id));
     el.innerHTML = `<h3>Extras</h3><p>Alles freiwillig – ein Klick lädt bzw. legt an.</p>
       <div class="ein-liste">${zeig.map((x) => `<div class="ein-row ${x.status}"><span class="ein-st">${x.status === 'ok' ? '✓' : x.status === 'fehler' ? '✕' : '!'}</span>
         <div class="ein-txt"><b>${esc(x.titel)}</b><div class="m">${esc(x.text)}</div></div>
         <div class="ein-act">${x.aktion ? `<button type="button" class="btn small${x.status === 'ok' ? '' : ' primary'}" data-akt="${x.aktion}">${esc(x.aktionText)}</button>` : ''}</div></div>`).join('')}</div>
-      <p class="hint">Kartenbild: Hintergrund der Weltkarte und der Welt-Ansicht (von GitHub).</p>`;
+      <p class="hint">Kartenbild: Hintergrund der Weltkarte und der Welt-Ansicht (von GitHub). Gelände &amp; Felsen: für die Welt-Ansicht, aus deinem Spiel. Teile-Limit: Satisfactory lädt standardmäßig höchstens rund 2,16 Mio. Objekte; riesige Fabriken können daran abstürzen. „Anheben“ trägt den Wert aus dem Satisfactory-Wiki (100 Mio.) in die Engine.ini ein – vorher Spiel beenden; die alte Datei wird gesichert, „Zurücksetzen“ macht es rückgängig. Das Wiki empfiehlt, nur bei diesem Absturz zu erhöhen.</p>`;
     el.querySelectorAll('[data-akt]').forEach((b) => b.addEventListener('click', async () => {
       b.disabled = true; b.textContent = 'Läuft …';
       try { const r = await post('einrichtung/aktion', { aktion: b.dataset.akt }); this.app.toast(r.text, 'ok'); } catch (e) { this.app.toast(e.message, 'err'); }

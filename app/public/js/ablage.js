@@ -37,9 +37,14 @@ export class AblageUI {
   }
 
   /** Ablage in ein großes Fenster verschieben (gleiche Elemente – alles funktioniert dort wie gewohnt) */
-  grossesFenster() {
+  /** waehlen: Auswahl-Modus (Welt-Ansicht) – Kacheln mit Vorschau, Klick übergibt { ablage | session, name } statt zu öffnen */
+  grossesFenster(waehlen = null) {
     const d = $('dlg-ablage'), ab = $('ablage');
     if (d.open) return;
+    this.waehlen = waehlen;
+    if (waehlen) { this.ansichtVorher = this.ansichtArt; this.ansichtArt = 'kacheln'; }
+    d.classList.toggle('waehlen', !!waehlen);
+    d.querySelector('.dlg-ablage-kopf h2').textContent = waehlen ? 'Blaupause zum Setzen wählen – Klick auf eine Kachel' : 'Ablage';
     this.platzhalter = document.createComment('ablage');
     ab.replaceWith(this.platzhalter);
     $('ab-gross-inhalt').appendChild(ab);
@@ -47,6 +52,7 @@ export class AblageUI {
     this.render?.();
   }
   grossesFensterZu() {
+    if (this.waehlen) { this.waehlen = null; this.ansichtArt = this.ansichtVorher || this.ansichtArt; $('dlg-ablage').classList.remove('waehlen'); $('dlg-ablage').querySelector('.dlg-ablage-kopf h2').textContent = 'Ablage'; }
     if (!this.platzhalter) return;
     this.platzhalter.replaceWith($('ablage'));
     this.platzhalter = null;
@@ -253,6 +259,7 @@ export class AblageUI {
       row.querySelector('[data-del]').addEventListener('click', () => this.loeschen(x.aktiv ? { session: x.session, name } : { ordner: this.aktuell, name }));
       row.addEventListener('dblclick', () => this.ansehenAusFenster(x));
       row.addEventListener('click', (e) => {
+        if (this.waehlen && !e.target.closest('input, label, [data-del]')) { e.preventDefault(); this.ansehenAusFenster(x); return; } // Welt: Klick wählt
         if (e.target.closest('input, label, button')) return;
         const namen = L.map((y) => y.name), strg = e.ctrlKey || e.metaKey;
         if (e.shiftKey && this.abAnker && namen.includes(this.abAnker)) {
@@ -318,6 +325,7 @@ export class AblageUI {
   /** Öffnen; im großen Fenster schließt es sich dabei (wieder öffnen über „Großes Fenster“) */
   async ansehenAusFenster(x) {
     const ordner = this.aktuell;
+    if (this.waehlen) { const cb = this.waehlen; $('dlg-ablage').close(); return cb(x.aktiv ? { session: x.session, name: x.name } : { ablage: ordner, name: x.name }); }
     if (this.platzhalter) $('dlg-ablage').close();
     await this.ansehen(ordner, x);
   }

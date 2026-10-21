@@ -1726,5 +1726,14 @@
  "Noch nichts gesetzt oder geändert.": "Nothing placed or changed yet.",
  "Dieses Bauteil liegt nicht im Haupt-Level und lässt sich hier nicht ändern.": "This part is not in the main level and cannot be changed here.",
  "Welt": "World",
- "Ganze Karte in 3D mit Gelände und Spielstand": "Whole map in 3D with terrain and save"
+ "Ganze Karte in 3D mit Gelände und Spielstand": "Whole map in 3D with terrain and save",
+ "Gelände & Felsen (Welt-Ansicht)": "Terrain & rocks (world view)",
+ "Erzeugen": "Create",
+ "Neu erzeugen": "Create again",
+ "vorhanden (aus deinem Spiel)": "available (from your game)",
+ "Aus der Ablage wählen …": "Choose from storage …",
+ "Blaupause zum Setzen wählen – Klick auf eine Kachel": "Choose a blueprint to place – click a tile",
+ "Verschieben": "Move",
+ "Drehen 90°": "Rotate 90°",
+ "Teile-Limit (große Fabriken)": "Object limit (huge factories)"
 }

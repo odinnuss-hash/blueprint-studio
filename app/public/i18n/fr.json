@@ -1726,5 +1726,14 @@
  "Noch nichts gesetzt oder geändert.": "Rien de placé ou modifié pour le moment.",
  "Dieses Bauteil liegt nicht im Haupt-Level und lässt sich hier nicht ändern.": "Cette pièce n'est pas dans le niveau principal et ne peut pas être modifiée ici.",
  "Welt": "Monde",
- "Ganze Karte in 3D mit Gelände und Spielstand": "Toute la carte en 3D avec terrain et sauvegarde"
+ "Ganze Karte in 3D mit Gelände und Spielstand": "Toute la carte en 3D avec terrain et sauvegarde",
+ "Gelände & Felsen (Welt-Ansicht)": "Terrain & rochers (vue du monde)",
+ "Erzeugen": "Créer",
+ "Neu erzeugen": "Recréer",
+ "vorhanden (aus deinem Spiel)": "disponible (issu de votre jeu)",
+ "Aus der Ablage wählen …": "Choisir dans le rangement …",
+ "Blaupause zum Setzen wählen – Klick auf eine Kachel": "Choisir un plan à placer – cliquez sur une vignette",
+ "Verschieben": "Déplacer",
+ "Drehen 90°": "Tourner de 90°",
+ "Teile-Limit (große Fabriken)": "Limite d'objets (très grandes usines)"
 }
