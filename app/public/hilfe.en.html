@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">About the app</h2>
 <table>
   <tr><th style="width:200px">Program</th><td><b>Blueprint Studio</b> – blueprint tool for Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">1.2.0</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.4.1</td></tr>
   <tr><th>Author</th><td><b>ODINnuss</b> – idea, concept and design</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. All rights reserved.</td></tr>
   <tr><th>Implementation</th><td>Programmed on behalf of the author with AI assistance (Claude, Anthropic).</td></tr>
@@ -601,7 +601,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Models are rotated/offset in the app</td><td>The FModel mesh format must be <code>glTF 2.0 (binary)</code>; run the tool again.</td></tr>
   <tr><td>Gray boxes instead of models</td><td>A model is missing for this part (see the tool's message) – or it is a belt/pipeline/railway/lift (intentionally without a model).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.2.0 · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.4.1</span> · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen
@@ -610,6 +610,7 @@ if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrol
 <script>
 // Pfade in der Hilfe aus den eigenen Einstellungen einsetzen (keine festen Pfade im Text)
 fetch('/api/config').then((r) => r.json()).then((c) => {
+  if (c.version) document.querySelectorAll('[data-version]').forEach((e) => { e.textContent = c.version; }); // Version immer aus der laufenden App
   const j = (...t) => t.filter(Boolean).join('\\');
   const w = { appDir: c.appDir, blueprintDir: c.blueprintDir, saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0], megaprints: (c.megaprints || [])[0],
     fmodel: c.fmodelDir, fmodelOutput: c.fmodelDir && j(c.fmodelDir, 'Output'), fmodelExport: c.fmodelExport, usmap: c.gameDir && j(c.gameDir, 'CommunityResources', 'FactoryGame.usmap') };

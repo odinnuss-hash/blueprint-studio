@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">À propos de l'app</h2>
 <table>
   <tr><th style="width:200px">Programme</th><td><b>Blueprint Studio</b> – outil de plans pour Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">1.2.0</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.4.1</td></tr>
   <tr><th>Auteur</th><td><b>ODINnuss</b> – idée, concept et conception</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Tous droits réservés.</td></tr>
   <tr><th>Réalisation</th><td>Programmé pour le compte de l'auteur avec l'aide de l'IA (Claude, Anthropic).</td></tr>
@@ -601,7 +601,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Les modèles sont tournés/décalés dans l'app</td><td>Le format de mesh de FModel doit être <code>glTF 2.0 (binary)</code> ; relancez l'outil.</td></tr>
   <tr><td>Boîtes grises au lieu des modèles</td><td>Il manque un modèle pour cet élément (voir le message de l'outil) – ou il s'agit d'un convoyeur/tuyau/rail/ascenseur (volontairement sans modèle).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.2.0 · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.4.1</span> · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen
@@ -610,6 +610,7 @@ if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrol
 <script>
 // Pfade in der Hilfe aus den eigenen Einstellungen einsetzen (keine festen Pfade im Text)
 fetch('/api/config').then((r) => r.json()).then((c) => {
+  if (c.version) document.querySelectorAll('[data-version]').forEach((e) => { e.textContent = c.version; }); // Version immer aus der laufenden App
   const j = (...t) => t.filter(Boolean).join('\\');
   const w = { appDir: c.appDir, blueprintDir: c.blueprintDir, saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0], megaprints: (c.megaprints || [])[0],
     fmodel: c.fmodelDir, fmodelOutput: c.fmodelDir && j(c.fmodelDir, 'Output'), fmodelExport: c.fmodelExport, usmap: c.gameDir && j(c.gameDir, 'CommunityResources', 'FactoryGame.usmap') };

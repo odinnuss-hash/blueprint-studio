@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">Zur App</h2>
 <table>
   <tr><th style="width:200px">Programm</th><td><b>Blueprint Studio</b> – Blaupausen-Werkzeug für Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">1.2.0</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.4.1</td></tr>
   <tr><th>Urheber</th><td><b>ODINnuss</b> – Idee, Konzept und Gestaltung</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Alle Rechte vorbehalten.</td></tr>
   <tr><th>Umsetzung</th><td>Programmiert im Auftrag des Urhebers mit KI-Unterstützung (Claude, Anthropic).</td></tr>
@@ -601,7 +601,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Modelle liegen in der App verdreht/versetzt</td><td>FModel-Mesh-Format muss <code>glTF 2.0 (binary)</code> sein; Werkzeug erneut laufen lassen.</td></tr>
   <tr><td>Graue Kästen statt Modellen</td><td>Für dieses Bauteil fehlt ein Modell (siehe Meldung des Werkzeugs) – oder es ist ein Band/Rohr/Schiene/Lift (bewusst ohne Modell).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.2.0 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.4.1</span> · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen
@@ -610,6 +610,7 @@ if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrol
 <script>
 // Pfade in der Hilfe aus den eigenen Einstellungen einsetzen (keine festen Pfade im Text)
 fetch('/api/config').then((r) => r.json()).then((c) => {
+  if (c.version) document.querySelectorAll('[data-version]').forEach((e) => { e.textContent = c.version; }); // Version immer aus der laufenden App
   const j = (...t) => t.filter(Boolean).join('\\');
   const w = { appDir: c.appDir, blueprintDir: c.blueprintDir, saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0], megaprints: (c.megaprints || [])[0],
     fmodel: c.fmodelDir, fmodelOutput: c.fmodelDir && j(c.fmodelDir, 'Output'), fmodelExport: c.fmodelExport, usmap: c.gameDir && j(c.gameDir, 'CommunityResources', 'FactoryGame.usmap') };

@@ -34,6 +34,7 @@ const MANUELL = {
   Build_SignPole_Large_C: ['SM_SignPole_350cm'],
   Build_SignPole_Huge_C: ['SM_SignPole_500cm'],
   Build_SignPole_Portrait_C: ['SM_SignPole_200cm'],
+  Build_PipelineFlowIndicator_C: ['SM_StatusInd_01'], // liegt unter …/FlowIndicator/ – der Filter „Indicator“ würde es sonst verwerfen
 };
 // Teile, die nicht zum sichtbaren Gebaeude gehoeren
 const SKIP = /(^|\/)Cube$|Hologram|Indicator|Clearance|Collision|Snap|Preview|Overlap|Fog|Broken|_Holo|Arrows|Pause|SmokePlane|BlenderLiquid|LandingPad_Jelly|^\/Engine\/|FicsmasHat|GiftTree|Mercer_Rings/i;
@@ -150,7 +151,25 @@ for (const name of [...buildFiles.keys()].sort()) {
 for (const [cls, list] of Object.entries(MANUELL)) {
   if (!klassen[cls]) { const ok = list.filter((m) => glbFiles.has(m)); if (ok.length) klassen[cls] = ok.map((m) => [m, [0, 0, 0], [0, 0, 0, 1], [1, 1, 1]]); }
 }
-const used = [...new Set(Object.values(klassen).flatMap((l) => l.map((x) => x[0])))].sort();
+// Höhenabhängige Bauteile – das Spiel setzt sie erst zur Laufzeit zusammen, die App ebenso (Höhe aus Spielstand/Blaupause):
+//  lifte:    Förderlifte – Unterteil, Mittelstücke (Teilhöhe, auch halbe), Oberteil (FGBuildableConveyorLiftSparseData)
+//  stuetzen: Stützen/Masten – Stangen-Varianten je Höhe (mPoleVariations) und ggf. Kopf (mSupportMeshInstanceData)
+const lifte = {}, stuetzen = {};
+const meshName = (ref) => (/StaticMesh'([^']+)'/.exec(ref?.ObjectName || '') || [])[1];
+for (const [name, file] of buildFiles) {
+  let d; try { d = JSON.parse(fs.readFileSync(file, 'utf8')); } catch { continue; }
+  const sp = d.filter((e) => e.Type === 'FGBuildableConveyorLiftSparseData').pop()?.Properties;
+  if (sp) lifte[name + '_C'] = { teilhoehe: sp.mMeshHeight || 200, unten: meshName(sp.mBottomMesh), mitte: meshName(sp.mMidMesh), halb: meshName(sp.mHalfMidMesh), oben: meshName(sp.mTopMesh) };
+  const def = d.find((e) => e.Name === 'Default__' + name + '_C')?.Properties;
+  if (def?.mPoleVariations?.length) {
+    const k = def.mSupportMeshInstanceData;
+    stuetzen[name + '_C'] = { kopf: k?.StaticMesh ? [meshName(k.StaticMesh), vec(k.RelativeTransform?.Translation).map(r4)] : null,
+      stangen: def.mPoleVariations.map((v) => [meshName(v.StaticMesh), v.Height || 0, vec(v.RelativeTransform?.Translation).map(r4)]).filter((x) => x[0]) };
+  }
+}
+const zusatz = [...Object.values(lifte).flatMap((l) => [l.unten, l.mitte, l.halb, l.oben]), ...Object.values(stuetzen).flatMap((x) => [x.kopf?.[0], ...x.stangen.map((y) => y[0])])].filter((m) => m && glbFiles.has(m));
+const used = [...new Set([...Object.values(klassen).flatMap((l) => l.map((x) => x[0])), ...zusatz])].sort();
+console.log(`${Object.keys(lifte).length} Förderlifte, ${Object.keys(stuetzen).length} Stützen/Masten (höhenabhängig)`);
 console.log(`${Object.keys(klassen).length} Bauteil-Typen mit Modell, ${used.length} verschiedene Meshes`);
 if (fehlend.size) console.log(`Hinweis: ${fehlend.size} Meshes fehlen im Export (in FModel mit Export > Model nachholen):\n  ` + [...fehlend].sort().join('|'));
 
@@ -271,7 +290,9 @@ for (const [cls, list] of Object.entries(klassen)) {
   klassen[cls] = list.filter((x) => meshes[x[0]]);
   if (!klassen[cls].length) delete klassen[cls];
 }
-const index = { version: 1, erstellt: new Date().toISOString(), quelle: SRC, groesse: offset, meshes, klassen };
+for (const [c, l] of Object.entries(lifte)) if (![l.unten, l.mitte, l.oben].every((m) => meshes[m])) delete lifte[c]; else if (!meshes[l.halb]) l.halb = null;
+for (const [c, x] of Object.entries(stuetzen)) { x.stangen = x.stangen.filter((y) => meshes[y[0]]); if (x.kopf && !meshes[x.kopf[0]]) x.kopf = null; if (!x.stangen.length) delete stuetzen[c]; }
+const index = { version: 1, erstellt: new Date().toISOString(), quelle: SRC, groesse: offset, meshes, klassen, lifte, stuetzen };
 fs.writeFileSync(path.join(OUT_DIR, 'meshes.bin'), Buffer.concat(chunks));
 fs.writeFileSync(path.join(OUT_DIR, 'index.json'), JSON.stringify(index));
 console.log(`Fertig: ${Object.keys(meshes).length} Meshes (${Math.round(nTri / 1000)}k Dreiecke, ${(offset / 1048576).toFixed(1)} MB), ${Object.keys(klassen).length} Bauteil-Typen, ${fail} Fehler`);

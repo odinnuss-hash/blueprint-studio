@@ -32,7 +32,7 @@ async function api(path, body) {
 
 // W/A/S/D: [vor, seitlich] (e.code = Tastenposition, unabhängig vom Tastaturlayout)
 const FAHR = { KeyW: [1, 0], KeyS: [-1, 0], KeyA: [0, -1], KeyD: [0, 1] };
-const APP_VERSION = '1.4.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
+const APP_VERSION = '1.4.1'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
 
 class App {
   constructor() {
@@ -787,17 +787,33 @@ class App {
         $('w-maus').checked = this.welt.mausUmkehren;
         $('w-maus').addEventListener('change', (e) => { this.welt.mausUmkehren = e.target.checked; try { localStorage.setItem('bs-welt-maus-umkehren', e.target.checked ? '1' : '0'); } catch { /* egal */ } });
         this.weltBlaupausenVerdrahten();
-        const j = await (await fetch('/api/karte/liste', { cache: 'no-store' })).json();
-        $('w-spielstand').insertAdjacentHTML('beforeend', (j.spielstaende || []).map((x) => `<option value="${esc(x.id)}">${esc(x.sitzung)} · ${esc(x.name)}</option>`).join(''));
+        // Liste aktuell halten: beim Aufklappen, wenn das Fenster wieder aktiv wird (z. B. nach dem Spielen), alle 30 s
+        $('w-spielstand').addEventListener('pointerdown', () => this.weltListe());
+        $('w-spielstand').addEventListener('focus', () => this.weltListe());
+        window.addEventListener('focus', () => { if (!$('view-welt').hidden) this.weltListe(); });
+        setInterval(() => { if (!$('view-welt').hidden && document.visibilityState === 'visible') this.weltListe(); }, 30000);
       }
+      await this.weltListe(true);
       await this.welt.start();
       this.welt.zeichne();
     } catch (e) { $('w-fehler').hidden = false; $('w-fehler').textContent = e.message; }
+  }
+  /** Spielstände für die Welt-Ansicht neu einlesen (neue erscheinen, gelöschte verschwinden; die Auswahl bleibt) */
+  async weltListe(sofort = false) {
+    if (!sofort && this.weltListeZeit && Date.now() - this.weltListeZeit < 3000) return; // nicht bei jedem Klick neu
+    this.weltListeZeit = Date.now();
+    let j; try { j = await (await fetch('/api/karte/liste', { cache: 'no-store' })).json(); } catch { return; }
+    const sel = $('w-spielstand'), alt = sel.value, l = j.spielstaende || [];
+    const html = '<option value="">– nur Gelände –</option>' + l.map((x) => `<option value="${esc(x.id)}">${esc(x.sitzung)} · ${esc(x.name)}</option>`).join('');
+    if (sel.dataset.liste === html) return; // unverändert – offenes Aufklappmenü nicht stören
+    sel.dataset.liste = html; sel.innerHTML = html;
+    sel.value = l.some((x) => x.id === alt) ? alt : '';
   }
   /** Spielstand direkt in der Welt-Ansicht öffnen (Knopf „In 3D öffnen“ auf der Karte) */
   async weltOeffnen(id) {
     this.setMode('welt'); // lädt die Welt-Ansicht; warten, bis die Spielstand-Liste da ist
     for (let i = 0; i < 100 && !(this.welt && $('w-spielstand').options.length > 1); i++) await new Promise((r) => setTimeout(r, 100));
+    if (![...$('w-spielstand').options].some((o) => o.value === id)) await this.weltListe(true);
     if (![...$('w-spielstand').options].some((o) => o.value === id)) return;
     $('w-spielstand').value = id; $('w-laden').click();
   }
@@ -845,6 +861,7 @@ class App {
         $('w-speichern').textContent = 'Wird gespeichert …';
         const r = await api('welt/spielstand', { id, name, setzungen, loeschen, verschieben, ueberschreiben }), i = r.info;
         const teile = [i.blaupausen ? `${i.blaupausen} Blaupausen (${i.eingefuegt.toLocaleString('de-DE')} Objekte)` : '', i.verschoben ? `${i.verschoben} verschoben` : '', (i.akteureGeloescht || 0) + (i.leichtbauGeloescht || 0) ? `${i.akteureGeloescht + i.leichtbauGeloescht} gelöscht${i.kabelGeloescht ? ` (+${i.kabelGeloescht} Kabel)` : ''}` : ''].filter(Boolean);
+        this.weltListe(true); // neuer Spielstand gleich in der Liste
         this.toast(`Neuer Spielstand „${r.name}“ gespeichert: ${teile.join(', ')}. Im Spiel laden zum Prüfen.${i.sicherung ? ` Alte Datei gesichert: ${i.sicherung}` : ''}`, 'ok');
       } catch (e) { this.toast(e.message, 'err'); } finally { $('w-speichern').disabled = false; $('w-speichern').textContent = 'In Spielstand speichern'; }
     });

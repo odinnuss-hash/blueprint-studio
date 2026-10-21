@@ -35,7 +35,9 @@ public static class Programm
     // Teile, die nicht zum sichtbaren Gebäude gehören (wie in modelle-aufbereiten.mjs)
     private static readonly Regex Skip = new(@"(^|/)Cube$|Hologram|Indicator|Clearance|Collision|Snap|Preview|Overlap|Fog|Broken|_Holo|Arrows|Pause|SmokePlane|BlenderLiquid|LandingPad_Jelly|^/Engine/|FicsmasHat|GiftTree|Mercer_Rings", RegexOptions.IgnoreCase | RegexOptions.Compiled);
     // Bauteile, deren Mesh erst zur Laufzeit gewählt wird (MANUELL in modelle-aufbereiten.mjs)
-    private static readonly string[] ZusatzMeshes = ["SM_ConveyorPole_01", "SM_HyperTubePole_01", "SM_SignPole_200cm", "SM_SignPole_350cm", "SM_SignPole_500cm"];
+    // Zusätzlich exportieren, obwohl der Filter sie verwerfen würde bzw. sie erst zur Laufzeit gewählt werden
+    // (SM_StatusInd_01 = Rohr-Durchflussanzeige, liegt unter …/FlowIndicator/ – „Indicator“ steht im Filter)
+    private static readonly string[] ZusatzMeshes = ["SM_ConveyorPole_01", "SM_HyperTubePole_01", "SM_SignPole_200cm", "SM_SignPole_350cm", "SM_SignPole_500cm", "SM_StatusInd_01"];
     private static readonly Regex MeshRef = new("\"ObjectName\":\\s*\"StaticMesh'([^']+)'\",\\s*\"ObjectPath\":\\s*\"([^\"]+)\"", RegexOptions.Compiled);
     private static readonly Regex IconRef = new("\"m(?:PersistentBigIcon|SmallIcon)\"\\s*:\\s*\"Texture2D ([^\"]+)\"", RegexOptions.Compiled);
 

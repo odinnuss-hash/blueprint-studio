@@ -263,7 +263,7 @@ export class Welt3D {
         const o = i * 12, cls = meta.klassen[w[o + 10]], s = [w[o + 7] || 1, w[o + 8] || 1, w[o + 9] || 1];
         const [p0, q0] = this.lageMit(w, i, delta?.get(i), meta);
         const q = dreh ? qmul(qd, q0) : q0, p = lage(p0[0], p0[1], p0[2]);
-        const parts = models?.klassen?.[cls], col = [...farben[w[o + 10]].map((c) => c * 0.75 + 0.2), id || (ids ? i + 2 : 1)], R = qm(q, s);
+        const parts = this.teileFuer(cls, w[o + 11]) || models?.klassen?.[cls], col = [...farben[w[o + 10]].map((c) => c * 0.75 + 0.2), id || (ids ? i + 2 : 1)], R = qm(q, s);
         if (parts) {
           for (const [mesh, t, mq, s0] of parts) {
             let sk = s0;
@@ -300,6 +300,32 @@ export class Welt3D {
     gl.bindBuffer(gl.ARRAY_BUFFER, satz.vbo); gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW); satz.ranges = ranges;
     gl.bindBuffer(gl.ARRAY_BUFFER, satz.lineVbo); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(L), gl.STATIC_DRAW); satz.nLinie = L.length / 3;
     this.zeichne();
+  }
+  /**
+   * Höhenabhängige Bauteile wie im Spiel zusammensetzen (Teile aus modelle/index.json: lifte, stuetzen); sonst null.
+   * Lift: Unterteil am Anschluss, Mittelstücke im Teilhöhen-Raster (Rest mit halbem Stück), Oberteil bei Höhe p (p < 0: nach unten).
+   * Stütze/Mast: p = (Variante + 1) · 100 000 + Höhe; Stange von 0 bis Höhe (mit Kopf: bis Höhe − 100, Kopf darüber), passend gestreckt.
+   */
+  teileFuer(cls, p) {
+    const M = this.modelle; if (!M) return null;
+    const E = [0, 0, 0, 1], S1 = [1, 1, 1], L = M.lifte?.[cls];
+    if (L) {
+      const h = Math.abs(p) >= 50 ? p : 400, lo = Math.min(0, h), hi = Math.max(0, h), teile = [[L.unten, [0, 0, lo], E, S1], [L.oben, [0, 0, hi], E, S1]];
+      let z = lo + L.teilhoehe; const ende = hi - 100;
+      for (; z + L.teilhoehe <= ende + 1; z += L.teilhoehe) teile.push([L.mitte, [0, 0, z], E, S1]);
+      if (L.halb && ende - z > 20) teile.push([L.halb, [0, 0, z], E, S1]);
+      return teile;
+    }
+    const T = M.stuetzen?.[cls];
+    if (T) {
+      const nr = p >= 100000 ? Math.floor(p / 100000) - 1 : -1, hoehe = (p % 100000) || T.stangen[0][1];
+      const v = T.stangen[nr] || T.stangen.find((x) => x[1] >= hoehe - 1) || T.stangen.at(-1);
+      const kopfAb = T.kopf ? 100 : 0, soll = Math.max(1, hoehe - kopfAb), mm = M.meshes[v[0]], ist = mm ? mm.max[2] - Math.min(0, mm.min[2]) : soll;
+      const teile = [[v[0], v[2] || [0, 0, 0], E, [1, 1, ist > 1 ? soll / ist : 1]]];
+      if (T.kopf) teile.push([T.kopf[0], [T.kopf[1][0], T.kopf[1][1], hoehe + T.kopf[1][2]], E, S1]);
+      return teile;
+    }
+    return null;
   }
   zeichneSatz(VP, satz, M = EINS, tint = [0, 0, 0, 0]) {
     if (!satz.ranges.length && !satz.nLinie) return;

@@ -225,6 +225,11 @@ export function readProps(body, o) {
     const at = s + ml + 12 + 14 + 9;
     if (at + 4 <= e) { const v = body.readFloatLE(at); if (v > 0 && v < 1e6) o.length = Math.round(v * 10) / 10; }
   }
+  // Stützen/Masten: Höhe und gewählte Stangen-Variante (Name, 4-Byte-Typlänge, Typ, 9 Byte bis zum Wert – in alter und neuer Kodierung)
+  const mh = txt.indexOf('mHeight\x00');
+  if (mh >= 0 && txt.startsWith('FloatProperty\x00', mh + 12)) { const at = s + mh + 12 + 14 + 9; if (at + 4 <= e) { const v = body.readFloatLE(at); if (v >= 0 && v < 1e5) o.hoehe = v; } }
+  const pv = txt.indexOf('mSelectedPoleVersion\x00');
+  if (pv >= 0 && txt.startsWith('IntProperty\x00', pv + 25)) { const at = s + pv + 25 + 12 + 9; if (at + 4 <= e) { const v = body.readInt32LE(at); if (v >= 0 && v < 20) o.stangeNr = v; } }
   // Foerderlift: obere Position
   const tt = txt.indexOf('mTopTransform\x00');
   if (tt >= 0) {

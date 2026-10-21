@@ -54,6 +54,16 @@ function spline3d(o) {
   }
   return out.map((v) => Math.round(v));
 }
+/**
+ * Zusatzwert je Bauteil (12. Zahl): Träger = Länge; Förderlift = Höhe des Oberteils (kann negativ sein);
+ * Stütze/Mast = Höhe, mit gewählter Stangen-Variante als (Variante + 1) · 100 000 + Höhe.
+ */
+function parameter(o) {
+  if (o.length) return o.length;
+  if (o.liftTop) return o.liftTop[2] || 0;
+  if (o.hoehe !== undefined || o.stangeNr !== undefined) return (o.stangeNr !== undefined ? (o.stangeNr + 1) * 100000 : 0) + (o.hoehe || 0);
+  return 0;
+}
 /** Trägerlänge aus Leichtbau-Zusatzdaten (BuildableBeamLightweightData{BeamLength}): Wert 9 Byte nach „FloatProperty“ */
 function beamLaenge(typed) {
   if (!typed) return 0;
@@ -88,9 +98,9 @@ export function weltDaten(buf) {
     const cls = kurz(o.typePath);
     if (cls === 'Char_Player_C') { spieler.push(o.pos.map(Math.round)); continue; }
     if (!/^Build_/.test(cls) || cls === 'Build_PowerLine_C') continue;
-    if (RX_SPLINE.test(cls) || /Beam/.test(cls)) readProps(body, o);
+    if (RX_SPLINE.test(cls) || /Beam|ConveyorLift|Pole|Support/.test(cls)) readProps(body, o);
     if (o.spline?.length > 1) { linien.push([ki(cls), ...spline3d(o)]); linienRefs.push(o.level === haupt ? o.pathName : null); linienLage.push(...o.pos, ...o.rot); continue; }
-    werte.push(o.pos[0], o.pos[1], o.pos[2], ...o.rot, ...(o.scale || [1, 1, 1]), ki(cls), o.length || 0);
+    werte.push(o.pos[0], o.pos[1], o.pos[2], ...o.rot, ...(o.scale || [1, 1, 1]), ki(cls), parameter(o));
     refs.push(o.level === haupt ? o.pathName : null);
   }
   const meta = { refs, lwTypen, linienRefs, linienLage, name: header.saveName || header.sessionName, sitzung: header.sessionName, version: header.saveVersion, anzahl: werte.length / 12, leichtbau: leicht, klassen, linien, spieler, dauer: Date.now() - t0 };
@@ -110,7 +120,7 @@ export function blaupauseDaten(bp, name) {
     if (o.kind !== 'entity' || !/^Build_/.test(o.cls) || o.cls === 'Build_PowerLine_C') continue;
     z0 = Math.min(z0, o.pos[2]);
     if (o.spline?.length > 1) { linien.push([ki(o.cls), ...spline3d(o)]); continue; }
-    werte.push(o.pos[0], o.pos[1], o.pos[2], ...o.rot, ...(o.scale || [1, 1, 1]), ki(o.cls), o.length || 0);
+    werte.push(o.pos[0], o.pos[1], o.pos[2], ...o.rot, ...(o.scale || [1, 1, 1]), ki(o.cls), parameter(o));
   }
   const meta = { name, version: bp.header.saveVersion, anzahl: werte.length / 12, klassen, linien, unten: Number.isFinite(z0) ? z0 : 0 };
   return { meta, werte: new Float32Array(werte) };

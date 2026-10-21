@@ -30,6 +30,7 @@ import { bereichAlsBlaupause } from './lib/extrahieren.mjs';
 import { scannen, planen, anwenden, rueckgaengig, vorschau, GRUPPEN, GRUPPE_NAME, GRUPPEN_STANDARD, GRUPPEN_NEU, setGruppen, setPraefixe, setThemenUebersetzung, MAXLEN, pass, merkmale, lernen, vorschlagGelernt, ablageOrdner, strukturOrdner } from './lib/ordnen.mjs';
 import { Ablage } from './lib/ablage.mjs';
 import { kategorienSchreiben, SYMBOL_STANDARD } from './lib/spielkategorien.mjs';
+import { zuletztGeladen, zielWaehlen } from './lib/spielziel.mjs';
 import { Einrichtung, findeSpielOrdner, ordnerWaehlen } from './lib/einrichtung.mjs';
 import { Updater } from './lib/update.mjs';
 
@@ -43,7 +44,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '1.4.0';
+const VERSION = '1.4.1';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 
@@ -719,7 +720,8 @@ async function spielstaende() {
   return out.sort((a, b) => b.geaendert - a.geaendert);
 }
 // ------------------------------------------------------------------ Kategorien im Bauplan-Menü des Spiels
-// Das Spiel speichert die Einteilung je Spielstand. Beim Holen ins Spiel wird der neueste Spielstand der Sitzung angepasst
+// Das Spiel speichert die Einteilung je Spielstand. Beim Holen ins Spiel wird der Spielstand angepasst, mit dem gespielt wird
+// (lib/spielziel.mjs: zuletzt im Spiel geladener bzw. danach vom Spiel gespeicherter Stand der Sitzung, laut Spielprotokoll)
 // (vorher einmalig als Original in userdata\sicherungen\spielstaende gesichert); Hauptgruppe → Kategorie, Untergruppe →
 // Unterkategorie, Namen ohne Nummer. Symbole: im Spiel einmal einstellen – die App merkt sie sich (settings.spielSymbole).
 const SPIEL_SICHERUNG = () => path.join(DATA_DIR, 'sicherungen', 'spielstaende');
@@ -766,7 +768,8 @@ async function spielKategorienSetzen(session) {
   if (spielKatLauf) { spielKatNochmal.add(session); return { laeuft: true }; }
   spielKatLauf = (async () => {
     if (await spielLaeuft()) { spielKatWartet.add(session); log(`Kategorien für „${session}“ vorgemerkt – Spiel läuft.`); return { wartet: true }; }
-    const stand = (await spielstaende()).find((s) => s.sitzung === session);
+    const ziel = zielWaehlen((await spielstaende()).filter((s) => s.sitzung === session), zuletztGeladen(path.join(path.dirname(settings.saveDir), 'Logs')), new Set(settings.appSpielstaende || []));
+    const stand = ziel?.stand;
     if (!stand) throw Object.assign(new Error(`Kein Spielstand der Sitzung „${session}“ gefunden.`), { status: 404 });
     const datei = path.join(settings.saveDir, ...stand.id.split('/'));
     // einmalig das Original sichern (je Spielstand-Datei)
@@ -786,8 +789,8 @@ async function spielKategorienSetzen(session) {
     // erst in eine Nachbardatei schreiben, dann ersetzen
     const tmp = datei + '.bs-neu';
     await fsp.writeFile(tmp, r.ausgabe); await fsp.rename(tmp, datei);
-    log(`Kategorien gesetzt in ${stand.id}: ${r.kategorien.filter((c) => !c.undef).map((c) => `${c.name} (${c.subs.length})`).join(', ')}`);
-    return { ok: true, spielstand: stand.name, zugeordnet: zuordnung.length, kategorien: r.kategorien };
+    log(`Kategorien gesetzt in ${stand.id} (${ziel.grund}): ${r.kategorien.filter((c) => !c.undef).map((c) => `${c.name} (${c.subs.length})`).join(', ')}`);
+    return { ok: true, spielstand: stand.name, grund: ziel.grund, zugeordnet: zuordnung.length, kategorien: r.kategorien };
   })();
   try { return await spielKatLauf; }
   finally {
@@ -921,6 +924,7 @@ async function weltSpielstand(body) {
   }
   await fsp.writeFile(ziel + '.neu', daten); await fsp.rename(ziel + '.neu', ziel);
   info.sicherung = sicherung ? path.basename(sicherung) : null;
+  if (!(settings.appSpielstaende || []).includes(name)) { settings.appSpielstaende = [...(settings.appSpielstaende || []), name].slice(-200); await saveSettings(); }
   log(`Welt → Spielstand${sicherung ? ` (überschrieben, alte Datei: ${sicherung})` : ''}: ${ziel} (${setzungen.length} Blaupausen, ${info.eingefuegt} Objekte eingefügt, ${loeschen.length} gelöscht, ${verschieben.length} verschoben, Quelle ${id})`);
   return { ok: true, name, datei: path.basename(ziel), info };
 }

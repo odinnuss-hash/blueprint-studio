@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">アプリについて</h2>
 <table>
   <tr><th style="width:200px">プログラム</th><td><b>Blueprint Studio</b> – Satisfactory 用の設計図ツール</td></tr>
-  <tr><th>バージョン</th><td id="za-version">1.2.0</td></tr>
+  <tr><th>バージョン</th><td id="za-version" data-version>1.4.1</td></tr>
   <tr><th>作者</th><td><b>ODINnuss</b>– アイデア、コンセプト、デザイン</td></tr>
   <tr><th>著作権</th><td>© 2026 ODINnuss. 無断複製・転載を禁じます。</td></tr>
   <tr><th>実装</th><td>作者の依頼により AI の支援(Claude、Anthropic)を受けてプログラミングされました。</td></tr>
@@ -601,7 +601,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>アプリ内でモデルが回転/ずれている</td><td>FModel の Mesh Format は <code>glTF 2.0 (binary)</code> である必要があります。ツールを再度実行してください。</td></tr>
   <tr><td>モデルの代わりに灰色の箱が表示される</td><td>このパーツのモデルがありません(ツールのメッセージ参照)– またはベルト/パイプ/線路/リフトです(意図的にモデルなし)。</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.2.0 · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.4.1</span> · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen
@@ -610,6 +610,7 @@ if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrol
 <script>
 // Pfade in der Hilfe aus den eigenen Einstellungen einsetzen (keine festen Pfade im Text)
 fetch('/api/config').then((r) => r.json()).then((c) => {
+  if (c.version) document.querySelectorAll('[data-version]').forEach((e) => { e.textContent = c.version; }); // Version immer aus der laufenden App
   const j = (...t) => t.filter(Boolean).join('\\');
   const w = { appDir: c.appDir, blueprintDir: c.blueprintDir, saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0], megaprints: (c.megaprints || [])[0],
     fmodel: c.fmodelDir, fmodelOutput: c.fmodelDir && j(c.fmodelDir, 'Output'), fmodelExport: c.fmodelExport, usmap: c.gameDir && j(c.gameDir, 'CommunityResources', 'FactoryGame.usmap') };
