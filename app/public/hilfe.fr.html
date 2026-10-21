@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">À propos de l'app</h2>
 <table>
   <tr><th style="width:200px">Programme</th><td><b>Blueprint Studio</b> – outil de plans pour Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">1.1.0</td></tr>
+  <tr><th>Version</th><td id="za-version">1.2.0</td></tr>
   <tr><th>Auteur</th><td><b>ODINnuss</b> – idée, concept et conception</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Tous droits réservés.</td></tr>
   <tr><th>Réalisation</th><td>Programmé pour le compte de l'auteur avec l'aide de l'IA (Claude, Anthropic).</td></tr>
@@ -179,6 +179,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <ul>
   <li><b>Ouvrir comme nouveau plan</b> – aperçu ; les modifications des valeurs sont visibles immédiatement. Ensuite, modifiez et enregistrez comme d'habitude.</li>
   <li><b>Insérer dans le plan ouvert</b> – place la forme au-dessus du plan ouvert (sélectionnée, à déplacer avec les touches fléchées).</li>
+  <li><b>Pixel art à partir d’une image :</b> choisis une image (PNG, JPG, GIF …), la largeur en pixels, la taille des pixels (0,5 / 1 / 2 m), mur ou sol, éventuellement lumineux. Chaque pixel devient un panneau carré dans la couleur de l’image (comme les plans de pixel art de la communauté) ; les pixels transparents peuvent être ignorés. Sous les réglages s’affiche l’image réduite, <b>Voir en 3D</b> montre le mur, <b>Enregistrer comme plan</b> l’enregistre. 20 000 pixels au maximum – les petites images aux couleurs nettes rendent le mieux.</li>
+  <li><b>Bâtiment à partir d’un plan (image) :</b> dessine le plan sur une grille (p. ex. dans Paint, une case = une fondation de 8 × 8 m) – lignes <b>noires</b> = mur, <b>bleu</b> = fenêtre, <b>rouge</b> = porte, vide = passage ouvert. Choisis l’image et règle « Largeur (fondations) » sur le nombre de cases sur la largeur de l’image. L’image de contrôle montre la grille, les murs/fenêtres/portes reconnus et en vert les sols (tout ce qui est à l’intérieur d’un mur extérieur fermé). Choisis ensuite étages, hauteur d’étage et pièces ; fenêtres et portes sont dans la rangée de murs la plus basse de chaque étage. Le haut de l’image est à l’arrière du plan si tu regardes dans la même direction qu’en regardant l’image en le posant.</li>
 </ul>
 
 <h2 class="sec" id="speichern">Enregistrer</h2>
@@ -254,6 +256,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Liste ou vignettes :</b> à choisir en haut de la grande fenêtre. Les <i>vignettes</i> montrent chaque plan avec un petit <b>aperçu 3D</b> (vrais modèles si activés). Un clic sur une vignette ouvre le plan et ferme la fenêtre – rouvrir via « Grande fenêtre ». L’application retient votre choix.</li>
   <li><b>Masquer la réserve :</b> le bouton <b>Masquer la réserve</b> à côté de « Dossier » masque entièrement la barre des dossiers (plus de place pour la 2D/3D) ; le même bouton (<b>Afficher la réserve</b>) la fait revenir.</li>
   <li><b>Dossier</b> (en haut) ouvre toujours le dossier principal des plans <code>…\SaveGames\blueprints</code> dans l’Explorateur.</li>
+  <li><b>Réserve masquée :</b> quand la réserve est masquée, le bouton <b>Grande fenêtre</b> apparaît à côté en haut – il ouvre la réserve directement dans la grande fenêtre.</li>
+  <li><b>Modifier :</b> un plan de la réserve se modifie directement (tourner, déplacer, échanger …). <b>Enregistrer</b> place la copie dans le même dossier de la réserve ; en cas d’écrasement, une sauvegarde est faite d’abord.</li>
+  <li><b>Sélection multiple :</b> dans la liste des fichiers de la réserve, un clic sélectionne un plan, <kbd>Ctrl</kbd>+clic en ajoute ou retire un, <kbd>Maj</kbd>+clic toute une plage, <kbd>Ctrl</kbd>+<kbd>A</kbd> tous. Les plans sélectionnés se glissent ensemble sur un dossier ou sur la liste de gauche ; la barre au-dessus propose <b>Dans le jeu</b>, <b>Ranger</b>, <b>Supprimer</b> (aussi <kbd>Suppr</kbd>) et <b>Effacer la sélection</b> (aussi <kbd>Échap</kbd>).</li>
+  <li><b>Renommer en déplaçant :</b> si tu glisses un plan dans un dossier d’un autre groupe (p. ex. de <code>1_1</code> vers <code>2_6</code>), l’application adapte le code de groupe au début du nom : <code>1_1_Maison</code> → <code>2_6_Maison</code>. Les sous-dossiers thématiques reprennent le code de leur dossier ; les noms et dossiers sans code restent inchangés.</li>
 </ul>
 <h3 id="spiel-kategorien">Catégories dans le jeu (menu des plans)</h3>
 <p>Quand vous ramenez des plans de la réserve dans le jeu, l’application les range aussitôt dans le <b>menu des plans du jeu</b> : groupe principal → <b>catégorie</b>, sous-groupe → <b>sous-catégorie</b> ; les sous-dossiers thématiques de la réserve n’existent pas dans le jeu. Le jeu enregistre ce classement <b>dans la sauvegarde</b> – l’application modifie donc la <b>sauvegarde la plus récente</b> de la session (souvent une sauvegarde automatique) et copie <b>une seule fois l’original</b> dans <code>userdata\sicherungen\spielstaende</code> auparavant.</p>
@@ -592,7 +598,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Les modèles sont tournés/décalés dans l'app</td><td>Le format de mesh de FModel doit être <code>glTF 2.0 (binary)</code> ; relancez l'outil.</td></tr>
   <tr><td>Boîtes grises au lieu des modèles</td><td>Il manque un modèle pour cet élément (voir le message de l'outil) – ou il s'agit d'un convoyeur/tuyau/rail/ascenseur (volontairement sans modèle).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.1.0 · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
+<p class="muted">Blueprint Studio 1.2.0 · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

@@ -13,6 +13,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { readBlueprint, writeBlueprint, readCfg, createBlueprint } from './lib/sbp.mjs';
 import { baueReihe, baueKette } from './lib/fabrik.mjs';
+import { bauePixelbild } from './lib/pixelbild.mjs';
 import { masterclassEinlesen, masterclassDatei, masterclassExport, masterclassImport, masterclassAblegen } from './lib/masterclass.mjs';
 import { rechne as planRechnen, vorstufen } from './public/js/planer-rechner.js';
 import { buildLibrary, availability, buildObject, costDelta, makeHead, newInstance, templateFor, makeCfg, i32, replaceObjectProp } from './lib/vorlagen.mjs';
@@ -37,7 +38,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 
@@ -257,14 +258,16 @@ function bpToClient(bp, session, name, cfg) {
 }
 
 async function saveBp(body) {
-  const { session, name, mode, newName, edits = {}, remove = [], swap = {}, add = [], quelleId, stufe = {} } = body;
-  // Quelle: Spielstand-Ordner (session/name) oder ein Eintrag aus „Ordnen“ (Unterordner/Bibliothek)
+  const { session, name, mode, newName, edits = {}, remove = [], swap = {}, add = [], quelleId, stufe = {}, ablage: ablageOrdnerRel } = body;
+  // Quelle: Spielstand-Ordner (session/name), ein Ablage-Ordner oder ein Eintrag aus „Ordnen“ (Unterordner/Bibliothek)
   let quelle = null;
   if (quelleId) {
     quelle = letzterPlan?.get(quelleId);
     if (!quelle) throw Object.assign(new Error('Bitte im Bereich „Ordnen“ neu einlesen und die Blaupause erneut öffnen.'), { status: 409 });
   }
-  const srcPath = quelle ? path.join(quelle.root, quelle.dir, quelle.alt + '.sbp') : bpPath(session, name);
+  const ablageDir = !quelle && ablageOrdnerRel ? ablage.ordnerPfad(ablageOrdnerRel) : null;
+  if (ablageDir && !safeName(name)) throw Object.assign(new Error('Ungültiger Name'), { status: 400 });
+  const srcPath = quelle ? path.join(quelle.root, quelle.dir, quelle.alt + '.sbp') : ablageDir ? path.join(ablageDir, name + '.sbp') : bpPath(session, name);
   const bp = await loadBpFile(srcPath);
   const k = getKatalog();
   let opts = { edits, remove };
@@ -307,23 +310,24 @@ async function saveBp(body) {
   readBlueprint(out); // Selbstpruefung: Ergebnis muss wieder lesbar sein
   const src = srcPath;
   if (mode === 'overwrite') {
-    const bdir = path.join(DATA_DIR, 'sicherungen', quelle ? `${quelle.ort}_${quelle.dir || 'Hauptordner'}`.replace(/[\\/:*?"<>|]/g, '_') : session);
+    const bdir = path.join(DATA_DIR, 'sicherungen', quelle ? `${quelle.ort}_${quelle.dir || 'Hauptordner'}`.replace(/[\\/:*?"<>|]/g, '_')
+      : ablageDir ? `Ablage_${ablageOrdnerRel}`.replace(/[\\/:*?"<>|]/g, '_') : session);
     await fsp.mkdir(bdir, { recursive: true });
     const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     await fsp.copyFile(src, path.join(bdir, `${name}__${stamp}.sbp`));
     try { await fsp.copyFile(src + 'cfg', path.join(bdir, `${name}__${stamp}.sbpcfg`)); } catch { /* ohne cfg */ }
     await fsp.writeFile(src, out);
     bpCache.clear();
-    return { ok: true, name, id: quelleId || null, sicherung: path.join(bdir, `${name}__${stamp}.sbp`) };
+    return { ok: true, name, id: quelleId || null, ablage: ablageDir ? ablageOrdnerRel : undefined, sicherung: path.join(bdir, `${name}__${stamp}.sbp`) };
   }
   if (!safeName(newName)) throw Object.assign(new Error('Bitte einen gültigen Namen für die Kopie angeben (ohne \\ / : * ? " < > |).'), { status: 400 });
-  const dst = quelle ? path.join(quelle.root, quelle.dir, newName + '.sbp') : bpPath(session, newName);
+  const dst = quelle ? path.join(quelle.root, quelle.dir, newName + '.sbp') : ablageDir ? path.join(ablageDir, newName + '.sbp') : bpPath(session, newName);
   if (fs.existsSync(dst)) throw Object.assign(new Error(`„${newName}“ gibt es schon. Bitte einen anderen Namen wählen.`), { status: 409 });
   await fsp.writeFile(dst, out);
   try { await fsp.copyFile(src + 'cfg', dst + 'cfg'); } catch { /* ohne cfg */ }
   let id = null;
   if (quelle) { id = `${quelle.ort}|${quelle.dir}|${newName}`; letzterPlan.set(id, { ...quelle, id, alt: newName }); }
-  return { ok: true, name: newName, id };
+  return { ok: true, name: newName, id, ablage: ablageDir ? ablageOrdnerRel : undefined };
 }
 
 async function createBp(body) {
@@ -1022,6 +1026,32 @@ async function planerSpeichern(body) {
   log(`Planer-Blaupause: ${dst} (${r.info.objekte} Objekte)`);
   return { ok: true, name, session, info: r.info, planId };
 }
+
+// ------------------------------------------------------------------ Pixel-Art aus einem Bild
+async function pixelBauen(body) {
+  const kat = getKatalog();
+  if (!kat) throw Object.assign(new Error(katalogFehler || 'Spieldaten (Katalog) fehlen.'), { status: 422 });
+  return bauePixelbild({ lib: await getLib(), kat, bild: body.bild, groesse: body.groesse, lage: body.lage, leuchten: !!body.leuchten, transparentWeg: body.transparentWeg !== false });
+}
+async function pixelVorschau(body) {
+  const r = await pixelBauen(body);
+  return { ...bpToClient(readBlueprint(r.datei), '', `Pixel-Art · ${body.bild?.b}×${body.bild?.h}`, {}), nurAnsicht: true, info: r.info };
+}
+async function pixelSpeichern(body) {
+  const { session, name } = body;
+  if (!safeName(name)) throw Object.assign(new Error('Bitte einen gültigen Namen angeben (ohne \\ / : * ? " < > |).'), { status: 400 });
+  const dst = bpPath(session, name);
+  if (fs.existsSync(dst)) throw Object.assign(new Error(`„${name}“ gibt es in „${session}“ schon. Bitte einen anderen Namen wählen.`), { status: 409 });
+  const r = await pixelBauen(body);
+  await fsp.mkdir(path.dirname(dst), { recursive: true });
+  await fsp.writeFile(dst, r.datei);
+  const cfg = makeCfg((await getLib()).basis?.cfg, `Blueprint Studio Pixel-Art: ${body.bild.b} × ${body.bild.h} Pixel (${r.info.breite} × ${r.info.hoehe} m, ${r.info.schild})${body.quelle ? ` aus „${String(body.quelle).slice(0, 80)}“` : ''}`);
+  if (cfg) await fsp.writeFile(dst + 'cfg', cfg);
+  bpCache.clear();
+  log(`Pixel-Art: ${dst} (${r.info.pixel} Pixel)`);
+  return { ok: true, name, session, info: r.info };
+}
+
 async function planerHerkunft(id) {
   if (!/^[0-9a-f]{8}$/.test(id || '')) throw Object.assign(new Error('Ungültige Plan-Kennung'), { status: 400 });
   try { return JSON.parse(await fsp.readFile(path.join(DATA_DIR, 'planer', id + '.json'), 'utf8')); }
@@ -1152,7 +1182,7 @@ const server = http.createServer(async (req, res) => {
         if (!safeName(n)) throw Object.assign(new Error('Ungültiger Name'), { status: 400 });
         const bp = await loadBpFile(f);
         let cfg = {}; try { cfg = readCfg(await fsp.readFile(f + 'cfg')); } catch { /* ohne cfg */ }
-        return sendJson(res, 200, { ...bpToClient(bp, '', n, cfg), nurAnsicht: true, ablage: o });
+        return sendJson(res, 200, { ...bpToClient(bp, '', n, cfg), ablage: o }); // bearbeitbar, Speichern schreibt in den Ablage-Ordner
       }
       if (p === '/api/blueprint') {
         const s = url.searchParams.get('session'), n = url.searchParams.get('name');
@@ -1230,6 +1260,8 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/planer/herkunft') return sendJson(res, 200, await planerHerkunft(url.searchParams.get('id')));
       if (p === '/api/planer/vorschau' && req.method === 'POST') return sendJson(res, 200, await planerVorschau(await readJsonBody(req)));
       if (p === '/api/planer/blaupause' && req.method === 'POST') return sendJson(res, 200, await planerSpeichern(await readJsonBody(req)));
+      if (p === '/api/pixelbild/vorschau' && req.method === 'POST') return sendJson(res, 200, await pixelVorschau(await readJsonBody(req)));
+      if (p === '/api/pixelbild/blaupause' && req.method === 'POST') return sendJson(res, 200, await pixelSpeichern(await readJsonBody(req)));
       if (p === '/api/karte/blaupause' && req.method === 'POST') return sendJson(res, 200, await karteZuBlaupause(await readJsonBody(req)));
       if (p === '/api/karte/3d' && req.method === 'POST') return sendJson(res, 200, oeffne3d((await readJsonBody(req)).id));
       if (p === '/api/karte/daten') {

@@ -16,7 +16,7 @@ import { PlanerUI } from './planer.js';
 import { selectMitBildern, bauteilBild } from './bildwahl.js';
 import { i18nStart, SPRACHEN, t } from './i18n.js';
 import { Katalog, tileHtml, dims, powerText, extraText, fmt, ICONS } from './katalog.js';
-import { frage, ungespeichert, auswahl } from './dialog.js';
+import { frage, ungespeichert, auswahl, eingabe } from './dialog.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -32,7 +32,7 @@ async function api(path, body) {
 
 // W/A/S/D: [vor, seitlich] (e.code = Tastenposition, unabhängig vom Tastaturlayout)
 const FAHR = { KeyW: [1, 0], KeyS: [-1, 0], KeyA: [0, -1], KeyD: [0, 1] };
-const APP_VERSION = '1.1.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
+const APP_VERSION = '1.2.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
 
 class App {
   constructor() {
@@ -594,7 +594,7 @@ class App {
     const session = this.bp.session || $('session').value;
     const body = this.bp.neu
       ? { session, newName: $('save-name').value.trim(), add: c.add, beschreibung: $('save-desc').value.trim() }
-      : { session, name: this.bp.name, quelleId: this.bp.quelleId || undefined, mode, newName: $('save-name').value.trim(), edits: c.edits, remove: c.remove, swap: c.swap, add: c.add, stufe: c.stufe };
+      : { session, name: this.bp.name, quelleId: this.bp.quelleId || undefined, ablage: this.bp.ablage || undefined, mode, newName: $('save-name').value.trim(), edits: c.edits, remove: c.remove, swap: c.swap, add: c.add, stufe: c.stufe };
     $('save-ok').disabled = true;
     try {
       const r = await api(this.bp.neu ? 'create' : 'save', body);
@@ -604,6 +604,7 @@ class App {
       const ausOrdnen = !!this.bp?.quelleId;
       this.scene = null; this.bp = null;
       if (ausOrdnen && r.id) { this.ordnen.data = null; await this.openFromOrdnen({ id: r.id }); return; }
+      if (r.ablage) { await this.ablage.laden?.(); await this.ablage.ansehen(r.ablage, { name: r.name }); return; } // aus der Ablage: dort bleiben
       await this.loadList();
       await this.openBlueprint(r.name);
     } catch (e) { $('save-error').textContent = e.message; $('save-error').hidden = false; }
@@ -859,15 +860,113 @@ class App {
     $('gen-params').innerHTML = f.params.map((p) => {
       const id = 'gp-' + p.k;
       if (p.typ === 'zahl') return `<div class="genrow"><label for="${id}">${esc(p.label)}</label><input type="number" id="${id}" min="${p.min}" max="${p.max}" value="${p.std}"></div>`;
-      if (p.typ === 'janein') return `<div class="genrow check"><input type="checkbox" id="${id}" ${p.std ? 'checked' : ''}><label for="${id}">${esc(p.label)}</label></div>`;
+      if (p.typ === 'wahl') return `<div class="genrow"><label for="${id}">${esc(p.label)}</label><select id="${id}" class="gen-wahl">${p.optionen.map(([w, t]) => `<option value="${esc(w)}" ${w === p.std ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select></div>`;
+      if (p.typ === 'bild') return `<div class="genrow"><label for="${id}">${esc(p.label)}</label><input type="file" id="${id}" accept="image/*"></div>`;
+      if (p.typ === 'janein') return`<div class="genrow check"><input type="checkbox" id="${id}" ${p.std ? 'checked' : ''}><label for="${id}">${esc(p.label)}</label></div>`;
       const opts = teileFuer(p.filter, this.kat, av);
       const std = opts.includes(p.std) ? p.std : (p.leer ? '' : opts[0]);
       return `<div class="genrow"><label for="${id}">${esc(p.label)}</label><select id="${id}">${p.leer ? `<option value="">${esc(p.leer)}</option>` : ''}${opts.map((c) => `<option value="${esc(c)}" ${c === std ? 'selected' : ''}>${esc(teilLabel(this.kat, c))}${av[c] === 'abgeleitet' ? ' *' : ''}</option>`).join('')}</select></div>`;
     }).join('');
     $('gen-params').querySelectorAll('input, select').forEach((el) => el.addEventListener('change', () => this.genPreviewUpdate()));
-    $('gen-params').querySelectorAll('select').forEach((sel) => selectMitBildern(sel, this.bildOpt(sel.closest('.genrow')?.querySelector('label')?.textContent || 'Bauteil wählen')));
+    $('gen-params').querySelectorAll('select:not(.gen-wahl)').forEach((sel) => selectMitBildern(sel, this.bildOpt(sel.closest('.genrow')?.querySelector('label')?.textContent || 'Bauteil wählen')));
     $('gen-params').querySelectorAll('input[type=number]').forEach((el) => el.addEventListener('input', () => this.genInfo()));
+    // Bild für Pixel-Art laden (bleibt beim Umschalten der Form erhalten)
+    $('gp-bild')?.addEventListener('change', (e) => {
+      const datei = e.target.files?.[0]; if (!datei) return;
+      const img = new Image();
+      img.onload = () => { this.pixelBild = img; this.pixelName = datei.name.replace(/\.[^.]+$/, ''); this.genInfo(); if (this.bp?.formVorschau === 'pixel' || this.bp?.neu) this.genNew(true); };
+      img.onerror = () => this.toast('Das Bild lässt sich nicht lesen.', 'err');
+      img.src = URL.createObjectURL(datei);
+    });
+    // Formen vom Server (Pixel-Art): Vorschau öffnen statt einfügen, eigener Speichern-Knopf
+    $('gen-new').textContent = f.server ? 'In 3D ansehen' : 'Als neue Blaupause öffnen';
+    $('gen-insert').hidden = !!f.server; $('gen-raum-save').hidden = !f.server;
+    $('gen-hint').textContent = f.server === 'pixel'
+        ? 'Je Pixel ein quadratisches Schild in der Bildfarbe. Kleine Bilder mit klaren Farben (Logos, Pixel-Art) wirken am besten; die Breite bestimmt die Pixelzahl (höchstens 20 000 Pixel).'
+        : $('gen-form').value === 'grundriss'
+          ? 'Grundriss auf ein Raster zeichnen (z. B. in Paint, ein Kästchen = ein Fundament 8 × 8 m): schwarze Linien = Wand, blau = Fenster, rot = Tür, Lücke = offener Durchgang. „Breite (Fundamente)“ = Anzahl Kästchen über die Bildbreite. Das Kontrollbild zeigt, was erkannt wurde (grün = Boden).'
+          : 'Teile, die in deinen Blaupausen vorkommen, werden exakt übernommen; andere Materialvarianten werden daraus abgeleitet.';
     this.genInfo();
+  }
+  /**
+   * Grundriss erkennen: 8-m-Raster mit n Zellen über die Bildbreite legen; jede Rasterkante als W (Wand, dunkel), F (Fenster, blau),
+   * T (Tür, rot) oder offen. Innen = Zellen, die man von außen nicht ohne gezeichnete Kante erreicht. → { n, m, kanten, innen, bild }
+   */
+  grundrissPlan(n) {
+    const img = this.pixelBild; if (!img) return null;
+    if (this.planCache?.img === img && this.planCache.n === n) return this.planCache.plan;
+    const sk = Math.min(1, 2000 / img.naturalWidth), W = Math.round(img.naturalWidth * sk), H = Math.round(img.naturalHeight * sk);
+    const c = document.createElement('canvas'); c.width = W; c.height = H;
+    const g = c.getContext('2d', { willReadFrequently: true }); g.fillStyle = '#fff'; g.fillRect(0, 0, W, H); g.drawImage(img, 0, 0, W, H);
+    const d = g.getImageData(0, 0, W, H).data;
+    const art = (x, y) => { // Farbe eines Bildpunkts → W/F/T oder null
+      x = Math.max(0, Math.min(W - 1, Math.round(x))); y = Math.max(0, Math.min(H - 1, Math.round(y)));
+      const o = (y * W + x) * 4, r = d[o], gg = d[o + 1], b = d[o + 2];
+      if (b > 110 && b > r + 50 && b > gg + 30) return 'F';
+      if (r > 130 && r > gg + 60 && r > b + 60) return 'T';
+      if (Math.max(r, gg, b) < 110) return 'W';
+      return null;
+    };
+    const cw = W / n, m = Math.max(1, Math.round(H / cw)), ch = H / m, band = Math.max(2, cw * 0.12);
+    const kante = (x0, y0, x1, y1, quer) => { // entlang der Kante 13 Stellen, je Stelle quer ±band nach Farbe suchen
+      const z = {}; let treffer = 0;
+      for (let k = 0; k <= 12; k++) {
+        const t = 0.15 + (0.7 * k) / 12, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t;
+        let a = null; for (let q = -band; q <= band && !a; q++) a = quer === 'y' ? art(x, y + q) : art(x + q, y);
+        if (a) { treffer++; z[a] = (z[a] || 0) + 1; }
+      }
+      return treffer >= 8 ? Object.entries(z).sort((p, q) => q[1] - p[1])[0][0] : null;
+    };
+    const kanten = {};
+    for (let j = 0; j <= m; j++) for (let i = 0; i < n; i++) { const a = kante(i * cw, j * ch, (i + 1) * cw, j * ch, 'y'); if (a) kanten[`h,${i},${j}`] = a; }
+    for (let i = 0; i <= n; i++) for (let j = 0; j < m; j++) { const a = kante(i * cw, j * ch, i * cw, (j + 1) * ch, 'x'); if (a) kanten[`v,${i},${j}`] = a; }
+    // von außen fluten: über offene Kanten in Nachbarzellen; was nicht erreicht wird, ist innen
+    const aussen = new Set(), stapel = [];
+    const rein = (i, j) => { const k = `${i},${j}`; if (!aussen.has(k)) { aussen.add(k); stapel.push([i, j]); } };
+    for (let i = 0; i < n; i++) { if (!kanten[`h,${i},0`]) rein(i, 0); if (!kanten[`h,${i},${m}`]) rein(i, m - 1); }
+    for (let j = 0; j < m; j++) { if (!kanten[`v,0,${j}`]) rein(0, j); if (!kanten[`v,${n},${j}`]) rein(n - 1, j); }
+    while (stapel.length) {
+      const [i, j] = stapel.pop();
+      if (i > 0 && !kanten[`v,${i},${j}`]) rein(i - 1, j);
+      if (i < n - 1 && !kanten[`v,${i + 1},${j}`]) rein(i + 1, j);
+      if (j > 0 && !kanten[`h,${i},${j}`]) rein(i, j - 1);
+      if (j < m - 1 && !kanten[`h,${i},${j + 1}`]) rein(i, j + 1);
+    }
+    const innen = new Set();
+    for (let i = 0; i < n; i++) for (let j = 0; j < m; j++) if (!aussen.has(`${i},${j}`)) innen.add(`${i},${j}`);
+    const plan = { n, m, kanten, innen, bild: c, cw, ch };
+    this.planCache = { img, n, plan };
+    return plan;
+  }
+  /** Kontrollbild: Grundriss mit Raster, erkannten Kanten (schwarz/blau/rot) und Innenflächen */
+  grundrissKontrolle(plan) {
+    const max = 280, sk = max / plan.bild.width, c = document.createElement('canvas');
+    c.width = max; c.height = Math.round(plan.bild.height * sk); c.className = 'gen-pixel gen-plan';
+    const g = c.getContext('2d'); g.globalAlpha = 0.35; g.drawImage(plan.bild, 0, 0, c.width, c.height); g.globalAlpha = 1;
+    const cw = plan.cw * sk, ch = plan.ch * sk;
+    g.fillStyle = 'rgba(80,180,120,.35)';
+    for (const k of plan.innen) { const [i, j] = k.split(',').map(Number); g.fillRect(i * cw, j * ch, cw, ch); }
+    g.strokeStyle = 'rgba(128,128,128,.35)'; g.lineWidth = 1;
+    for (let i = 0; i <= plan.n; i++) { g.beginPath(); g.moveTo(i * cw, 0); g.lineTo(i * cw, plan.m * ch); g.stroke(); }
+    for (let j = 0; j <= plan.m; j++) { g.beginPath(); g.moveTo(0, j * ch); g.lineTo(plan.n * cw, j * ch); g.stroke(); }
+    g.lineWidth = 3;
+    for (const [k, a] of Object.entries(plan.kanten)) {
+      const [r, i, j] = k.split(','); g.strokeStyle = a === 'F' ? '#3a7bff' : a === 'T' ? '#e0302a' : '#111'; g.beginPath();
+      if (r === 'h') { g.moveTo(+i * cw, +j * ch); g.lineTo((+i + 1) * cw, +j * ch); } else { g.moveTo(+i * cw, +j * ch); g.lineTo(+i * cw, (+j + 1) * ch); }
+      g.stroke();
+    }
+    return c;
+  }
+  /** Pixel-Art: Bild auf die gewählte Breite verkleinern → { b, h, px:[[r,g,b,a]…] } (null ohne Bild) */
+  pixelDaten() {
+    const img = this.pixelBild; if (!img) return null;
+    const v = this.genValues(), b = v.breite, h = Math.max(1, Math.round((img.naturalHeight / img.naturalWidth) * b));
+    const c = document.createElement('canvas'); c.width = b; c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true }); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(img, 0, 0, b, h);
+    const d = g.getImageData(0, 0, b, h).data, px = [];
+    for (let i = 0; i < d.length; i += 4) px.push([d[i], d[i + 1], d[i + 2], d[i + 3]]);
+    return { b, h, px, canvas: c };
   }
   genValues() {
     const f = FORMEN[$('gen-form').value], v = {};
@@ -875,26 +974,73 @@ class App {
       const el = $('gp-' + p.k);
       v[p.k] = p.typ === 'zahl' ? Math.max(p.min, Math.min(p.max, parseInt(el.value, 10) || p.std)) : p.typ === 'janein' ? el.checked : el.value;
     }
+    if ($('gen-form').value === 'grundriss') v.plan = this.grundrissPlan(v.breite);
     return v;
   }
   genObjects() { return generate($('gen-form').value, this.genValues(), this.kat).filter((o) => o.cls); }
   genInfo() {
+    if (FORMEN[$('gen-form').value].server === 'pixel') {
+      const p = this.pixelDaten(), v = this.genValues();
+      if (!p) { $('gen-info').textContent = 'Bitte ein Bild wählen (PNG, JPG, GIF …).'; return []; }
+      const m = { tiny: 0.5, small: 1, square: 2 }[v.groesse], sichtbar = p.px.filter((x) => !v.transparent || x[3] >= 128).length;
+      $('gen-info').innerHTML = `${p.b} × ${p.h} Pixel · ${m1(p.b * m * 100)} × ${m1(p.h * m * 100)} m · ${sichtbar} Schilder${p.b * p.h > 20000 ? ' <span class="err">– zu viele, Breite verkleinern</span>' : ''}<br>`;
+      p.canvas.className = 'gen-pixel';
+      $('gen-info').appendChild(p.canvas);
+      return [];
+    }
     const objs = this.genObjects(), cnt = {};
     for (const o of objs) cnt[o.cls] = (cnt[o.cls] || 0) + 1;
     let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
     for (const o of objs) { x0 = Math.min(x0, o.pos[0]); x1 = Math.max(x1, o.pos[0]); z0 = Math.min(z0, o.pos[2]); z1 = Math.max(z1, o.pos[2]); }
     $('gen-info').innerHTML = objs.length ? `${objs.length} Bauteile · ca. ${m1(x1 - x0 + 800)} m breit${z1 - z0 > 100 ? ` · ${m1(z1 - z0)} m hoch` : ''}<br>` +
       Object.entries(cnt).map(([c, n]) => `${n}× ${esc(teilLabel(this.kat, c))}`).join('<br>') : 'Keine Bauteile – Parameter prüfen.';
+    if ($('gen-form').value === 'grundriss') { // Kontrollbild: was wurde im Grundriss erkannt?
+      const plan = this.pixelBild && this.planCache?.img === this.pixelBild ? this.planCache.plan : null;
+      if (!this.pixelBild) $('gen-info').textContent = 'Bitte ein Grundriss-Bild wählen: schwarze Linien = Wand, blau = Fenster, rot = Tür, Lücke = offen.';
+      else if (plan) {
+        if (!plan.innen.size) $('gen-info').insertAdjacentHTML('afterbegin', `<span class="err">${esc('Keine geschlossene Außenwand erkannt – Breite (Fundamente) an das Raster der Zeichnung anpassen.')}</span><br>`);
+        $('gen-info').appendChild(this.grundrissKontrolle(plan));
+      }
+    }
     return objs;
   }
-  genPreviewUpdate() { this.genInfo(); if (this.bp?.neu) this.genNew(true); }
+  genPreviewUpdate() { this.genInfo(); if (this.bp?.neu || (this.bp?.formVorschau && this.bp.formVorschau === FORMEN[$('gen-form').value].server)) this.genNew(true); }
+  /** Pixel-Art: Vorschau vom Server (Schilder in 3D) */
+  pixelBody() { const p = this.pixelDaten(), v = this.genValues(); return p && { bild: { b: p.b, h: p.h, px: p.px }, groesse: v.groesse, lage: v.lage, leuchten: v.leuchten, transparentWeg: v.transparent, quelle: this.pixelName }; }
+  async pixelVorschau(silent) {
+    const body = this.pixelBody(); if (!body) { this.toast('Bitte zuerst ein Bild wählen.', 'err'); return; }
+    if (!silent && this.dirty() && !(await ungespeichert('Trotzdem die Vorschau öffnen?'))) return;
+    try {
+      const r = await fetch('/api/pixelbild/vorschau', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify(body) });
+      const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status);
+      const keepView = silent && this.scene;
+      this.bp = { ...j, formVorschau: 'pixel' }; this.setMode('editor'); this.openScene();
+      if (keepView) this.render();
+      $('pathtext').textContent = `Pixel-Art · ${j.info.pixel} Schilder, ${j.info.breite} × ${j.info.hoehe} m (nur ansehen – speichern über „Als Blaupause speichern“)`;
+    } catch (e) { this.toast(e.message, 'err'); }
+  }
+  async pixelSpeichern() {
+    const body = this.pixelBody(); if (!body) { this.toast('Bitte zuerst ein Bild wählen.', 'err'); return; }
+    const session = $('session').value;
+    const name = await eingabe({ art: 'ordner', titel: 'Pixel-Art speichern', text: `in „${session}“`, wert: `8_5_${(this.pixelName || 'Bild').replace(/[^\p{L}\p{N}]+/gu, '_').slice(0, 40)}_${body.bild.b}x${body.bild.h}`, ok: 'Speichern' });
+    if (!name) return;
+    if (/[\\/:*?"<>|]/.test(name)) { this.toast('Ein Name darf \\ / : * ? " < > | nicht enthalten.', 'err'); return; }
+    try {
+      const r = await fetch('/api/pixelbild/blaupause', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ ...body, session, name }) });
+      const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status);
+      await this.loadList(); await this.openBlueprint(name);
+      this.toast(`Pixel-Art „${name}“ gespeichert (${j.info.pixel} Schilder).`, 'ok');
+    } catch (e) { this.toast(e.message, 'err'); }
+  }
   async genNew(silent) {
+    const srv = FORMEN[$('gen-form').value].server;
+    if (srv === 'pixel') return this.pixelVorschau(silent);
     if (!silent && this.dirty() && !(await ungespeichert('Trotzdem eine neue Blaupause aus der Form öffnen?'))) return;
     const objs = this.genObjects();
     if (!objs.length) { this.toast('Keine Bauteile – Parameter prüfen.', 'err'); return; }
     const formName = FORMEN[$('gen-form').value].name.split(' (')[0].replace(/[^\p{L}\p{N}]+/gu, '_');
     const v = this.genValues();
-    const groesse = v.durchmesser ? `${v.durchmesser}` : `${v.breite}x${v.laenge}`;
+    const groesse = v.durchmesser ? `${v.durchmesser}` : v.plan ? `${v.plan.n}x${v.plan.m}` : `${v.breite}x${v.laenge}`;
     const mat = (teilLabel(this.kat, v.boden || '').split(' · ')[1] || '').replace(/[^\p{L}\p{N}]+/gu, '');
     const keepView = silent && this.scene;
     this.bp = { neu: true, session: $('session').value, name: `BS_${formName}_${groesse}${mat ? '_' + mat : ''}`, beschreibung: `Erstellt mit Blueprint Studio: ${FORMEN[$('gen-form').value].name}`,
@@ -950,6 +1096,7 @@ class App {
     $('gen-form').addEventListener('change', () => this.renderGenParams());
     $('gen-new').addEventListener('click', () => this.genNew());
     $('gen-insert').addEventListener('click', () => this.genInsert());
+    $('gen-raum-save').addEventListener('click', () => this.pixelSpeichern());
     $('swap-cancel').addEventListener('click', () => $('dlg-swap').close());
     $('swap-ok').addEventListener('click', () => this.applySwap());
     $('mode-editor').addEventListener('click', () => this.setMode('editor'));
@@ -999,12 +1146,14 @@ class App {
       $('btn-ablage').setAttribute('aria-pressed', String(an));
       $('btn-ablage-t').textContent = an ? 'Ablage ausblenden' : 'Ablage einblenden';
       $('btn-ablage').title = an ? 'Ablage (Ordnerleiste) ausblenden' : 'Ablage (Ordnerleiste) einblenden';
+      $('btn-ablage-gross').hidden = an; // ausgeblendet: großes Fenster direkt aus der Kopfzeile
       try { localStorage.setItem('bs-ablage-sichtbar', an ? '1' : '0'); } catch { /* egal */ }
       if (this.area === 'editor') requestAnimationFrame(() => this.render());
     };
     let ablageAn = true; try { ablageAn = localStorage.getItem('bs-ablage-sichtbar') !== '0'; } catch { /* egal */ }
     ablageSicht(ablageAn);
     $('btn-ablage').addEventListener('click', () => { ablageAn = !ablageAn; ablageSicht(ablageAn); if (ablageAn && this.area !== 'editor') this.setMode('editor'); });
+    $('btn-ablage-gross').addEventListener('click', () => { if (this.area !== 'editor') this.setMode('editor'); this.ablage.grossesFenster(); });
     $('btn-settings').addEventListener('click', () => { $('set-save').value = this.cfg.saveDir; $('set-sprache').value = this.cfg.sprache || 'de'; $('set-game').value = this.cfg.gameDir; $('set-lib').value = (this.cfg.bibliotheken || []).join('\n'); $('set-3d').value = this.cfg.editor3d || ''; $('set-3dm').checked = this.cfg.editor3dModelle !== false; $('set-rutschen').checked = this.cfg.nachrutschen !== false; $('set-einsortieren').checked = this.cfg.umbenennenEinsortieren !== false; $('set-spielstand').innerHTML = '<option value="">Jedes Mal fragen</option>' + (this.cfg.spielSitzungen || []).map((x) => `<option value="${esc(x.name)}">${esc(x.name)} (zuletzt ${new Date(x.zuletzt).toLocaleDateString('de-DE')})</option>`).join(''); $('set-spielstand').value = this.cfg.spielSitzung || ''; $('set-ansicht').value = this.cfg.ansicht || 'zuletzt'; document.querySelectorAll('[name=set-ablage-lage]').forEach((r) => { r.checked = r.value === (this.cfg.ablageLage || 'unten'); }); $('set-ablage-breite').value = this.cfg.ablageBreite || 420; $('set-ablage-hoehe').value = this.cfg.ablageHoehe || 260; this.ablageWerteZeigen(); $('set-mp').value = (this.cfg.megaprints || []).join('\n'); $('set-praefixe').value = (this.cfg.namensPraefixe || []).join(', '); $('set-update-auto').checked = this.cfg.updatePruefen !== false; $('set-update-repo').value = this.cfg.updateRepo || ''; $('set-update-repo').placeholder = this.cfg.updateRepoStandard || 'Besitzer/Repository'; $('set-update-status').textContent = `Installiert: ${this.cfg.version}`; this.einstellungenStruktur(); $('set-status').textContent = `Spieldaten: ${this.cfg.docs || 'nicht gefunden'}`; $('dlg-settings').showModal(); });
     $('set-cancel').addEventListener('click', () => $('dlg-settings').close());
     $('set-struktur').addEventListener('click', () => this.struktur.zeigen());

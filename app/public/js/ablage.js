@@ -33,6 +33,7 @@ export class AblageUI {
     this.ansichtArt = lsGet('ablage-ansicht') === 'kacheln' ? 'kacheln' : 'liste'; // nur im großen Fenster
     this.k3d = new Kacheln3D(app);
     this.vorschlag = null;
+    this.abSel = new Set(); // markierte Blaupausen im gewählten Ordner
   }
 
   /** Ablage in ein großes Fenster verschieben (gleiche Elemente – alles funktioniert dort wie gewohnt) */
@@ -106,7 +107,7 @@ export class AblageUI {
     liste.addEventListener('drop', (e) => {
       liste.classList.remove('drop');
       const d = this.daten_(e); if (!d?.von) return;
-      e.preventDefault(); this.schalten(d.von, [d.name], true);
+      e.preventDefault(); this.schalten(d.von, d.namen?.length ? d.namen : [d.name], true);
     });
     document.addEventListener('dragend', () => { document.body.classList.remove('ab-ziehen'); document.querySelectorAll('.drop').forEach((x) => x.classList.remove('drop')); });
     this.layout();
@@ -227,13 +228,17 @@ export class AblageUI {
     const L = this.daten.ordner[this.aktuell] || [];
     const unter = k.kinder.filter((c) => c.n).map((c) => `<button type="button" class="ab-chip" data-rel="${esc(c.rel)}">${esc(c.titel)} <span>${c.a}/${c.n}</span></button>`).join('');
     const kannWeg = !k.code && !k.thema && !L.length && !k.kinder.length;
+    // Mehrfachauswahl (Strg = einzeln dazu/weg, Umschalt = Bereich) gilt je Ordner
+    if (this.selOrdner !== this.aktuell) { this.abSel = new Set(); this.abAnker = null; this.selOrdner = this.aktuell; }
+    this.abSel = new Set([...(this.abSel || [])].filter((n) => L.some((x) => x.name === n)));
     const kacheln = !!this.platzhalter && this.ansichtArt === 'kacheln';
     $('ab-ansicht-liste')?.setAttribute('aria-pressed', String(!kacheln)); $('ab-ansicht-kacheln')?.setAttribute('aria-pressed', String(kacheln));
     F.innerHTML = `<div class="ab-fhead"><b>${esc(this.aktuell)}</b><span class="muted">${L.filter((x) => x.aktiv).length} von ${L.length} im Spiel</span><span class="grow"></span>
       ${L.length ? `<button type="button" class="btn small" data-alle="1">Alle ins Spiel</button><button type="button" class="btn small" data-alle="0">Alle ablegen</button>` : ''}
       <button type="button" class="btn small" id="ab-unter">+ Unterordner</button>${kannWeg ? '<button type="button" class="btn small" id="ab-weg">Ordner entfernen</button>' : ''}</div>
       ${unter ? `<div class="ab-chips">${unter}</div>` : ''}
-      <div class="ab-list${kacheln ? ' ab-kacheln' : ''}">${L.map((x) => { const falsch = x.aktiv && !(this.daten.spielSitzungen || []).includes(x.session); return `<div class="ab-file${x.aktiv ? ' aktiv' : ''}${falsch ? ' falsch' : ''}" draggable="true" data-name="${esc(x.name)}">${kacheln ? `<button type="button" class="ab-bild" data-open="1" title="Öffnen" aria-label="${esc(x.name)} öffnen"><canvas class="ab-k3d" width="320" height="210" data-quelle="${esc(x.aktiv ? `session=${encodeURIComponent(x.session)}&name=${encodeURIComponent(x.name)}` : `ablage=${encodeURIComponent(this.aktuell)}&name=${encodeURIComponent(x.name)}`)}"></canvas></button>` : ''}
+      <div class="bp-multi" id="ab-multi" hidden><span id="ab-multi-text"></span><span class="grow"></span><button type="button" class="btn small" data-multi="spiel">Ins Spiel</button><button type="button" class="btn small" data-multi="ablegen">Ablegen</button><button type="button" class="btn small" data-multi="del">Löschen</button><button type="button" class="btn small" data-multi="weg">Aufheben</button></div>
+      <div class="ab-list${kacheln ? ' ab-kacheln' : ''}" tabindex="-1">${L.map((x) => { const falsch = x.aktiv && !(this.daten.spielSitzungen || []).includes(x.session); return `<div class="ab-file${x.aktiv ? ' aktiv' : ''}${falsch ? ' falsch' : ''}${this.abSel.has(x.name) ? ' mark' : ''}" draggable="true" data-name="${esc(x.name)}">${kacheln ? `<button type="button" class="ab-bild" data-open="1" title="Öffnen" aria-label="${esc(x.name)} öffnen"><canvas class="ab-k3d" width="320" height="210" data-quelle="${esc(x.aktiv ? `session=${encodeURIComponent(x.session)}&name=${encodeURIComponent(x.name)}` : `ablage=${encodeURIComponent(this.aktuell)}&name=${encodeURIComponent(x.name)}`)}"></canvas></button>` : ''}
         <label class="ab-schalter" title="${falsch ? `Liegt im Ordner „${esc(x.session)}“ – das ist kein Spielstand, das Spiel sieht sie dort nicht. Klick: zurück in die Ablage, dann neu ins Spiel holen.` : x.aktiv ? 'Im Spiel (Spielstand ' + esc(x.session) + ') – Klick: ablegen' : 'Abgelegt – Klick: ins Spiel holen'}"><input type="checkbox" ${x.aktiv ? 'checked' : ''} aria-label="${esc(x.name)} im Spiel"><span class="sl"></span></label>
         <span class="n" title="${esc(x.name)}">${esc(x.name)}</span><span class="m">${falsch ? '⚠ nicht im Spiel · ' + esc(x.session) : x.aktiv ? 'im Spiel · ' + esc(x.session) : 'abgelegt'}</span>
         <button type="button" class="linkbtn" data-open="1">ansehen</button><button type="button" class="ab-del" data-del="1" title="Löschen (in den Papierkorb)" aria-label="${esc(x.name)} löschen">${ICON_DEL}</button></div>`; }).join('') || '<div class="muted pad">Leer – Blaupausen hierher ziehen.</div>'}</div>`;
@@ -247,14 +252,68 @@ export class AblageUI {
       row.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => this.ansehenAusFenster(x)));
       row.querySelector('[data-del]').addEventListener('click', () => this.loeschen(x.aktiv ? { session: x.session, name } : { ordner: this.aktuell, name }));
       row.addEventListener('dblclick', () => this.ansehenAusFenster(x));
+      row.addEventListener('click', (e) => {
+        if (e.target.closest('input, label, button')) return;
+        const namen = L.map((y) => y.name), strg = e.ctrlKey || e.metaKey;
+        if (e.shiftKey && this.abAnker && namen.includes(this.abAnker)) {
+          const a = namen.indexOf(this.abAnker), b = namen.indexOf(name);
+          if (!strg) this.abSel.clear();
+          namen.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((n) => this.abSel.add(n));
+        } else if (strg) { if (this.abSel.has(name)) this.abSel.delete(name); else this.abSel.add(name); this.abAnker = name; }
+        else { this.abSel = new Set([name]); this.abAnker = name; }
+        this.markierungZeigen();
+      });
       row.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData(TYP, JSON.stringify({ von: this.aktuell, name }));
+        const namen = this.abSel.has(name) && this.abSel.size > 1 ? L.map((y) => y.name).filter((n) => this.abSel.has(n)) : [name];
+        e.dataTransfer.setData(TYP, JSON.stringify({ von: this.aktuell, name, namen }));
         e.dataTransfer.effectAllowed = 'move';
+        if (namen.length > 1) { const g = document.createElement('div'); g.className = 'drag-anzahl'; g.textContent = `${namen.length} Blaupausen`; document.body.appendChild(g); e.dataTransfer.setDragImage(g, 10, 10); setTimeout(() => g.remove(), 0); }
         document.body.classList.add('ab-ziehen', 'ab-von-ablage');
       });
       row.addEventListener('dragend', () => document.body.classList.remove('ab-von-ablage'));
     });
+    // Mehrfachauswahl: Leiste und Tasten (Entf = löschen, Esc = aufheben, Strg+A = alle)
+    const markiert = () => L.filter((y) => this.abSel.has(y.name));
+    F.querySelectorAll('[data-multi]').forEach((b) => b.addEventListener('click', () => {
+      const m = markiert(), art = b.dataset.multi;
+      if (art === 'weg') { this.abSel.clear(); this.markierungZeigen(); }
+      else if (art === 'del') this.loeschenAusAblage(this.aktuell, m);
+      else this.schalten(this.aktuell, m.map((y) => y.name), art === 'spiel');
+    }));
+    F.querySelector('.ab-list').addEventListener('keydown', (e) => {
+      if (e.key === 'a' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.abSel = new Set(L.map((y) => y.name)); this.markierungZeigen(); }
+      else if (e.key === 'Escape' && this.abSel.size) { e.stopPropagation(); this.abSel.clear(); this.markierungZeigen(); }
+      else if (e.key === 'Delete' && this.abSel.size) { e.preventDefault(); e.stopPropagation(); this.loeschenAusAblage(this.aktuell, markiert()); }
+    });
+    this.markierungZeigen();
     if (kacheln) this.k3d.beobachten(F.querySelectorAll('canvas.ab-k3d'));
+  }
+  /** Markierung in der Dateiliste anzeigen (ohne neu zu zeichnen) + Leiste ab 2 markierten */
+  markierungZeigen() {
+    const F = $('ab-files');
+    F.querySelectorAll('.ab-file').forEach((r) => r.classList.toggle('mark', this.abSel.has(r.dataset.name)));
+    const bar = $('ab-multi'); if (!bar) return;
+    bar.hidden = this.abSel.size < 2;
+    $('ab-multi-text').textContent = `${this.abSel.size} markiert`;
+  }
+  /** Mehrere Blaupausen aus der Ablage löschen (eine Rückfrage); aktive liegen im Spielstand-Ordner */
+  async loeschenAusAblage(ordner, liste) {
+    if (!liste.length) return;
+    if (liste.length === 1) { const x = liste[0]; return this.loeschen(x.aktiv ? { session: x.session, name: x.name } : { ordner, name: x.name }); }
+    const namen = liste.map((x) => x.name);
+    if (!(await frage({ art: 'loeschen', titel: `${namen.length} Blaupausen löschen?`, liste: namen.slice(0, 50).concat(namen.length > 50 ? [`… und ${namen.length - 50} weitere`] : []), text: 'Sie werden in den Papierkorb verschoben und können dort wiederhergestellt werden.', ok: `${namen.length} löschen` }))) return;
+    let ok = 0; const fehler = [];
+    for (const x of liste) {
+      try { await post('loeschen', x.aktiv ? { session: x.session, name: x.name } : { ordner, name: x.name }); ok++; } catch (e) { fehler.push(`${x.name}: ${e.message}`); }
+    }
+    const bp = this.app.bp;
+    if (bp && namen.includes(bp.name) && (bp.ablage === ordner || liste.some((x) => x.aktiv && x.name === bp.name && !bp.ablage))) {
+      this.app.bp = null; this.app.scene = null; this.app.sel = new Set();
+      $('empty').hidden = false; $('nv').hidden = true; this.app.render(); this.app.renderInspector?.(); this.app.renderCosts?.();
+    }
+    this.abSel.clear();
+    await this.nachher(null);
+    this.app.toast(`${ok} Blaupausen gelöscht (im Papierkorb).` + (fehler.length ? ` ${fehler.length} nicht möglich: ${fehler.slice(0, 3).join('; ')}` : ''), fehler.length ? 'err' : 'ok');
   }
   /** Öffnen; im großen Fenster schließt es sich dabei (wieder öffnen über „Großes Fenster“) */
   async ansehenAusFenster(x) {
@@ -272,13 +331,32 @@ export class AblageUI {
   async ablegen(d, nach) {
     if (!d.von && d.namen?.length > 1) return this.ablegenMehrere(d.session, d.namen, nach);
     try {
-      if (d.von) { if (d.von === nach) return; await post('ablage/ablegen', { von: d.von, name: d.name, nach }); return this.nachher(`„${d.name}“ nach ${nach.split('/').pop()} verschoben.`); }
+      // Umbenennung als eigener Satz (Übersetzung über ganze Muster: „… verschoben. Neuer Name: „…“.“)
+      const ziel = nach.split('/').pop(), neuName = (alt, neu) => (neu && neu !== alt ? ` Neuer Name: „${neu}“.` : '');
+      if (d.von) { // zwischen Ablage-Ordnern (auch mehrere markierte); Gruppencode im Namen passt der Server an
+        if (d.von === nach) return;
+        const namen = d.namen?.length ? d.namen : [d.name];
+        let ok = 0, um = 0, letzter = null; const fehler = [];
+        for (const name of namen) {
+          try {
+            const r = await post('ablage/ablegen', { von: d.von, name, nach }); ok++; letzter = r;
+            if (r.name && r.name !== name) um++;
+            const bp = this.app.bp;
+            if (bp && bp.ablage === d.von && bp.name === name) { bp.ablage = nach; bp.name = r.name || name; this.app.updateStatus(); }
+          } catch (e) { fehler.push(`${name}: ${e.message}`); }
+        }
+        this.abSel?.clear();
+        await this.nachher(null);
+        const msg = namen.length === 1 && ok ? `„${d.name}“ nach ${ziel} verschoben.${neuName(d.name, letzter?.name)}`
+          : um ? `${ok} Blaupausen nach ${ziel} verschoben (${um} umbenannt, Gruppencode angepasst).` : `${ok} Blaupausen nach ${ziel} verschoben.`;
+        return this.app.toast(msg + (fehler.length ? ` ${fehler.length} nicht möglich: ${fehler.slice(0, 3).join('; ')}` : ''), fehler.length ? 'err' : 'ok');
+      }
       if (this.app.bp && this.app.bp.name === d.name && !this.app.bp.ablage && this.app.dirty() && !(await ungespeichert('Trotzdem ablegen?'))) return;
       const erg = await post('ablage/ablegen', { session: d.session, name: d.name, nach });
-      if (erg.kopiert) { this.aktuell = nach; lsSet('ablage-ordner', nach); return this.nachher(`„${d.name}“ aus der Bibliothek in ${nach.split('/').pop()} kopiert (Original bleibt in der Bibliothek).`); }
-      if (this.app.bp && this.app.bp.name === d.name && !this.app.bp.ablage) { this.app.bp.nurAnsicht = true; this.app.bp.ablage = nach; this.app.updateStatus(); $('pathtext').textContent = `Ablage · ${nach} · ${d.name} (nur ansehen – zum Bearbeiten ins Spiel holen)`; }
+      if (erg.kopiert) { this.aktuell = nach; lsSet('ablage-ordner', nach); return this.nachher(`„${d.name}“ aus der Bibliothek in ${ziel} kopiert (Original bleibt in der Bibliothek).${neuName(d.name, erg.name)}`); }
+      if (this.app.bp && this.app.bp.name === d.name && !this.app.bp.ablage) { this.app.bp.ablage = nach; this.app.bp.name = erg.name || d.name; this.app.updateStatus(); $('pathtext').textContent = `Ablage · ${nach} · ${this.app.bp.name} (Speichern schreibt in diesen Ordner)`; }
       this.aktuell = nach; lsSet('ablage-ordner', nach);
-      await this.nachher(`„${d.name}“ abgelegt in ${nach.split('/').pop()} – nicht mehr im Spiel.`);
+      await this.nachher(`„${d.name}“ abgelegt in ${ziel} – nicht mehr im Spiel.${neuName(d.name, erg.name)}`);
     } catch (e) { this.app.toast(e.message, 'err'); }
   }
   async schalten(ordner, namen, aktiv) {
@@ -388,7 +466,7 @@ export class AblageUI {
       const r = await fetch(`/api/blueprint?ablage=${encodeURIComponent(ordner)}&name=${encodeURIComponent(x.name)}`, { cache: 'no-store' });
       const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status);
       this.app.bp = j; this.app.openScene();
-      $('pathtext').textContent = `Ablage · ${ordner} · ${x.name} (nur ansehen – zum Bearbeiten ins Spiel holen)`;
+      $('pathtext').textContent = `Ablage · ${ordner} · ${x.name} (Speichern schreibt in diesen Ordner)`;
     } catch (e) { this.app.toast('Konnte nicht geöffnet werden: ' + e.message, 'err'); }
     finally { $('loading').hidden = true; }
   }
@@ -397,7 +475,7 @@ export class AblageUI {
   async zeigeVorschlag() {
     const bp = this.app.bp;
     const box = $('nv');
-    if (!bp || bp.neu || bp.kartenAusschnitt) { box.hidden = true; return; }
+    if (!bp || bp.neu || bp.kartenAusschnitt || bp.formVorschau || bp.planer) { box.hidden = true; return; } // Vorschauen: noch keine Datei
     box.hidden = false;
     $('nv-alt').textContent = bp.name;
     $('nv-neu').value = ''; this.felderSetzen(''); $('nv-grund').textContent = 'Vorschlag wird ermittelt …'; $('nv-len').textContent = '';

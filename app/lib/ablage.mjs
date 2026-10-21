@@ -69,10 +69,10 @@ export class Ablage {
     if (fs.existsSync(von + 'cfg')) { try { fs.renameSync(von + 'cfg', nach + 'cfg'); } catch (e) { fs.renameSync(nach, von); throw e; } }
   }
 
-  static kopieren(vonDir, nachDir, name) {
-    const von = path.join(vonDir, name + '.sbp'), nach = path.join(nachDir, name + '.sbp');
+  static kopieren(vonDir, nachDir, name, neuName = name) {
+    const von = path.join(vonDir, name + '.sbp'), nach = path.join(nachDir, neuName + '.sbp');
     if (!fs.existsSync(von)) throw Object.assign(new Error(`„${name}“ nicht gefunden.`), { status: 404 });
-    if (fs.existsSync(nach)) throw Object.assign(new Error(`In der Ablage gibt es dort schon „${name}“.`), { status: 409 });
+    if (fs.existsSync(nach)) throw Object.assign(new Error(`In der Ablage gibt es dort schon „${neuName}“.`), { status: 409 });
     fs.mkdirSync(nachDir, { recursive: true });
     fs.copyFileSync(von, nach);
     if (fs.existsSync(von + 'cfg')) fs.copyFileSync(von + 'cfg', nach + 'cfg');
@@ -82,27 +82,44 @@ export class Ablage {
   ablegen(session, name, ordner) {
     if (!sicher(name) || !ordner) throw Object.assign(new Error('Ungültige Angabe'), { status: 400 });
     const ix = this.index();
+    const neu = Ablage.codeName(name, ordner);
     if (Ablage.istBibliothek(session)) {
       // Aus der Bibliothek wird KOPIERT – das Original bleibt dort liegen
-      Ablage.kopieren(this.sessionPfad(session), this.ordnerPfad(ordner), name);
-      return { ok: true, kopiert: true };
+      Ablage.kopieren(this.sessionPfad(session), this.ordnerPfad(ordner), name, neu);
+      return { ok: true, kopiert: true, name: neu };
     }
-    Ablage.bewegen(this.sessionPfad(session), this.ordnerPfad(ordner), name);
+    Ablage.bewegen(this.sessionPfad(session), this.ordnerPfad(ordner), name, neu);
     ix.aktiv = (ix.aktiv || []).filter((a) => !(a.session === session && a.name === name));
-    (ix.herkunft = ix.herkunft || {})[`${ordner}/${name}`] = session;
+    (ix.herkunft = ix.herkunft || {})[`${ordner}/${neu}`] = session;
     this.speichern(ix);
-    return { ok: true };
+    return { ok: true, name: neu };
   }
 
-  /** Zwischen Ablage-Ordnern verschieben (aktive nur umbuchen) */
+  /**
+   * Gruppencode des Zielordners (letzter Ordner mit „1_1 …“-Nummer, Themen-Unterordner erben ihn) in den Namen übernehmen:
+   * „1_1_Haus“ nach „2_6 Fabriken/…“ → „2_6_Haus“. Namen ohne Code und Ordner ohne Code bleiben, wie sie sind.
+   */
+  static codeName(name, ordner) {
+    const code = (ordner || '').split('/').reverse().map((t) => /^(\d+_\d+)(?=[ _-]|$)/.exec(t)?.[1]).find(Boolean);
+    const m = /^(\d+_\d+)_(.+)$/.exec(name);
+    return code && m && m[1] !== code ? `${code}_${m[2]}` : name;
+  }
+
+  /** Zwischen Ablage-Ordnern verschieben (aktive nur umbuchen); Gruppencode im Namen wird an den Zielordner angepasst */
   umordnen(von, name, nach) {
-    if (von === nach) return { ok: true };
+    if (von === nach) return { ok: true, name };
     const ix = this.index();
+    const neu = Ablage.codeName(name, nach);
     const a = (ix.aktiv || []).find((x) => x.ordner === von && x.name === name);
-    if (a) { this.ordnerPfad(nach); a.ordner = nach; this.speichern(ix); return { ok: true }; }
-    Ablage.bewegen(this.ordnerPfad(von), this.ordnerPfad(nach), name);
-    if (ix.herkunft?.[`${von}/${name}`]) { ix.herkunft[`${nach}/${name}`] = ix.herkunft[`${von}/${name}`]; delete ix.herkunft[`${von}/${name}`]; this.speichern(ix); }
-    return { ok: true };
+    if (a) {
+      this.ordnerPfad(nach);
+      if (neu !== name) Ablage.bewegen(this.sessionPfad(a.session), this.sessionPfad(a.session), name, neu);
+      a.ordner = nach; a.name = neu; this.speichern(ix);
+      return { ok: true, name: neu };
+    }
+    Ablage.bewegen(this.ordnerPfad(von), this.ordnerPfad(nach), name, neu);
+    if (ix.herkunft?.[`${von}/${name}`]) { ix.herkunft[`${nach}/${neu}`] = ix.herkunft[`${von}/${name}`]; delete ix.herkunft[`${von}/${name}`]; this.speichern(ix); }
+    return { ok: true, name: neu };
   }
 
   /** Aktivieren = in den Spielstand-Ordner, Deaktivieren = zurueck in den Ablage-Ordner */

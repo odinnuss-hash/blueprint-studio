@@ -456,6 +456,9 @@ dialog.bs-frage::backdrop { background: rgba(8,9,11,.62); backdrop-filter: blur(
 .bf-merken { align-self: flex-start; font-size: 13px; color: var(--text2); margin-top: 2px; }
 .ab-file.falsch { border-color: #b8742a; }
 .ab-file.falsch .m { color: #f0a050; }
+.ab-file { user-select: none; }
+.ab-file.mark { border-color: var(--accent); box-shadow: inset 4px 0 0 var(--accent); background: color-mix(in srgb, var(--accent-bg) 55%, var(--field)); }
+.ab-files .bp-multi { margin: 4px 12px 0; }
 
 /* Struktur-Editor */
 dialog.dlg-gross { width: min(760px, 94vw); }
@@ -690,3 +693,6 @@ dialog.dlg-ablage[open] { display: flex; flex-direction: column; }
 .ab-kacheln .m { grid-area: m; font-size: 11px; }
 .ab-kacheln .linkbtn { grid-area: open; }
 .ab-kacheln .ab-del { grid-area: del; }
+
+/* Pixel-Art-Vorschau im Formen-Generator */
+.gen-pixel { display: block; width: 100%; max-width: 280px; margin-top: 6px; image-rendering: pixelated; border: 1px solid var(--line); border-radius: 4px; background: repeating-conic-gradient(#0002 0 25%, transparent 0 50%) 0 0 / 12px 12px; }

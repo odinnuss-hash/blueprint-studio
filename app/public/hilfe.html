@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">Zur App</h2>
 <table>
   <tr><th style="width:200px">Programm</th><td><b>Blueprint Studio</b> – Blaupausen-Werkzeug für Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">1.1.0</td></tr>
+  <tr><th>Version</th><td id="za-version">1.2.0</td></tr>
   <tr><th>Urheber</th><td><b>ODINnuss</b> – Idee, Konzept und Gestaltung</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Alle Rechte vorbehalten.</td></tr>
   <tr><th>Umsetzung</th><td>Programmiert im Auftrag des Urhebers mit KI-Unterstützung (Claude, Anthropic).</td></tr>
@@ -179,6 +179,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <ul>
   <li><b>Als neue Blaupause öffnen</b> – Vorschau; Änderungen der Werte sieht man sofort. Danach wie gewohnt bearbeiten und speichern.</li>
   <li><b>In geöffnete Blaupause einfügen</b> – setzt die Form oben auf die offene Blaupause (ausgewählt, mit Pfeiltasten verschieben).</li>
+  <li><b>Pixel-Art aus Bild:</b> Bild wählen (PNG, JPG, GIF …), Breite in Pixeln, Pixelgröße (0,5 / 1 / 2 m), Wand oder Boden, auf Wunsch leuchtend. Je Pixel entsteht ein quadratisches Schild in der Bildfarbe (wie bei den Pixel-Art-Blaupausen der Community); transparente Pixel können wegbleiben. Unter den Einstellungen siehst du das verkleinerte Bild, <b>In 3D ansehen</b> zeigt die Wand, <b>Als Blaupause speichern</b> legt sie ab. Höchstens 20 000 Pixel – kleine Bilder mit klaren Farben wirken am besten.</li>
+  <li><b>Gebäude aus Grundriss (Bild):</b> Grundriss auf ein Raster zeichnen (z. B. in Paint, ein Kästchen = ein Fundament 8 × 8 m) – <b>schwarze</b> Linien = Wand, <b>blau</b> = Fenster, <b>rot</b> = Tür, Lücke = offener Durchgang. Bild wählen und „Breite (Fundamente)“ auf die Zahl der Kästchen über die Bildbreite setzen. Das Kontrollbild zeigt das Raster, die erkannten Wände/Fenster/Türen und grün die Bodenflächen (alles, was innerhalb einer geschlossenen Außenwand liegt). Dazu Etagen, Etagenhöhe und Bauteile wählen; Fenster und Türen sitzen in der untersten Wandreihe jeder Etage. Oben im Bild liegt in der Blaupause hinten, wenn du beim Setzen in dieselbe Richtung wie auf das Bild schaust.</li>
 </ul>
 
 <h2 class="sec" id="speichern">Speichern</h2>
@@ -254,6 +256,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Liste oder Kacheln:</b> Im großen Fenster oben umschalten. <i>Kacheln</i> zeigen jede Blaupause mit einer kleinen <b>3D-Vorschau</b> (echte Modelle, falls eingeschaltet). Klick auf eine Kachel öffnet die Blaupause und schließt das Fenster – wieder öffnen über „Großes Fenster“. Die Wahl merkt sich die App.</li>
   <li><b>Ablage ausblenden:</b> Knopf <b>Ablage ausblenden</b> oben neben „Ordner“ blendet die Ordnerleiste ganz aus (mehr Platz für 2D/3D); derselbe Knopf (<b>Ablage einblenden</b>) holt sie zurück.</li>
   <li><b>Ordner</b> (oben) öffnet immer den Blaupausen-Hauptordner <code>…\SaveGames\blueprints</code> im Explorer.</li>
+  <li><b>Ausgeblendet:</b> Ist die Ablage ausgeblendet, steht oben daneben der Knopf <b>Großes Fenster</b> – damit öffnest du die Ablage direkt im großen Fenster.</li>
+  <li><b>Bearbeiten:</b> Eine Blaupause aus der Ablage lässt sich direkt bearbeiten (drehen, verschieben, tauschen …). <b>Speichern</b> legt die Kopie im selben Ablage-Ordner ab; beim Überschreiben wird vorher eine Sicherung angelegt.</li>
+  <li><b>Mehrfachauswahl:</b> In der Dateiliste der Ablage markiert ein Klick eine Blaupause, <kbd>Strg</kbd>+Klick nimmt einzelne dazu oder weg, <kbd>Umschalt</kbd>+Klick einen ganzen Bereich, <kbd>Strg</kbd>+<kbd>A</kbd> alle. Markierte lassen sich gemeinsam auf einen Ordner oder die Liste links ziehen; die Leiste darüber bietet <b>Ins Spiel</b>, <b>Ablegen</b>, <b>Löschen</b> (auch <kbd>Entf</kbd>) und <b>Aufheben</b> (auch <kbd>Esc</kbd>).</li>
+  <li><b>Umbenennen beim Verschieben:</b> Ziehst du eine Blaupause in einen Ordner einer anderen Gruppe (z. B. von <code>1_1</code> nach <code>2_6</code>), passt die App den Gruppencode vorne im Namen an: <code>1_1_Haus</code> → <code>2_6_Haus</code>. Themen-Unterordner übernehmen den Code ihres Ordners; Namen ohne Code und Ordner ohne Code bleiben unverändert.</li>
 </ul>
 <h3 id="spiel-kategorien">Kategorien im Spiel (Bauplan-Menü)</h3>
 <p>Holst du Blaupausen aus der Ablage ins Spiel, sortiert die App sie im <b>Bauplan-Menü des Spiels</b> gleich passend ein: Hauptgruppe → <b>Kategorie</b> (z. B. „Bauen“), Untergruppe → <b>Unterkategorie</b> (z. B. „Gebäude &amp; Hallen“); die Themen-Unterordner der Ablage gibt es im Spiel nicht. Das Spiel speichert diese Einteilung <b>im Spielstand</b> – die App ändert deshalb den <b>neuesten Spielstand</b> der Sitzung (oft ein Autosave) und sichert vorher <b>einmalig das Original</b> nach <code>userdata\sicherungen\spielstaende</code>.</p>
@@ -592,7 +598,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Modelle liegen in der App verdreht/versetzt</td><td>FModel-Mesh-Format muss <code>glTF 2.0 (binary)</code> sein; Werkzeug erneut laufen lassen.</td></tr>
   <tr><td>Graue Kästen statt Modellen</td><td>Für dieses Bauteil fehlt ein Modell (siehe Meldung des Werkzeugs) – oder es ist ein Band/Rohr/Schiene/Lift (bewusst ohne Modell).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.1.0 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
+<p class="muted">Blueprint Studio 1.2.0 · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

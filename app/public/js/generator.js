@@ -79,6 +79,34 @@ export const FORMEN = {
       { k: 'deckel', label: 'Oberste Decke', typ: 'janein', std: true },
     ],
   },
+  // Grundriss: Bild im Browser auf ein 8-m-Raster gelegt (main.js grundrissPlan) → p.plan; Gebäude daraus hier
+  grundriss: {
+    name: 'Gebäude aus Grundriss (Bild)',
+    params: [
+      { k: 'bild', label: 'Grundriss-Bild', typ: 'bild' },
+      { k: 'breite', label: 'Breite (Fundamente)', typ: 'zahl', min: 2, max: 60, std: 8 },
+      { k: 'etagen', label: 'Etagen', typ: 'zahl', min: 1, max: 20, std: 1 },
+      { k: 'hoehe', label: 'Etagenhöhe (Wandreihen à 4 m)', typ: 'zahl', min: 1, max: 6, std: 1 },
+      { k: 'boden', label: 'Boden / Decke', typ: 'teil', filter: 'boden', std: 'Build_Foundation_ConcretePolished_8x1_C' },
+      { k: 'wand', label: 'Wand (schwarz)', typ: 'teil', filter: 'wand', std: 'Build_Wall_Concrete_8x4_C' },
+      { k: 'fenster', label: 'Fenster (blau)', typ: 'teil', filter: 'wand', std: 'Build_Wall_Concrete_8x4_Window_02_C' },
+      { k: 'tuer', label: 'Tür (rot)', typ: 'teil', filter: 'tuer', std: 'Build_Wall_Concrete_CDoor_8x4_C' },
+      { k: 'dach', label: 'Dach', typ: 'teil', filter: 'dach', std: 'Build_Roof_Tar_01_C', leer: 'kein Dach' },
+    ],
+  },
+  // Pixel-Art: Bild wird im Browser verkleinert, je Pixel ein quadratisches Schild (Server: lib/pixelbild.mjs)
+  pixelbild: {
+    name: 'Pixel-Art aus Bild',
+    server: 'pixel',
+    params: [
+      { k: 'bild', label: 'Bild', typ: 'bild' },
+      { k: 'breite', label: 'Breite (Pixel)', typ: 'zahl', min: 4, max: 200, std: 48 },
+      { k: 'groesse', label: 'Pixelgröße', typ: 'wahl', std: 'tiny', optionen: [['tiny', '0,5 m (kleines Schild)'], ['small', '1 m'], ['square', '2 m']] },
+      { k: 'lage', label: 'Lage', typ: 'wahl', std: 'wand', optionen: [['wand', 'Wand (senkrecht)'], ['boden', 'Boden (liegend)']] },
+      { k: 'leuchten', label: 'Leuchtend', typ: 'janein', std: false },
+      { k: 'transparent', label: 'Transparente Pixel weglassen', typ: 'janein', std: true },
+    ],
+  },
 };
 
 // Kreisflaeche aus Ringen (Bauweise wie „Rundplatte22x22“: Ringe im Fundamentabstand, tangential gedreht, 5°-Raster)
@@ -104,6 +132,7 @@ function rectFloor(cls, box, w, l, z) {
 }
 
 export function generate(form, p, kat) {
+  if (FORMEN[form]?.server) return []; // entsteht auf dem Server
   const box = (cls) => kat?.gebaeude?.[cls]?.box || null;
   const top = (cls) => { const b = box(cls); return b ? b[5] : 50; }; // Oberkante relativ zum Drehpunkt
   const wallBase = (cls) => { const b = box(cls); return b ? -b[2] : 0; }; // Unterkante liegt auf dem Boden (Drehpunkt unten -> 0)
@@ -137,6 +166,33 @@ export function generate(form, p, kat) {
         for (let j = 0; j < p.laenge; j++) {
           const y = (j - (p.laenge - 1) / 2) * t.d;
           objs.push({ cls: wcls, pos: P(-W / 2, y, zc), rot: quatYaw(180) }, { cls: wcls, pos: P(W / 2, y, zc), rot: quatYaw(0) });
+        }
+      }
+    }
+  } else if (form === 'grundriss') {
+    // plan = { n, m, kanten: { 'h,i,j' | 'v,i,j': 'W'|'F'|'T' }, innen: Set('i,j') } – Zelle (i, j): Spalte i, Zeile j von oben.
+    // Lage wie die im Spiel geprüfte Boden-Pixel-Art: Spalten nach −X, oben im Bild = +Y (lesbar mit Blick nach +Y).
+    const plan = p.plan; if (!plan) return objs;
+    const s = tileSize(box(p.boden)).w, fh = p.hoehe * 400;
+    const X = (i) => -(i - (plan.n - 1) / 2) * s, Y = (j) => -(j - (plan.m - 1) / 2) * s;
+    const innen = (i, j) => plan.innen.has(`${i},${j}`);
+    for (let e = 0; e <= p.etagen; e++) {
+      const zf = e * fh;
+      for (const k of plan.innen) {
+        const [i, j] = k.split(',').map(Number);
+        if (e < p.etagen) objs.push({ cls: p.boden, pos: P(X(i), Y(j), zf - top(p.boden)), rot: quatYaw(0) });
+        else if (p.dach) objs.push({ cls: p.dach, pos: P(X(i), Y(j), zf - (box(p.dach) ? box(p.dach)[2] : 0)), rot: quatYaw(0) });
+      }
+      if (e === p.etagen) break;
+      for (const [k, art] of Object.entries(plan.kanten)) {
+        const [r, i, j] = k.split(','); const a = +i, b = +j;
+        // Lage und Drehung: Vorderseite nach außen (wie beim Gebäude-Generator)
+        const [x, y, yaw] = r === 'h'
+          ? [X(a), (Y(b - 1) + Y(b)) / 2, innen(a, b - 1) && !innen(a, b) ? -90 : 90]
+          : [(X(a - 1) + X(a)) / 2, Y(b), innen(a - 1, b) && !innen(a, b) ? 180 : 0];
+        for (let row = 0; row < p.hoehe; row++) {
+          const cls = row === 0 && art === 'F' ? p.fenster : row === 0 && art === 'T' ? p.tuer : p.wand;
+          objs.push({ cls, pos: P(x, y, zf + row * 400 + wallBase(cls)), rot: quatYaw(yaw) });
         }
       }
     }
@@ -181,6 +237,7 @@ export function teileFuer(filter, kat, avail) {
     const w = g.box[3] - g.box[0], d = g.box[4] - g.box[1], h = g.box[5] - g.box[2];
     if (filter === 'boden') return (g.unterkategorie === 'Fundamente' || /Glass|Frame/.test(cls) && g.unterkategorie === 'Rahmen') && Math.abs(w - 800) < 2 && Math.abs(d - 800) < 2;
     if (filter === 'wand') return /Wände|Fenster|Fensterrahmen/.test(g.unterkategorie) && Math.abs(d - 800) < 2 && Math.abs(h - 400) < 2 && w <= 100;
+    if (filter === 'tuer') return /Türen/.test(g.unterkategorie) && !/BigGarage/.test(cls) && Math.abs(d - 800) < 2 && Math.abs(h - 400) < 2 && w <= 100;
     if (filter === 'dach') return (g.unterkategorie === 'Dächer' && Math.abs(w - 800) < 2 && Math.abs(d - 800) < 2 && h <= 60 && !/Corner|Ramp|Curved|Sloped|In_|Out_/.test(cls)) || (g.unterkategorie === 'Fundamente' && h <= 100 && Math.abs(w - 800) < 2);
     return false;
   });

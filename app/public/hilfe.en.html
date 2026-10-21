@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">About the app</h2>
 <table>
   <tr><th style="width:200px">Program</th><td><b>Blueprint Studio</b> – blueprint tool for Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version">1.1.0</td></tr>
+  <tr><th>Version</th><td id="za-version">1.2.0</td></tr>
   <tr><th>Author</th><td><b>ODINnuss</b> – idea, concept and design</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. All rights reserved.</td></tr>
   <tr><th>Implementation</th><td>Programmed on behalf of the author with AI assistance (Claude, Anthropic).</td></tr>
@@ -179,6 +179,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <ul>
   <li><b>Open as new blueprint</b> – preview; changes to the values are visible immediately. Then edit and save as usual.</li>
   <li><b>Insert into open blueprint</b> – places the shape on top of the open blueprint (selected, move it with the arrow keys).</li>
+  <li><b>Pixel art from image:</b> choose an image (PNG, JPG, GIF …), the width in pixels, the pixel size (0.5 / 1 / 2 m), wall or floor, optionally glowing. Each pixel becomes a square sign in the image colour (like the community pixel-art blueprints); transparent pixels can be left out. Below the settings you see the scaled-down image, <b>View in 3D</b> shows the wall, <b>Save as blueprint</b> stores it. At most 20,000 pixels – small images with clear colours work best.</li>
+  <li><b>Building from floor plan (image):</b> draw the floor plan on a grid (e.g. in Paint, one square = one 8 × 8 m foundation) – <b>black</b> lines = wall, <b>blue</b> = window, <b>red</b> = door, gap = open passage. Choose the image and set “Width (foundations)” to the number of squares across the image width. The check image shows the grid, the detected walls/windows/doors and in green the floor areas (everything inside a closed outer wall). Then choose floors, floor height and parts; windows and doors sit in the lowest wall row of each floor. The top of the image is at the back of the blueprint when you look in the same direction as at the image while placing it.</li>
 </ul>
 
 <h2 class="sec" id="speichern">Saving</h2>
@@ -254,6 +256,10 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>List or tiles:</b> switch at the top of the large window. <i>Tiles</i> show each blueprint with a small <b>3D preview</b> (real models if enabled). Clicking a tile opens the blueprint and closes the window – reopen it via “Large window”. The app remembers your choice.</li>
   <li><b>Hide archive:</b> the button <b>Hide archive</b> next to “Folder” hides the folder bar completely (more room for 2D/3D); the same button (<b>Show archive</b>) brings it back.</li>
   <li><b>Folder</b> (top) always opens the main blueprints folder <code>…\SaveGames\blueprints</code> in Explorer.</li>
+  <li><b>When hidden:</b> while the archive is hidden, the button <b>Large window</b> appears next to it at the top – it opens the archive straight in the large window.</li>
+  <li><b>Editing:</b> a blueprint from the archive can be edited directly (rotate, move, swap …). <b>Save</b> puts the copy into the same archive folder; when overwriting, a backup is made first.</li>
+  <li><b>Multiple selection:</b> in the archive file list a click selects a blueprint, <kbd>Ctrl</kbd>+click adds or removes single ones, <kbd>Shift</kbd>+click a whole range, <kbd>Ctrl</kbd>+<kbd>A</kbd> all. Selected ones can be dragged together onto a folder or the list on the left; the bar above offers <b>Into game</b>, <b>Archive</b>, <b>Delete</b> (also <kbd>Del</kbd>) and <b>Clear</b> (also <kbd>Esc</kbd>).</li>
+  <li><b>Renaming when moving:</b> if you drag a blueprint into a folder of another group (e.g. from <code>1_1</code> to <code>2_6</code>), the app adjusts the group code at the front of the name: <code>1_1_House</code> → <code>2_6_House</code>. Topic subfolders use the code of their folder; names and folders without a code stay unchanged.</li>
 </ul>
 <h3 id="spiel-kategorien">Categories in the game (blueprint menu)</h3>
 <p>When you bring blueprints from the archive into the game, the app sorts them into the <b>game’s blueprint menu</b> right away: main group → <b>category</b> (e.g. “Building”), subgroup → <b>subcategory</b> (e.g. “Buildings &amp; halls”); the topic subfolders of the archive do not exist in the game. The game stores this layout <b>in the save</b> – so the app changes the <b>newest save</b> of the session (often an autosave) and backs up <b>the original once</b> to <code>userdata\sicherungen\spielstaende</code> beforehand.</p>
@@ -592,7 +598,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Models are rotated/offset in the app</td><td>The FModel mesh format must be <code>glTF 2.0 (binary)</code>; run the tool again.</td></tr>
   <tr><td>Gray boxes instead of models</td><td>A model is missing for this part (see the tool's message) – or it is a belt/pipeline/railway/lift (intentionally without a model).</td></tr>
 </table>
-<p class="muted">Blueprint Studio 1.1.0 · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
+<p class="muted">Blueprint Studio 1.2.0 · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen
