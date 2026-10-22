@@ -43,7 +43,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '1.4.2';
+const VERSION = '1.4.3';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 
@@ -1310,7 +1310,7 @@ const server = http.createServer(async (req, res) => {
         return res.end(d);
       }
       if (p === '/api/ablage') return sendJson(res, 200, { ...ablage.lesen(), spielSitzungen: (await spielSitzungen()).map((x) => x.name), gruppen: GRUPPEN, ordnerFuer: Object.fromEntries(GRUPPEN.map(([c]) => [c, ablageOrdner(c)])), struktur: strukturOrdner() });
-      if (p === '/api/ablage/ablegen' && req.method === 'POST') { const b = await readJsonBody(req); const r = b.von ? ablage.umordnen(b.von, b.name, b.nach) : ablage.ablegen(b.session, b.name, b.nach); bpCache.clear(); letzterPlan = null; return sendJson(res, 200, r); }
+      if (p === '/api/ablage/ablegen' && req.method === 'POST') { const b = await readJsonBody(req); const r = b.von ? ablage.umordnen(b.von, b.name, b.nach, b.neuName || null) : ablage.ablegen(b.session, b.name, b.nach, b.neuName || null); bpCache.clear(); letzterPlan = null; return sendJson(res, 200, r); }
       if (p === '/api/ablage/schalten' && req.method === 'POST') { const b = await readJsonBody(req);
         if (b.aktiv && !(await spielSitzungen()).some((x) => x.name === b.session)) throw Object.assign(new Error(`„${b.session || '–'}“ ist kein Spielstand – das Spiel liest nur die Blaupausen-Ordner seiner Spielstände. Bitte einen Spielstand wählen.`), { status: 400 }); const r = ablage.schalten(b.ordner, b.namen || [], !!b.aktiv, b.session); bpCache.clear(); letzterPlan = null; return sendJson(res, 200, r); }
       if (p === '/api/spielkategorien' && req.method === 'POST') return sendJson(res, 200, await spielKategorienSetzen(String((await readJsonBody(req)).session || '')));
@@ -1355,7 +1355,7 @@ const server = http.createServer(async (req, res) => {
   } catch (e) {
     if (e.code === 'ENOENT') return p.startsWith('/api/') ? sendJson(res, 404, { fehler: 'Datei nicht gefunden' }) : (res.writeHead(404), res.end('Nicht gefunden'));
     log('Fehler:', e.message);
-    if (!res.headersSent) sendJson(res, e.status || 500, { fehler: e.message });
+    if (!res.headersSent) sendJson(res, e.status || 500, { fehler: e.message, ...(e.vorschlag ? { vorschlag: e.vorschlag } : {}) });
   }
 });
 

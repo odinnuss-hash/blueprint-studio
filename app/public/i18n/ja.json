@@ -1735,5 +1735,22 @@
  "Blaupause zum Setzen wählen – Klick auf eine Kachel": "配置する設計図を選択 – タイルをクリック",
  "Verschieben": "移動",
  "Drehen 90°": "90° 回転",
- "Teile-Limit (große Fabriken)": "オブジェクト上限(巨大工場向け)"
+ "Teile-Limit (große Fabriken)": "オブジェクト上限(巨大工場向け)",
+ "„{0}“ an die Welt übergeben – dort in die Ansicht zeigen und klicken.": "「{0}」をワールドに渡しました – ワールドのビューでポイントしてクリックしてください。",
+ "Ablage – Blueprint Studio": "保管庫 – Blueprint Studio",
+ "Ablage als eigenes Fenster": "保管庫を別ウィンドウで",
+ "Ablage-Kacheln als eigenes Fenster neben der Welt öffnen (z. B. auf dem zweiten Bildschirm) – bleibt offen, Klick auf eine Kachel wählt die Blaupause hier": "保管庫のタイルをワールドの横の別ウィンドウで開きます(2 台目の画面など) – 開いたままで、タイルをクリックするとここで設計図が選ばれます",
+ "Das Fenster wurde blockiert – bitte Pop-ups für die App erlauben.": "ウィンドウがブロックされました – アプリのポップアップを許可してください。",
+ "Zum Setzen bitte die Welt-Ansicht öffnen.": "配置するにはワールドビューを開いてください。",
+ "„{0}“ aus der Bibliothek nach {1} verschoben.": "「{0}」をライブラリから {1} に移動しました。",
+ "„{0}“ aus der Bibliothek nach {1} verschoben. Neuer Name: „{2}“.": "「{0}」をライブラリから {1} に移動しました。新しい名前:「{2}」。",
+ "„{0}“ nicht abgelegt.": "「{0}」は保管されませんでした。",
+ "{0} Blaupausen aus der Bibliothek nach {1} verschoben.": "{0} 個の設計図をライブラリから {1} に移動しました。",
+ "Im Ablage-Ordner gibt es schon „{0}“.": "保管庫フォルダーには既に「{0}」があります。",
+ "Hier gibt es schon „{0}“.": "ここには既に「{0}」があります。",
+ "{0} Unter welchem Namen stattdessen?": "{0} 代わりにどの名前にしますか?",
+ "Unter welchem Namen stattdessen?": "代わりにどの名前にしますか?",
+ "(frei wäre „{0}“)": "(「{0}」なら空いています)",
+ "Nicht umbenannt.": "名前は変更されませんでした。",
+ "Umbenannt in „{0}“ – nicht einsortiert.": "「{0}」に名前を変更しました – 振り分けはしていません。"
 }

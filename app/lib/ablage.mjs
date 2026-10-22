@@ -69,6 +69,21 @@ export class Ablage {
     if (fs.existsSync(von + 'cfg')) { try { fs.renameSync(von + 'cfg', nach + 'cfg'); } catch (e) { fs.renameSync(nach, von); throw e; } }
   }
 
+  /** Freier Name im Ordner: „Name_2“, „Name_3“ … (höchstens 32 Zeichen wie im Spiel – dafür den Namen kürzen) */
+  static freierName(dir, name) {
+    const da = (n) => fs.existsSync(path.join(dir, n + '.sbp'));
+    if (!da(name)) return name;
+    for (let i = 2; i < 1000; i++) { const s = `_${i}`, n = (name.length + s.length > 32 ? name.slice(0, Math.max(1, 32 - s.length)) : name) + s; if (!da(n)) return n; }
+    return name + '_' + Date.now();
+  }
+  /** Gibt es den Zielnamen schon: Fehler 409 mit Namensvorschlag (der Client fragt dann nach) */
+  static frei(dir, alt, neu, wo) {
+    const ziel = path.join(dir, neu + '.sbp');
+    if (fs.existsSync(ziel) && path.join(dir, alt + '.sbp').toLowerCase() !== ziel.toLowerCase()) {
+      throw Object.assign(new Error(wo === 'hier' ? `Hier gibt es schon „${neu}“.` : `Im Ablage-Ordner gibt es schon „${neu}“.`), { status: 409, vorschlag: Ablage.freierName(dir, neu) });
+    }
+  }
+
   static kopieren(vonDir, nachDir, name, neuName = name) {
     const von = path.join(vonDir, name + '.sbp'), nach = path.join(nachDir, neuName + '.sbp');
     if (!fs.existsSync(von)) throw Object.assign(new Error(`„${name}“ nicht gefunden.`), { status: 404 });
@@ -78,15 +93,18 @@ export class Ablage {
     if (fs.existsSync(von + 'cfg')) fs.copyFileSync(von + 'cfg', nach + 'cfg');
   }
 
-  /** Aus dem Spielstand-Ordner in einen Ablage-Ordner (wird dabei inaktiv); aus der Bibliothek: Kopie */
-  ablegen(session, name, ordner) {
-    if (!sicher(name) || !ordner) throw Object.assign(new Error('Ungültige Angabe'), { status: 400 });
+  /**
+   * Aus dem Spielstand-Ordner in einen Ablage-Ordner (wird dabei inaktiv); aus der Bibliothek ebenfalls VERSCHIEBEN
+   * (seit 22.10.2026; früher Kopie – das Original blieb liegen und es sah aus, als sei nichts abgelegt). neuName: eigener Zielname.
+   */
+  ablegen(session, name, ordner, neuName = null) {
+    if (!sicher(name) || !ordner || (neuName && !sicher(neuName))) throw Object.assign(new Error('Ungültige Angabe'), { status: 400 });
     const ix = this.index();
-    const neu = Ablage.codeName(name, ordner);
+    const neu = neuName || Ablage.codeName(name, ordner);
+    Ablage.frei(this.ordnerPfad(ordner), '', neu, 'Im Ablage-Ordner');
     if (Ablage.istBibliothek(session)) {
-      // Aus der Bibliothek wird KOPIERT – das Original bleibt dort liegen
-      Ablage.kopieren(this.sessionPfad(session), this.ordnerPfad(ordner), name, neu);
-      return { ok: true, kopiert: true, name: neu };
+      Ablage.bewegen(this.sessionPfad(session), this.ordnerPfad(ordner), name, neu);
+      return { ok: true, bibliothek: true, name: neu };
     }
     Ablage.bewegen(this.sessionPfad(session), this.ordnerPfad(ordner), name, neu);
     ix.aktiv = (ix.aktiv || []).filter((a) => !(a.session === session && a.name === name));
@@ -106,10 +124,12 @@ export class Ablage {
   }
 
   /** Zwischen Ablage-Ordnern verschieben (aktive nur umbuchen); Gruppencode im Namen wird an den Zielordner angepasst */
-  umordnen(von, name, nach) {
+  umordnen(von, name, nach, neuName = null) {
     if (von === nach) return { ok: true, name };
+    if (neuName && !sicher(neuName)) throw Object.assign(new Error('Ungültiger Name'), { status: 400 });
     const ix = this.index();
-    const neu = Ablage.codeName(name, nach);
+    const neu = neuName || Ablage.codeName(name, nach);
+    if (!(ix.aktiv || []).some((x) => x.ordner === von && x.name === name)) Ablage.frei(this.ordnerPfad(nach), '', neu, 'Im Ablage-Ordner');
     const a = (ix.aktiv || []).find((x) => x.ordner === von && x.name === name);
     if (a) {
       this.ordnerPfad(nach);
@@ -170,6 +190,7 @@ export class Ablage {
     if (!sicher(name) || !sicher(neu)) throw Object.assign(new Error('Ungültiger Name (keine \\ / : * ? " < > |)'), { status: 400 });
     if (name === neu) return { ok: true };
     const dir = session ? this.sessionPfad(session) : this.ordnerPfad(ordner);
+    Ablage.frei(dir, name, neu, 'hier');
     Ablage.bewegen(dir, dir, name, neu);
     if (session) {
       const ix = this.index();

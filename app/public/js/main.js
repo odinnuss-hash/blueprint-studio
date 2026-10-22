@@ -32,7 +32,10 @@ async function api(path, body) {
 
 // W/A/S/D: [vor, seitlich] (e.code = Tastenposition, unabhängig vom Tastaturlayout)
 const FAHR = { KeyW: [1, 0], KeyS: [-1, 0], KeyA: [0, -1], KeyD: [0, 1] };
-const APP_VERSION = '1.4.2'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
+// Abgelöstes Ablage-Fenster (Welt): gleiche Seite mit ?fenster=ablage – zeigt nur die Ablage-Kacheln und meldet die Wahl über diesen Kanal
+const NUR_ABLAGE = new URLSearchParams(location.search).get('fenster') === 'ablage';
+const ABLAGE_KANAL = 'bs-ablage-wahl';
+const APP_VERSION = '1.4.3'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
 
 class App {
   constructor() {
@@ -62,8 +65,7 @@ class App {
     fetch('/api/heartbeat', { method: 'POST', headers: { 'x-bs': '1' } }).catch(() => {});
     // Fenster geschlossen → Server beendet sich gleich mit (sendBeacon kommt auch beim Schließen noch an)
     const abmelden = () => { try { navigator.sendBeacon('/api/fenster-zu', ''); } catch { /* egal */ } };
-    window.addEventListener('pagehide', abmelden);
-    window.addEventListener('beforeunload', abmelden);
+    if (!NUR_ABLAGE) { window.addEventListener('pagehide', abmelden); window.addEventListener('beforeunload', abmelden); }
     this.init();
   }
 
@@ -72,6 +74,7 @@ class App {
       this.cfg = await api('config');
       if (this.cfg.version !== APP_VERSION) { await this.updateNeustart(); return; }
       if (!this.i18nAn) { this.i18nAn = true; await i18nStart(this.cfg.sprache); }
+      if (NUR_ABLAGE) this.einrichtungGeprueft = true;
       if (!this.einrichtungGeprueft) { this.einrichtungGeprueft = true; this.einrichtung.beimStart(); if (this.cfg.updatePruefen !== false) setTimeout(() => this.update.pruefen({ still: true }), 4000); }
       $('st-version').textContent = `Blueprint Studio ${this.cfg.version} · © 2026 ODINnuss`;
       ICONS.clear(); for (const f of this.cfg.icons || []) ICONS.add(f);
@@ -80,8 +83,27 @@ class App {
       this.modellWahlAnwenden();
       if (!this.cfg.blueprintDirOk) this.toast('Kein Blaupausen-Ordner gefunden – bitte in den Einstellungen prüfen.', 'err');
     } catch (e) { this.toast('Server nicht erreichbar: ' + e.message, 'err'); }
+    // Ablage-Fenster: Katalog wird für die 3D-Vorschau der Kacheln gebraucht (kacheln3d.js)
+    if (NUR_ABLAGE) { try { this.kat = await api('katalog'); } catch (e) { this.toast(e.message, 'err'); } this.nurAblageStart(); return; }
     try { this.kat = await api('katalog'); this.katalog.setData(this.kat); if (this.area === 'planer') this.planer.show(); if (this.bp) this.openScene(); this.initGenerator(); }
     catch (e) { this.toast(e.message, 'err'); }
+  }
+
+  /** Abgelöstes Ablage-Fenster: Kacheln im Auswahl-Modus, Klick → Hauptfenster (Welt) */
+  nurAblageStart() {
+    if (this.nurAblageLaeuft) return;
+    this.nurAblageLaeuft = true;
+    document.body.classList.add('nur-ablage');
+    document.title = 'Ablage – Blueprint Studio';
+    this.ablage.offenLassen = true; // eigenes Fenster: nach der Wahl offen bleiben für die nächste
+    const kanal = new BroadcastChannel(ABLAGE_KANAL);
+    this.ablage.grossesFenster((q) => {
+      kanal.postMessage({ art: 'setzen', q: { ablage: q.ablage, session: q.session, name: q.name } });
+      this.toast(`„${q.name}“ an die Welt übergeben – dort in die Ansicht zeigen und klicken.`, 'ok');
+      try { window.opener?.focus(); } catch { /* anderes Fenster */ }
+    });
+    // Esc schließt hier nicht das Fenster-Innere; geschlossen wird über das Fenster selbst
+    $('dlg-ablage').addEventListener('cancel', (e) => e.preventDefault());
   }
 
   /** Oberflaeche ist neuer als der laufende Server (Update eingespielt, App nicht neu gestartet) */
@@ -836,7 +858,20 @@ class App {
       try { const m = await this.welt.waehleBlaupause(q); this.toast(`${m.name}: ${m.anzahl + m.linien.length} Bauteile – in die Ansicht zeigen und klicken zum Absetzen.`, 'ok'); $('w-canvas').focus(); }
       catch (e) { this.toast(e.message, 'err'); }
     };
-    $('w-bp-ablage').addEventListener('click', () => this.ablage.grossesFenster((q) => { $('w-bp').value = [...wahl].find(([, v]) => v.name === q.name && v.ablage === q.ablage && v.session === q.session)?.[0] || ''; pruefe(); setzen(q); }));
+    const gewaehlt = (q) => { $('w-bp').value = [...wahl].find(([, v]) => v.name === q.name && v.ablage === q.ablage && v.session === q.session)?.[0] || ''; pruefe(); setzen(q); };
+    $('w-bp-ablage').addEventListener('click', () => this.ablage.grossesFenster(gewaehlt));
+    $('w-bp-fenster').addEventListener('click', () => {
+      const f = window.open('/?fenster=ablage', 'bs-ablage', 'popup,width=1100,height=900');
+      if (!f) this.toast('Das Fenster wurde blockiert – bitte Pop-ups für die App erlauben.', 'err'); else f.focus();
+    });
+    if (!this.ablageKanal) {
+      this.ablageKanal = new BroadcastChannel(ABLAGE_KANAL);
+      this.ablageKanal.addEventListener('message', (e) => {
+        if (e.data?.art !== 'setzen' || !e.data.q?.name) return;
+        if (this.area !== 'welt') { this.toast('Zum Setzen bitte die Welt-Ansicht öffnen.', 'err'); return; }
+        window.focus(); gewaehlt(e.data.q);
+      });
+    }
     $('w-bp-setzen').addEventListener('click', async () => {
       const q = wahl.get($('w-bp').value); if (!q) return;
       $('w-bp-setzen').disabled = true;

@@ -1735,5 +1735,22 @@
  "Blaupause zum Setzen wählen – Klick auf eine Kachel": "Choose a blueprint to place – click a tile",
  "Verschieben": "Move",
  "Drehen 90°": "Rotate 90°",
- "Teile-Limit (große Fabriken)": "Object limit (huge factories)"
+ "Teile-Limit (große Fabriken)": "Object limit (huge factories)",
+ "„{0}“ an die Welt übergeben – dort in die Ansicht zeigen und klicken.": "“{0}” sent to the world – point into the view there and click.",
+ "Ablage – Blueprint Studio": "Storage – Blueprint Studio",
+ "Ablage als eigenes Fenster": "Storage as a separate window",
+ "Ablage-Kacheln als eigenes Fenster neben der Welt öffnen (z. B. auf dem zweiten Bildschirm) – bleibt offen, Klick auf eine Kachel wählt die Blaupause hier": "Open the storage tiles in a separate window next to the world (e.g. on a second screen) – stays open, a click on a tile picks the blueprint here",
+ "Das Fenster wurde blockiert – bitte Pop-ups für die App erlauben.": "The window was blocked – please allow pop-ups for the app.",
+ "Zum Setzen bitte die Welt-Ansicht öffnen.": "Please open the world view to place it.",
+ "„{0}“ aus der Bibliothek nach {1} verschoben.": "“{0}” moved from the library to {1}.",
+ "„{0}“ aus der Bibliothek nach {1} verschoben. Neuer Name: „{2}“.": "“{0}” moved from the library to {1}. New name: “{2}”.",
+ "„{0}“ nicht abgelegt.": "“{0}” not archived.",
+ "{0} Blaupausen aus der Bibliothek nach {1} verschoben.": "{0} blueprints moved from the library to {1}.",
+ "Im Ablage-Ordner gibt es schon „{0}“.": "The storage folder already contains “{0}”.",
+ "Hier gibt es schon „{0}“.": "“{0}” already exists here.",
+ "{0} Unter welchem Namen stattdessen?": "{0} Which name should be used instead?",
+ "Unter welchem Namen stattdessen?": "Which name should be used instead?",
+ "(frei wäre „{0}“)": "(“{0}” would be free)",
+ "Nicht umbenannt.": "Not renamed.",
+ "Umbenannt in „{0}“ – nicht einsortiert.": "Renamed to “{0}” – not sorted in."
 }

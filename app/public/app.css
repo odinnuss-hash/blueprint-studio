@@ -715,3 +715,8 @@ dialog.dlg-ablage[open] { display: flex; flex-direction: column; }
 .w-gmenue b { flex: 1 0 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .w-gmenue .muted { flex: 1 0 100%; font-size: 11px; }
 #view-welt .w-gmenue .btn { width: auto; margin: 0; }
+
+/* Abgelöstes Ablage-Fenster (/?fenster=ablage): nur die Ablage, fensterfüllend */
+body.nur-ablage .dlg-ablage { width: 100vw; height: 100vh; max-width: none; max-height: none; margin: 0; border: 0; border-radius: 0; }
+body.nur-ablage .dlg-ablage::backdrop { background: var(--bg, #14161a); }
+body.nur-ablage #ab-gross-zu, body.nur-ablage .dlg-ablage-kopf .hint { display: none; }

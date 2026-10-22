@@ -1735,5 +1735,22 @@
  "Blaupause zum Setzen wählen – Klick auf eine Kachel": "Choisir un plan à placer – cliquez sur une vignette",
  "Verschieben": "Déplacer",
  "Drehen 90°": "Tourner de 90°",
- "Teile-Limit (große Fabriken)": "Limite d'objets (très grandes usines)"
+ "Teile-Limit (große Fabriken)": "Limite d'objets (très grandes usines)",
+ "„{0}“ an die Welt übergeben – dort in die Ansicht zeigen und klicken.": "« {0} » transmis au monde – visez dans la vue et cliquez.",
+ "Ablage – Blueprint Studio": "Rangement – Blueprint Studio",
+ "Ablage als eigenes Fenster": "Rangement dans une fenêtre à part",
+ "Ablage-Kacheln als eigenes Fenster neben der Welt öffnen (z. B. auf dem zweiten Bildschirm) – bleibt offen, Klick auf eine Kachel wählt die Blaupause hier": "Ouvrir les vignettes du rangement dans une fenêtre séparée à côté du monde (p. ex. sur un second écran) – reste ouverte, un clic sur une vignette choisit le plan ici",
+ "Das Fenster wurde blockiert – bitte Pop-ups für die App erlauben.": "La fenêtre a été bloquée – veuillez autoriser les fenêtres contextuelles pour l’application.",
+ "Zum Setzen bitte die Welt-Ansicht öffnen.": "Pour placer, ouvrez la vue du monde.",
+ "„{0}“ aus der Bibliothek nach {1} verschoben.": "« {0} » déplacé de la bibliothèque vers {1}.",
+ "„{0}“ aus der Bibliothek nach {1} verschoben. Neuer Name: „{2}“.": "« {0} » déplacé de la bibliothèque vers {1}. Nouveau nom : « {2} ».",
+ "„{0}“ nicht abgelegt.": "« {0} » non rangé.",
+ "{0} Blaupausen aus der Bibliothek nach {1} verschoben.": "{0} plans déplacés de la bibliothèque vers {1}.",
+ "Im Ablage-Ordner gibt es schon „{0}“.": "Le dossier du rangement contient déjà « {0} ».",
+ "Hier gibt es schon „{0}“.": "« {0} » existe déjà ici.",
+ "{0} Unter welchem Namen stattdessen?": "{0} Sous quel nom à la place ?",
+ "Unter welchem Namen stattdessen?": "Sous quel nom à la place ?",
+ "(frei wäre „{0}“)": "(« {0} » serait libre)",
+ "Nicht umbenannt.": "Non renommé.",
+ "Umbenannt in „{0}“ – nicht einsortiert.": "Renommé en « {0} » – non classé."
 }

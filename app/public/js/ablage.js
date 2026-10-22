@@ -17,8 +17,23 @@ const ICON_AUF = '<svg class="fa ab-ico" width="14" height="13" viewBox="0 0 576
 async function post(pfad, body) {
   const r = await fetch('/api/' + pfad, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify(body) });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(j.fehler || r.status);
+  if (!r.ok) throw Object.assign(new Error(j.fehler || r.status), { vorschlag: j.vorschlag || null });
   return j;
+}
+/**
+ * Aufruf mit Rückfrage bei doppeltem Namen: der Server meldet 409 mit freiem Namensvorschlag („Name_2“) –
+ * dann den Vorschlag (änderbar) anbieten und mit diesem Namen erneut versuchen. Abbrechen → null.
+ */
+async function mitNamensvorschlag(aufruf, was = 'Ablegen') {
+  let neuName = null;
+  for (;;) {
+    try { return await aufruf(neuName); }
+    catch (e) {
+      if (!e.vorschlag) throw e;
+      neuName = await eingabe({ titel: 'Name schon vergeben', text: `${e.message} Unter welchem Namen stattdessen?`, wert: e.vorschlag, ok: was });
+      if (!neuName) return null;
+    }
+  }
 }
 const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* egal */ } };
@@ -325,7 +340,7 @@ export class AblageUI {
   /** Öffnen; im großen Fenster schließt es sich dabei (wieder öffnen über „Großes Fenster“) */
   async ansehenAusFenster(x) {
     const ordner = this.aktuell;
-    if (this.waehlen) { const cb = this.waehlen; $('dlg-ablage').close(); return cb(x.aktiv ? { session: x.session, name: x.name } : { ablage: ordner, name: x.name }); }
+    if (this.waehlen) { const cb = this.waehlen; if (!this.offenLassen) $('dlg-ablage').close(); return cb(x.aktiv ? { session: x.session, name: x.name } : { ablage: ordner, name: x.name }); }
     if (this.platzhalter) $('dlg-ablage').close();
     await this.ansehen(ordner, x);
   }
@@ -347,11 +362,14 @@ export class AblageUI {
         let ok = 0, um = 0, letzter = null; const fehler = [];
         for (const name of namen) {
           try {
-            const r = await post('ablage/ablegen', { von: d.von, name, nach }); ok++; letzter = r;
+            const r = namen.length === 1 ? await mitNamensvorschlag((neuName) => post('ablage/ablegen', { von: d.von, name, nach, neuName }), 'Verschieben')
+              : await post('ablage/ablegen', { von: d.von, name, nach });
+            if (!r) return; // abgebrochen
+            ok++; letzter = r;
             if (r.name && r.name !== name) um++;
             const bp = this.app.bp;
             if (bp && bp.ablage === d.von && bp.name === name) { bp.ablage = nach; bp.name = r.name || name; this.app.updateStatus(); }
-          } catch (e) { fehler.push(`${name}: ${e.message}`); }
+          } catch (e) { fehler.push(`${name}: ${e.message}${e.vorschlag ? ` (frei wäre „${e.vorschlag}“)` : ''}`); }
         }
         this.abSel?.clear();
         await this.nachher(null);
@@ -360,11 +378,11 @@ export class AblageUI {
         return this.app.toast(msg + (fehler.length ? ` ${fehler.length} nicht möglich: ${fehler.slice(0, 3).join('; ')}` : ''), fehler.length ? 'err' : 'ok');
       }
       if (this.app.bp && this.app.bp.name === d.name && !this.app.bp.ablage && this.app.dirty() && !(await ungespeichert('Trotzdem ablegen?'))) return;
-      const erg = await post('ablage/ablegen', { session: d.session, name: d.name, nach });
-      if (erg.kopiert) { this.aktuell = nach; lsSet('ablage-ordner', nach); return this.nachher(`„${d.name}“ aus der Bibliothek in ${ziel} kopiert (Original bleibt in der Bibliothek).${neuName(d.name, erg.name)}`); }
+      const erg = await mitNamensvorschlag((neu) => post('ablage/ablegen', { session: d.session, name: d.name, nach, neuName: neu }));
+      if (!erg) return this.app.toast(`„${d.name}“ nicht abgelegt.`);
       if (this.app.bp && this.app.bp.name === d.name && !this.app.bp.ablage) { this.app.bp.ablage = nach; this.app.bp.name = erg.name || d.name; this.app.updateStatus(); $('pathtext').textContent = `Ablage · ${nach} · ${this.app.bp.name} (Speichern schreibt in diesen Ordner)`; }
       this.aktuell = nach; lsSet('ablage-ordner', nach);
-      await this.nachher(`„${d.name}“ abgelegt in ${ziel} – nicht mehr im Spiel.${neuName(d.name, erg.name)}`);
+      await this.nachher(erg.bibliothek ? `„${d.name}“ aus der Bibliothek nach ${ziel} verschoben.${neuName(d.name, erg.name)}` : `„${d.name}“ abgelegt in ${ziel} – nicht mehr im Spiel.${neuName(d.name, erg.name)}`);
     } catch (e) { this.app.toast(e.message, 'err'); }
   }
   async schalten(ordner, namen, aktiv) {
@@ -403,21 +421,21 @@ export class AblageUI {
       if (aktiv && ok) this.spielKategorien(session);
     })();
   }
-  /** Mehrere Blaupausen aus der Liste links auf einen Ablage-Ordner (Spiel: verschieben, Bibliothek: kopieren) */
+  /** Mehrere Blaupausen aus der Liste links auf einen Ablage-Ordner (Spiel und Bibliothek: verschieben) */
   async ablegenMehrere(session, namen, nach) {
     const bp = this.app.bp;
     const offen = bp && !bp.ablage && namen.includes(bp.name);
     if (offen && this.app.dirty() && !(await ungespeichert('Trotzdem ablegen?'))) return;
-    let ok = 0, kopiert = false; const fehler = [];
+    let ok = 0, bibliothek = false; const fehler = [];
     for (const name of namen) {
-      try { const r = await post('ablage/ablegen', { session, name, nach }); ok++; if (r.kopiert) kopiert = true; }
-      catch (e) { fehler.push(`${name}: ${e.message}`); }
+      try { const r = await post('ablage/ablegen', { session, name, nach }); ok++; if (r.bibliothek) bibliothek = true; }
+      catch (e) { fehler.push(`${name}: ${e.message}${e.vorschlag ? ` (frei wäre „${e.vorschlag}“)` : ''}`); }
     }
-    if (offen && !kopiert && ok) { bp.nurAnsicht = true; bp.ablage = nach; this.app.updateStatus(); }
+    if (offen && ok && !fehler.some((f) => f.startsWith(bp.name + ':'))) { bp.nurAnsicht = true; bp.ablage = nach; this.app.updateStatus(); }
     this.aktuell = nach; lsSet('ablage-ordner', nach); this.app.listSel.clear();
     await this.nachher(null);
     const ziel = nach.split('/').pop();
-    const msg = kopiert ? `${ok} Blaupausen aus der Bibliothek in ${ziel} kopiert (Originale bleiben in der Bibliothek).` : `${ok} Blaupausen abgelegt in ${ziel} – nicht mehr im Spiel.`;
+    const msg = bibliothek ? `${ok} Blaupausen aus der Bibliothek nach ${ziel} verschoben.` : `${ok} Blaupausen abgelegt in ${ziel} – nicht mehr im Spiel.`;
     this.app.toast(msg + (fehler.length ? ` ${fehler.length} nicht möglich: ${fehler.slice(0, 3).join('; ')}${fehler.length > 3 ? ' …' : ''}` : ''), fehler.length ? 'err' : 'ok');
   }
   /** Mehrere Blaupausen löschen (eine Rückfrage, alle in den Papierkorb) */
@@ -622,19 +640,21 @@ export class AblageUI {
     if (!bp || !neu || neu === bp.name) return;
     if (this.app.dirty() && !(await ungespeichert('Erst umbenennen? Die Änderungen bleiben offen.'))) return;
     try {
-      await post('umbenennen', bp.ablage ? { ordner: bp.ablage, name: bp.name, neu } : { session: bp.session || $('session').value, name: bp.name, neu });
-      bp.name = neu;
+      // doppelter Name im selben Ordner: freien Namen vorschlagen
+      const umb = await mitNamensvorschlag(async (anders) => { const n = anders || neu; await post('umbenennen', bp.ablage ? { ordner: bp.ablage, name: bp.name, neu: n } : { session: bp.session || $('session').value, name: bp.name, neu: n }); return n; }, 'Umbenennen');
+      if (!umb) return this.app.toast('Nicht umbenannt.');
+      bp.name = umb;
       const ziel = this.app.cfg?.umbenennenEinsortieren !== false ? this.zielOrdner() : null;
       if (ziel && bp.ablage !== ziel) {
-        // gleich in den passenden Ablage-Ordner (Bibliothek: kopieren, Spiel: ablegen, Ablage: verschieben)
-        if (bp.ablage) { await post('ablage/ablegen', { von: bp.ablage, name: neu, nach: ziel }); bp.ablage = ziel; }
-        else {
-          const erg = await post('ablage/ablegen', { session: bp.session || $('session').value, name: neu, nach: ziel });
-          if (!erg.kopiert) { bp.nurAnsicht = true; bp.ablage = ziel; this.app.updateStatus(); }
-        }
+        // gleich in den passenden Ablage-Ordner verschieben (Spiel, Bibliothek und Ablage); gibt es den Namen dort schon: nachfragen
+        const erg = await mitNamensvorschlag((neuName) => post('ablage/ablegen', bp.ablage ? { von: bp.ablage, name: umb, nach: ziel, neuName } : { session: bp.session || $('session').value, name: umb, nach: ziel, neuName }));
+        if (!erg) { this.app.toast(`Umbenannt in „${umb}“ – nicht einsortiert.`); await this.nachher(null); $('nv-alt').textContent = umb; this.app.renderList(); return; }
+        bp.name = erg.name || umb;
+        if (!bp.ablage) bp.nurAnsicht = true;
+        bp.ablage = ziel; this.app.updateStatus();
         this.aktuell = ziel; lsSet('ablage-ordner', ziel);
-        this.app.toast(`Umbenannt in „${neu}“ und einsortiert in ${ziel.split('/').pop()}.`, 'ok');
-      } else this.app.toast(`Umbenannt in „${neu}“.`, 'ok');
+        this.app.toast(`Umbenannt in „${bp.name}“ und einsortiert in ${ziel.split('/').pop()}.`, 'ok');
+      } else this.app.toast(`Umbenannt in „${umb}“.`, 'ok');
       await this.nachher(null);
       $('nv-alt').textContent = neu; this.laengeZeigen();
       this.zielOrdner();
