@@ -238,7 +238,7 @@ export class Einrichtung {
   jobStarten(art) {
     if (this.job?.laeuft) throw Object.assign(new Error('Es läuft bereits ein Vorgang.'), { status: 409 });
     if (art !== 'automatisch' && art !== 'gelaende') throw Object.assign(new Error('Unbekannter Vorgang'), { status: 400 });
-    const j = this.job = { art, laeuft: true, ok: null, schritt: 'Start …', nr: 0, von: art === 'gelaende' ? 5 : 6, fortschritt: null, text: '', log: [], start: Date.now(), ende: null };
+    const j = this.job = { art, laeuft: true, ok: null, schritt: 'Start …', nr: 0, von: art === 'gelaende' ? 7 : 7, fortschritt: null, text: '', log: [], start: Date.now(), ende: null };
     const zeile = (z) => { j.log.push(z); if (j.log.length > 600) j.log.splice(0, j.log.length - 600); };
     (art === 'gelaende' ? this.gelaendeJob(j, zeile) : this.automatisch(j, zeile))
       .then((t) => { j.ok = true; j.text = t; })
@@ -315,7 +315,18 @@ export class Einrichtung {
     fs.mkdirSync(path.join(c.DATA_DIR, 'gelaende'), { recursive: true });
     const g = await lauf(nr + 1, 'Gelände aus dem Spiel lesen (1-m-Raster, ca. 30 Sekunden)', ['--export', path.join(c.DATA_DIR, 'gelaende', 'hoehen1m'), '--raster', '100']);
     const f = await lauf(nr + 2, 'Felsen und Klippen als Modelle holen (ca. 30 Sekunden)', ['--felsen-modelle', path.join(c.DATA_DIR, 'welt', 'felsen')]);
-    return `Gelände: ${g || 'fertig'} · Felsen: ${f || 'fertig'}`;
+    const p = await lauf(nr + 3, 'Rohstoff-Knoten, Absturzstellen und Sammelobjekte lesen (ca. 1 Minute)', ['--punkte', path.join(c.DATA_DIR, 'welt', 'punkte.json')]);
+    // Schild-Symbole (Plan-Tafel): Symbol-Bibliothek des Spiels → userdata/symbole.json (Desc-Klasse → IconID)
+    let sy = '';
+    try {
+      const roh = path.join(c.DATA_DIR, 'iconlibrary.json');
+      await lauf(nr + 4, 'Schild-Symbole lesen (wenige Sekunden)', ['--muster', 'IconLibrary', '--json', roh]);
+      const daten = JSON.parse(fs.readFileSync(roh, 'utf8')), m = {};
+      for (const e of daten[0]?.exporte?.[0]?.Properties?.mIconData || []) { const d = e.ItemDescriptor?.AssetPathName; if (!d || e.Hidden) continue; const k = d.split('.').pop(); if (!(k in m)) m[k] = e.ID; }
+      fs.writeFileSync(path.join(c.DATA_DIR, 'symbole.json'), JSON.stringify({ quelle: 'IconLibrary (mIconData)', erzeugt: new Date().toISOString(), symbole: m }));
+      fs.rmSync(roh, { force: true }); sy = ` · Symbole: ${Object.keys(m).length}`;
+    } catch (e) { zeile('Schild-Symbole: ' + e.message); }
+    return `Gelände: ${g || 'fertig'} · Felsen: ${f || 'fertig'} · Kartenpunkte: ${p || 'fertig'}${sy}`;
   }
   async gelaendeJob(j, zeile) {
     const c = this.c, schritt = (nr, t) => { j.nr = nr; j.schritt = t; j.fortschritt = null; zeile(`== ${t}`); };
@@ -365,7 +376,7 @@ export class Einrichtung {
     }
     // 6. Gelände & Felsen für die Welt-Ansicht (eigenes Werkzeug; Fehler hier lassen die Modelle gelten)
     let welt = '';
-    try { j.von = 8; await this.weltDatenErzeugen(j, zeile, schritt, 6); welt = ' Gelände und Felsen für die Welt-Ansicht ebenfalls.'; }
+    try { j.von = 10; await this.weltDatenErzeugen(j, zeile, schritt, 6); welt = ' Gelände und Felsen für die Welt-Ansicht ebenfalls.'; }
     catch (e) { zeile('HINWEIS Gelände & Felsen: ' + e.message); welt = ' Gelände & Felsen fehlen noch (Einstellungen → Voraussetzungen → „Erzeugen“).'; }
     return `Fertig: ${fertig || 'Daten exportiert'} – Icons und 3D-Modelle sind in der App.${welt}`;
   }

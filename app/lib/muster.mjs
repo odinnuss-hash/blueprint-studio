@@ -11,8 +11,8 @@ export const qrot = (q, [x, y, z]) => { const [qx, qy, qz, qw] = q, t = qmul(qmu
 export const qz = (a) => [0, 0, Math.sin(a / 2), Math.cos(a / 2)];
 
 /** Blaupause laden: { bp, objs: [{ o, data }], version } */
-export function ladeMuster(datei) {
-  const bp = readBlueprint(fs.readFileSync(datei), { props: false });
+export function ladeMuster(datei) { // Pfad oder Inhalt der Blaupause
+  const bp = readBlueprint(Buffer.isBuffer(datei) ? datei : fs.readFileSync(datei), { props: false });
   const objs = bp.objects.map((o) => ({ o, data: Buffer.from(bp.body.subarray(o.dStart, o.dEnd)) }));
   return { bp, objs, version: bp.header.saveVersion };
 }
@@ -25,7 +25,29 @@ export function kopiere(m, filter, trafo) {
     const mm = /^(.*_)(\d+)$/.exec(o.instance); const z = String(nr--);
     namen.set(o.instance, mm ? mm[1] + (z.length >= mm[2].length ? z.slice(-mm[2].length) : z.padStart(mm[2].length, '1')) : o.instance);
   }
-  const neu = (inst) => { for (const [a, b] of namen) if (inst === a || inst.startsWith(a + '.')) return b + inst.slice(a.length); return inst; };
+  // Schnellweg (große Bereiche mit Tausenden Teilen): Namen nicht einzeln in jedem Objekt suchen, sondern hinter jedem
+  // „PersistentLevel.“ das Namenswort nachschlagen. Nur wenn alle Namen diese Form haben, sonst die einfache Suche.
+  const PL = 'PersistentLevel.', kurz = new Map();
+  for (const [a, b] of namen) { const i = a.indexOf(PL); if (i >= 0 && b.indexOf(PL) === i) kurz.set(a.slice(i + PL.length), b.slice(i + PL.length)); }
+  const schnell = kurz.size === namen.size;
+  const wortEnde = (s, e) => { while (e < s.length) { const c = s.charCodeAt(e); if (!((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 95)) break; e++; } return e; };
+  const neu = (inst) => {
+    if (schnell) {
+      const i = inst.indexOf(PL); if (i < 0) return inst;
+      const a = i + PL.length, e = wortEnde(inst, a), b = kurz.get(inst.slice(a, e));
+      return b ? inst.slice(0, a) + b + inst.slice(e) : inst;
+    }
+    for (const [a, b] of namen) if (inst === a || inst.startsWith(a + '.')) return b + inst.slice(a.length);
+    return inst;
+  };
+  const ersetzeNamen = (d) => {
+    if (!schnell) { for (const [a, b] of namen) { const ab = Buffer.from(a, 'latin1'), bb = Buffer.from(b, 'latin1'); let p = d.indexOf(ab); while (p >= 0) { bb.copy(d, p); p = d.indexOf(ab, p + ab.length); } } return; }
+    const s = d.toString('latin1');
+    for (let p = s.indexOf(PL); p >= 0; p = s.indexOf(PL, p + PL.length)) {
+      const a = p + PL.length, e = wortEnde(s, a), b = kurz.get(s.slice(a, e));
+      if (b) d.write(b, a, 'latin1');
+    }
+  };
   // Spielstände ab 1.0 verlangen Objekt-Flags im Kopf; Blaupausen vor 1.0 (Format < 46) haben keine → Werte wie im Spiel ergänzen
   // (gemessen: Bauteile 8; Komponenten 262152 für Inventar/Strominfo/Schienen, sonst 2097152)
   const flags = (o) => (m.bp.hasFlags ? o.flags : o.kind === 'entity' ? 8 : /Inventory|PowerInfo|Railroad|TrainPlatform/.test(o.typePath) ? 262152 : 2097152);
@@ -33,7 +55,7 @@ export function kopiere(m, filter, trafo) {
     const besitzer = o.kind === 'entity' ? o.instance : o.parent;
     if (!namen.has(besitzer)) continue;
     const d = Buffer.from(data);
-    for (const [a, b] of namen) { const ab = Buffer.from(a, 'latin1'), bb = Buffer.from(b, 'latin1'); let p = d.indexOf(ab); while (p >= 0) { bb.copy(d, p); p = d.indexOf(ab, p + ab.length); } }
+    ersetzeNamen(d);
     let head;
     if (o.kind === 'entity') {
       const { pos, rot } = trafo(o);

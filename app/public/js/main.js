@@ -5,14 +5,18 @@ import { View2D } from './view2d.js';
 import { View3D } from './view3d.js';
 import { View3DGL } from './view3dgl.js';
 import { Ordnen } from './ordnen.js';
+import { Startseite } from './startseite.js';
 import { Karte } from './karte.js';
 import { AblageUI } from './ablage.js';
 import { EinrichtungUI } from './einrichtung.js';
 import { PapierkorbUI } from './papierkorb.js';
+import { materialCheck } from './material.js';
 import { StrukturUI } from './struktur.js';
 import { AssistentUI } from './assistent.js';
 import { UpdateUI } from './update.js';
 import { PlanerUI } from './planer.js';
+import { Tour } from './tour.js';
+import { SymbolUI } from './symbole.js';
 import { selectMitBildern, bauteilBild } from './bildwahl.js';
 import { i18nStart, SPRACHEN, t } from './i18n.js';
 import { Katalog, tileHtml, dims, powerText, extraText, fmt, ICONS } from './katalog.js';
@@ -35,7 +39,7 @@ const FAHR = { KeyW: [1, 0], KeyS: [-1, 0], KeyA: [0, -1], KeyD: [0, 1] };
 // Abgelöstes Ablage-Fenster (Welt): gleiche Seite mit ?fenster=ablage – zeigt nur die Ablage-Kacheln und meldet die Wahl über diesen Kanal
 const NUR_ABLAGE = new URLSearchParams(location.search).get('fenster') === 'ablage';
 const ABLAGE_KANAL = 'bs-ablage-wahl';
-const APP_VERSION = '1.4.3'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
+const APP_VERSION = '1.5.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
 
 class App {
   constructor() {
@@ -59,7 +63,10 @@ class App {
     this.assistent = new AssistentUI(this);
     this.update = new UpdateUI(this);
     this.planer = new PlanerUI(this);
+    this.tour = new Tour(this);
+    this.symbole = new SymbolUI(this);
     this.bindUi();
+    if (!NUR_ABLAGE) this.startseite = new Startseite(this);
     new ResizeObserver(() => this.render()).observe($('canvaswrap'));
     setInterval(() => fetch('/api/heartbeat', { method: 'POST', headers: { 'x-bs': '1' } }).catch(() => {}), 5000);
     fetch('/api/heartbeat', { method: 'POST', headers: { 'x-bs': '1' } }).catch(() => {});
@@ -73,6 +80,7 @@ class App {
     try {
       this.cfg = await api('config');
       if (this.cfg.version !== APP_VERSION) { await this.updateNeustart(); return; }
+      this.spendenZeigen();
       if (!this.i18nAn) { this.i18nAn = true; await i18nStart(this.cfg.sprache); }
       if (NUR_ABLAGE) this.einrichtungGeprueft = true;
       if (!this.einrichtungGeprueft) { this.einrichtungGeprueft = true; this.einrichtung.beimStart(); if (this.cfg.updatePruefen !== false) setTimeout(() => this.update.pruefen({ still: true }), 4000); }
@@ -81,6 +89,7 @@ class App {
       this.fillSessions();
       this.ablageLayout();
       this.modellWahlAnwenden();
+      this.startseite?.starten();
       if (!this.cfg.blueprintDirOk) this.toast('Kein Blaupausen-Ordner gefunden – bitte in den Einstellungen prüfen.', 'err');
     } catch (e) { this.toast('Server nicht erreichbar: ' + e.message, 'err'); }
     // Ablage-Fenster: Katalog wird für die 3D-Vorschau der Kacheln gebraucht (kacheln3d.js)
@@ -134,6 +143,8 @@ class App {
     return r.wert;
   }
 
+  /** Spenden-Link oben rechts zeigen, wenn der Herausgeber einen gesetzt hat (app/update.json) */
+  spendenZeigen() { const a = $('btn-spenden'); if (!a) return; a.hidden = !this.cfg?.spenden; if (this.cfg?.spenden) a.href = this.cfg.spenden; }
   async updateNeustart() {
     this.toast(`Update auf ${APP_VERSION} erkannt – der Server wird neu gestartet …`, 'ok');
     try {
@@ -494,31 +505,69 @@ class App {
   }
   /** Auswahl (oder alles) um X/Y/Z drehen; mit „auf Boden“ bleibt die Unterkante gleich */
   rotateAxis(axis, deg, alle, boden = true) {
-    const ids = alle || !this.sel.size ? this.scene.objs.filter((o) => !o.removed && o.kind !== 'none').map((o) => o.i) : this.selIds();
+    const ids = alle || !this.sel.size ? this.alleIds() : this.selIds();
     if (!ids.length) return;
+    const { c, z0 } = this.drehMitte(ids);
+    this.commit(ids, () => this.drehKern(ids, axis, deg, c, boden ? z0 : null), `${ids.length} Objekt(e) um ${axis.toUpperCase()} ${deg > 0 ? '+' : ''}${deg}° gedreht`);
+    this.scene.bounds = sceneBounds(this.scene);
+    if (alle || !this.sel.size) this.fit();
+  }
+  alleIds() { return this.scene.objs.filter((o) => !o.removed && o.kind !== 'none').map((o) => o.i); }
+  /** Drehpunkt (Mitte der Teile, aufs Raster gelegt) und Unterkante */
+  drehMitte(ids) {
     let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity, z1 = -Infinity;
     for (const i of ids) { const o = this.scene.byId.get(i); x0 = Math.min(x0, o.bb[0]); x1 = Math.max(x1, o.bb[2]); y0 = Math.min(y0, o.bb[1]); y1 = Math.max(y1, o.bb[3]); z0 = Math.min(z0, o.zMin); z1 = Math.max(z1, o.zMax); }
     const s = Math.min(this.snap, 100);
-    const c = [Math.round((x0 + x1) / 2 / s) * s, Math.round((y0 + y1) / 2 / s) * s, Math.round((z0 + z1) / 2 / s) * s];
+    return { c: [Math.round((x0 + x1) / 2 / s) * s, Math.round((y0 + y1) / 2 / s) * s, Math.round((z0 + z1) / 2 / s) * s], z0 };
+  }
+  /** Teile um Achse x/y/z und Punkt c drehen; boden = Unterkante, auf die danach wieder gesetzt wird (null = nicht) */
+  drehKern(ids, axis, deg, c, boden) {
     const h = deg * Math.PI / 360, sn = Math.sin(h);
     const r = axis === 'x' ? [sn, 0, 0, Math.cos(h)] : axis === 'y' ? [0, sn, 0, Math.cos(h)] : [0, 0, sn, Math.cos(h)];
     const mul = (a, b) => { const [ax, ay, az, aw] = a, [bx, by, bz, bw] = b; const q = [aw * bx + ax * bw + ay * bz - az * by, aw * by - ax * bz + ay * bw + az * bx, aw * bz + ax * by - ay * bx + az * bw, aw * bw - ax * bx - ay * by - az * bz]; const l = Math.hypot(...q) || 1; return q.map((v) => Math.round((v / l) * 1e6) / 1e6); };
-    this.commit(ids, () => {
-      for (const i of ids) {
-        const o = this.scene.byId.get(i);
-        const v = qRot(r, [o.p[0] - c[0], o.p[1] - c[1], o.p[2] - c[2]]);
-        o.p = [c[0] + v[0], c[1] + v[1], c[2] + v[2]].map((x) => Math.round(x * 10) / 10);
-        o.q = mul(r, o.q);
-        computeGeometry(o);
-      }
-      if (boden && axis !== 'z') {
-        let nz = Infinity; for (const i of ids) nz = Math.min(nz, this.scene.byId.get(i).zMin);
-        const dz = Math.round((z0 - nz) * 10) / 10;
-        if (Math.abs(dz) > 0.05) for (const i of ids) { const o = this.scene.byId.get(i); o.p = [o.p[0], o.p[1], Math.round((o.p[2] + dz) * 10) / 10]; }
-      }
-    }, `${ids.length} Objekt(e) um ${axis.toUpperCase()} ${deg > 0 ? '+' : ''}${deg}° gedreht`);
+    for (const i of ids) {
+      const o = this.scene.byId.get(i);
+      const v = qRot(r, [o.p[0] - c[0], o.p[1] - c[1], o.p[2] - c[2]]);
+      o.p = [c[0] + v[0], c[1] + v[1], c[2] + v[2]].map((x) => Math.round(x * 10) / 10);
+      o.q = mul(r, o.q);
+      computeGeometry(o);
+    }
+    if (boden != null && axis !== 'z') {
+      let nz = Infinity; for (const i of ids) nz = Math.min(nz, this.scene.byId.get(i).zMin);
+      const dz = Math.round((boden - nz) * 10) / 10;
+      if (Math.abs(dz) > 0.05) for (const i of ids) { const o = this.scene.byId.get(i); o.p = [o.p[0], o.p[1], Math.round((o.p[2] + dz) * 10) / 10]; computeGeometry(o); }
+    }
+  }
+  // ------------------------------------------------------------ Mit der Maus drehen/kippen (ganze Blaupause oder Auswahl)
+  mausDrehenSetzen(an) {
+    this.mausDreh = !!an;
+    if (this.mausDreh && this.mode !== '3d') $('v3d').click();
+    this.view3d.mausDreh = this.mausDreh; $('t-mausdreh').setAttribute('aria-pressed', this.mausDreh);
+    if (this.mausDreh) this.toast('Mit der Maus drehen: links ziehen – waagerecht = drehen, senkrecht = kippen (15°-Schritte, Strg = 1°). Rechte Maustaste = umsehen.');
+  }
+  /** Zug beginnt: Teile, Drehpunkt und Ausgangslage für ein einziges Rückgängig merken */
+  mausDrehStart() {
+    if (!this.scene) return false;
+    const ids = this.sel.size ? this.selIds() : this.alleIds(); if (!ids.length) return false;
+    const { c, z0 } = this.drehMitte(ids);
+    this.mausZug = { ids, c, z0, before: this.snapshot(ids), z: 0, k: 0, rz: 0, rk: 0 };
+    return true;
+  }
+  /** dx/dy in Pixeln; achseKippen: 'x' oder 'y' (Achse quer zur Blickrichtung), vz: Vorzeichen */
+  mausDrehen(dx, dy, fein, achseKippen, vz) {
+    const Z = this.mausZug; if (!Z) return;
+    const schritt = fein ? 1 : 15;
+    Z.z += dx * 0.5; Z.k += dy * 0.5;
+    let n = Math.trunc(Z.z / schritt); if (n) { Z.z -= n * schritt; this.drehKern(Z.ids, 'z', n * schritt, Z.c, null); Z.rz += n * schritt; }
+    n = Math.trunc(Z.k / schritt); if (n) { Z.k -= n * schritt; this.drehKern(Z.ids, achseKippen, vz * n * schritt, Z.c, Z.z0); Z.rk += vz * n * schritt; Z.achse = achseKippen; }
+    if (Z.rz || Z.rk) { $('st-changes').textContent = `Drehen ${Z.rz > 0 ? '+' : ''}${Z.rz}°${Z.rk ? ` · Kippen um ${Z.achse.toUpperCase()} ${Z.rk > 0 ? '+' : ''}${Z.rk}°` : ''}`; this.render(); }
+  }
+  mausDrehEnde() {
+    const Z = this.mausZug; this.mausZug = null; if (!Z || (!Z.rz && !Z.rk)) return;
+    const after = this.snapshot(Z.ids);
+    this.undoStack.push({ before: Z.before, after, label: `${Z.ids.length} Objekt(e) mit der Maus gedreht` }); this.redoStack = [];
     this.scene.bounds = sceneBounds(this.scene);
-    if (alle || !this.sel.size) this.fit();
+    this.afterEdit();
   }
   openKippen() {
     if (!this.scene) return;
@@ -699,7 +748,8 @@ class App {
     if (b) b.addEventListener('click', () => { this.katalog.state.sel = o.cls; this.katalog.state.cat = g.kategorie; this.katalog.state.tier = 9; this.katalog.renderAll(); this.setMode('katalog'); });
   }
   renderCosts() {
-    if (!this.bp) { $('costs').innerHTML = ''; return; }
+    $('costs-check').disabled = !this.bp;
+    if (!this.bp) { $('costs').innerHTML = ''; this.kostenSumme = []; return; }
     const k = this.kat, sum = {};
     for (const [i, a] of this.bp.kopf.kosten) sum[i] = (sum[i] || 0) + a;
     let changed = false;
@@ -712,6 +762,7 @@ class App {
         if (o.cls !== o.cls0) { addCost(o.cls0, -1); addCost(o.cls, 1); }
       }
     }
+    this.kostenSumme = Object.entries(sum).filter(([, a]) => a > 0);
     $('costs').innerHTML = Object.entries(sum).filter(([, a]) => a > 0).map(([i, a]) => `<div class="costrow"><span>${esc(k?.items?.[i]?.name || i)}</span><span>${a.toLocaleString('de-DE')}</span></div>`).join('') || '<div class="muted">—</div>';
     $('costs-hint').textContent = changed ? 'Neu berechnet (wird beim Speichern in die Blaupause geschrieben).' : 'Aus dem Blaupausen-Kopf gelesen.';
   }
@@ -777,6 +828,8 @@ class App {
   }
   setMode(m) {
     this.area = m;
+    document.body.dataset.bereich = m; // Planer, Welt, Karte: Blaupausen-Knöpfe der Kopfzeile ausgeblendet (app.css)
+    this.tour?.bereich(m);
     for (const v of ['editor', 'katalog', 'ordnen', 'karte', 'welt', 'planer', 'hilfe']) {
       $('view-' + v).hidden = v !== m;
       $('mode-' + v).classList.toggle('on', v === m); $('mode-' + v).setAttribute('aria-selected', v === m);
@@ -805,8 +858,20 @@ class App {
           } catch (e) { this.toast(e.message, 'err'); }
           finally { $('w-laden').disabled = false; $('w-laden').textContent = 'Laden'; }
         });
+        $('w-reset').addEventListener('click', async () => {
+          const w = this.welt, offen = w.gesetzt.length || w.geloescht?.size || w.delta?.size;
+          if (offen && !await frage({ art: 'warnung', titel: 'Welt zurücksetzen?', text: 'Gesetzte Blaupausen und Änderungen, die noch nicht in einen Spielstand gespeichert sind, gehen verloren.', ok: 'Zurücksetzen', abbrechen: 'Abbrechen' })) return;
+          w.zuruecksetzen(); $('w-spielstand').value = '';
+          this.toast('Welt zurückgesetzt – kein Spielstand geladen.', 'ok'); $('w-canvas').focus();
+        });
         $('w-bild').addEventListener('change', (e) => { this.welt.bildAn = e.target.checked; this.welt.zeichne(); });
         $('w-maus').checked = this.welt.mausUmkehren;
+        $('w-stift').addEventListener('click', () => { const an = !this.welt.stift; this.welt.stiftSetzen(an); $('w-stift').setAttribute('aria-pressed', an); $('w-canvas').focus(); if (an) this.toast('Stift an: mit gedrückter linker Maustaste umranden. Umsehen mit der rechten Maustaste.'); });
+        $('w-ego').addEventListener('click', () => { const an = !this.welt.ego?.an; this.welt.egoSetzen(an); this.weltEgoStatus(this.welt); $('w-canvas').focus(); });
+        $('w-punkte').addEventListener('click', () => { const an = !this.welt.punkteAn; this.welt.punkteSetzen(an); $('w-punkte').setAttribute('aria-pressed', an); });
+        $('w-punkte-menue-knopf').addEventListener('click', () => this.weltPunkteMenue());
+        $('w-tiefe').addEventListener('change', (e) => { this.welt.lassoTiefe = Math.max(0, +e.target.value || 0); });
+        $('w-leistung').addEventListener('change', (e) => { this.welt.leistungSetzen(e.target.checked, true); this.weltLeistungStatus(this.welt); });
         $('w-maus').addEventListener('change', (e) => { this.welt.mausUmkehren = e.target.checked; try { localStorage.setItem('bs-welt-maus-umkehren', e.target.checked ? '1' : '0'); } catch { /* egal */ } });
         this.weltBlaupausenVerdrahten();
         // Liste aktuell halten: beim Aufklappen, wenn das Fenster wieder aktiv wird (z. B. nach dem Spielen), alle 30 s
@@ -892,7 +957,7 @@ class App {
       } catch { /* Prüfung nicht möglich – der Server lehnt Doppel ohne Freigabe ohnehin ab */ }
       $('w-speichern').disabled = true;
       try {
-        const setzungen = w.gesetzt.map((g) => ({ ...g.quelle, x: g.x, y: g.y, z: g.z, dreh: g.dreh })), { loeschen, verschieben } = w.aenderungen();
+        const setzungen = w.gesetzt.map((g) => ({ ...g.quelle, x: g.x, y: g.y, z: g.z, dreh: g.dreh, kx: g.kx || 0, ky: g.ky || 0 })), { loeschen, verschieben } = w.aenderungen();
         $('w-speichern').textContent = 'Wird gespeichert …';
         const r = await api('welt/spielstand', { id, name, setzungen, loeschen, verschieben, ueberschreiben }), i = r.info;
         const teile = [i.blaupausen ? `${i.blaupausen} Blaupausen (${i.eingefuegt.toLocaleString('de-DE')} Objekte)` : '', i.verschoben ? `${i.verschoben} verschoben` : '', (i.akteureGeloescht || 0) + (i.leichtbauGeloescht || 0) ? `${i.akteureGeloescht + i.leichtbauGeloescht} gelöscht${i.kabelGeloescht ? ` (+${i.kabelGeloescht} Kabel)` : ''}` : ''].filter(Boolean);
@@ -916,16 +981,37 @@ class App {
     if (i == null || !w.gesetzt[i]) { if (m) m.hidden = true; this.weltSetzenStatus(w); return; }
     if (!m) { m = document.createElement('div'); m.id = 'w-gmenue'; m.className = 'w-gmenue'; $('w-canvas').parentElement.appendChild(m); }
     const g = w.gesetzt[i];
-    m.innerHTML = `<b title="${esc(g.quelle.name)}">${esc(g.quelle.name)}</b><span class="muted">${g.dreh}° · Pfeile/Bild/R/Entf</span>
+    const feld = (k, wert, schritt, titel) => `<label title="${titel}">${k} <input type="number" step="${schritt}" data-gf="${k}" value="${wert}"></label>`;
+    m.innerHTML = `<b title="${esc(g.quelle.name)}">${esc(g.quelle.name)}</b><span class="muted">Pfeile/Bild/R/Entf</span>
+      <div class="w-gfelder">${feld('X', (g.x / 100).toFixed(1), 0.5, 'Lage X in m')}${feld('Y', (g.y / 100).toFixed(1), 0.5, 'Lage Y in m')}${feld('Z', (g.z / 100).toFixed(1), 0.5, 'Höhe in m')}${feld('°', g.dreh, 5, 'Drehung um die Hochachse')}${feld('↻X', g.kx || 0, 5, 'Kippen um X (vor/zurück)')}${feld('↻Y', g.ky || 0, 5, 'Kippen um Y (seitlich)')}<label title="Schrittweite der Pfeiltasten (Umschalt = 8 m)">Raster <select data-graster>${[50, 100, 200, 400, 800].map((r) => `<option value="${r}"${r === (w.raster || 100) ? ' selected' : ''}>${r / 100} m</option>`).join('')}</select></label></div>
       <button type="button" class="btn small" data-g="schieben">Verschieben</button><button type="button" class="btn small" data-g="drehen">Drehen 90°</button><button type="button" class="btn small" data-g="weg">Löschen</button><button type="button" class="btn small" data-g="zu" aria-label="Schließen">✕</button>`;
     if (x != null) { const r = m.parentElement.getBoundingClientRect(); m.style.left = `${Math.min(Math.max(8, x - r.left + 12), r.width - 260)}px`; m.style.top = `${Math.min(Math.max(8, y - r.top + 12), r.height - 120)}px`; }
     m.hidden = false;
+    m.querySelectorAll('[data-gf]').forEach((f) => f.addEventListener('change', () => {
+      const v = parseFloat(f.value); if (!Number.isFinite(v)) return;
+      const k = f.dataset.gf; if (k === 'X') g.x = Math.round(v * 100); else if (k === 'Y') g.y = Math.round(v * 100); else if (k === 'Z') g.z = Math.round(v * 100);
+      else if (k === '°') g.dreh = ((v % 360) + 360) % 360; else if (k === '↻X') g.kx = Math.max(-180, Math.min(180, v)); else if (k === '↻Y') g.ky = Math.max(-180, Math.min(180, v));
+      w.gesetztNeu();
+    }));
+    m.querySelector('[data-graster]')?.addEventListener('change', (e) => { w.raster = +e.target.value; });
     m.querySelectorAll('[data-g]').forEach((b) => b.addEventListener('click', () => {
       const a = b.dataset.g;
       if (a === 'schieben') w.gVerschieben(i); else if (a === 'drehen') w.gTaste({ key: 'r', shiftKey: false }); else if (a === 'weg') { w.entferne(i); m.hidden = true; } else w.gAufheben();
       w.cv.focus({ preventScroll: true });
     }));
     this.weltSetzenStatus(w);
+  }
+  /** Inhalt des schwebenden Maschinen-Felds in der Welt */
+  weltMaschineHtml(j) {
+    const it = (id) => esc(this.kat?.items?.[id]?.name || id), zahl = (v) => v.toLocaleString('de-DE', { maximumFractionDigits: 2 });
+    const fl = (id) => /Flüssig|Gas/.test(this.kat?.items?.[id]?.form || '');
+    const zeilen = (l) => (l || []).map((x) => `<span data-no-i18n>${it(x.item)}</span><b>${zahl(x.proMin)} ${fl(x.item) ? 'm³/min' : '/min'}</b>`).join('');
+    const kopf = [j.takt != null ? `Takt ${zahl(j.takt)} %` : '', j.boost ? `Somersloop +${j.boost} %` : '', j.auslastung != null ? `Auslastung ${j.auslastung} %` : '', j.pausiert ? 'angehalten' : '', j.reinheit ? `Knoten ${j.reinheit}` : '', j.mw != null ? `${zahl(j.mw)} MW` : ''].filter(Boolean);
+    return `<b class="w-maschine-name" data-no-i18n>${esc(j.name)}</b>${j.rezept ? `<div class="w-maschine-rezept"><span>Rezept</span> <b data-no-i18n>${esc(j.rezept)}</b>${j.alternativ && !/^Alternativ/.test(j.rezept) ? ' <small class="muted">(Alternative)</small>' : ''}</div>` : ''}
+      ${kopf.length ? `<div class="muted">${kopf.join(' · ')}</div>` : ''}
+      ${j.ein?.length ? `<div class="w-maschine-teil">Eingang</div><div class="k-kv">${zeilen(j.ein)}</div>` : ''}
+      ${j.aus?.length ? `<div class="w-maschine-teil">Ausgang</div><div class="k-kv">${zeilen(j.aus)}</div>` : ''}
+      ${!j.rezept && !j.ein?.length && !j.aus?.length ? '<div class="muted">Kein Rezept eingestellt.</div>' : ''}`;
   }
   weltAendernStatus(w) {
     const el = $('w-aendern'); if (!el || !w) return;
@@ -934,18 +1020,77 @@ class App {
     if (nA && O) {
       const arten = new Map(); for (const i of w.auswahl) { const c = w.klasseVon(i); arten.set(c, (arten.get(c) || 0) + 1); }
       const kat = this.kat?.gebaeude || {}, B = w.bewegung;
-      html += `<div class="hint">Ausgewählt: <b>${[...arten].map(([c, n]) => `${n > 1 ? n + '× ' : ''}${esc(kat[c]?.name || c.replace(/^Build_|_C$/g, ''))}`).join(', ')}</b>${B ? ` · ${(B.t[0] / 100).toFixed(0)} / ${(B.t[1] / 100).toFixed(0)} / ${(B.t[2] / 100).toFixed(0)} m, ${Math.round(B.a * 180 / Math.PI)}°` : ''}</div>`;
+      const liste = [...arten].sort((a, b) => b[1] - a[1]), mehr = liste.length > 6 ? ` … (${nA.toLocaleString('de-DE')} Teile)` : '';
+      html += `<div class="hint">Ausgewählt: <b>${liste.slice(0, 6).map(([c, n]) => `${n > 1 ? n + '× ' : ''}${esc(kat[c]?.name || c.replace(/^Build_|_C$/g, ''))}`).join(', ')}${mehr}</b>${B ? ` · ${(B.t[0] / 100).toFixed(0)} / ${(B.t[1] / 100).toFixed(0)} / ${(B.t[2] / 100).toFixed(0)} m, ${Math.round(B.a * 180 / Math.PI)}°` : ''}</div>`;
     }
     if (nV || nG) html += `<div class="w-g"><span>Änderungen: ${nV} verschoben, ${nG} gelöscht</span><button type="button" class="btn small" id="w-verwerfen">Verwerfen</button></div>`;
     el.innerHTML = html;
     $('w-verwerfen')?.addEventListener('click', () => w.aenderungenVerwerfen());
     $('w-speichern-feld').hidden = !(w.gesetzt.length || nV || nG || w.bewegung);
+    if (!nA) this.weltAuswahlMenue(w);
+  }
+  /** kleines Feld über dem umrandeten Bereich: als Blaupause speichern, löschen, abbrechen (ohne x: schließen) */
+  weltAuswahlMenue(w, x = null, y0 = 0, y1 = 0) {
+    let m = $('w-amenue');
+    if (x == null || !w?.auswahl?.size) { if (m) m.hidden = true; return; }
+    if (!m) { m = document.createElement('div'); m.id = 'w-amenue'; m.className = 'w-gmenue w-amenue'; $('w-canvas').parentElement.appendChild(m); }
+    m.innerHTML = `<b>${w.auswahl.size.toLocaleString('de-DE')} Teile ausgewählt</b>
+      <button type="button" class="btn primary small" data-a="bp" title="Die ausgewählten Teile (wie im geladenen Spielstand) als neue Blaupause speichern">Als Blaupause speichern …</button><button type="button" class="btn small" data-a="weg" title="Ausgewählte Teile löschen (erst beim Speichern in der neuen Datei wirksam)">Löschen</button><button type="button" class="btn small" data-a="zu">Abbrechen</button>`;
+    m.hidden = false;
+    const r = m.parentElement.getBoundingClientRect(), b = m.offsetWidth, h = m.offsetHeight;
+    const oben = y0 - h - 10 >= 8 ? y0 - h - 10 : Math.min(y1 + 10, r.height - h - 8); // über dem Bereich, sonst darunter
+    m.style.left = `${Math.min(Math.max(8, x - b / 2), r.width - b - 8)}px`; m.style.top = `${Math.max(8, oben)}px`;
+    m.querySelectorAll('[data-a]').forEach((k) => k.addEventListener('click', () => {
+      const a = k.dataset.a; m.hidden = true;
+      if (a === 'bp') this.weltAuswahlSpeichern(w); else if (a === 'weg') w.auswahlLoeschen(); else w.auswahlAufheben();
+      w.cv.focus({ preventScroll: true });
+    }));
+  }
+  /** Welt: ausgewählte Teile als Blaupause speichern (Spiel-Sitzung wählen, Name) */
+  async weltAuswahlSpeichern(w) {
+    const { akteure, leicht } = w.auswahlRefs();
+    const sessions = (this.cfg?.sessions || []).filter((x) => !x.lib).map((x) => x.name);
+    if (!sessions.length) { this.toast('Keine Spiel-Sitzung zum Speichern gefunden.', 'err'); return; }
+    const ziel = await auswahl({ titel: 'Blaupause speichern in', text: `${(akteure.length + leicht.length).toLocaleString('de-DE')} Teile, so wie sie im geladenen Spielstand stehen.`, ok: 'Weiter', vorwahl: this.spielSession() || sessions[0], optionen: sessions.map((s) => ({ wert: s, text: s })) });
+    if (!ziel) return;
+    const name = await eingabe({ titel: 'Name der Blaupause', wert: 'Welt_Auswahl', ok: 'Speichern' });
+    if (!name) return;
+    if (/[\\/:*?"<>|]/.test(name)) { this.toast('Bitte einen gültigen Namen angeben (ohne \\ / : * ? " < > |).', 'err'); return; }
+    try {
+      const r = await fetch('/api/welt/auswahl-blaupause', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ id: $('w-spielstand').value, akteure, leicht, session: ziel.wert, name }) });
+      const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status);
+      const i = j.info, fehlt = Object.entries(i.fehlend || {});
+      this.zaehlerAktualisieren?.();
+      this.toast(`Blaupause „${name}“ gespeichert: ${i.gebaeude} Gebäude, ${i.leichtbau} Leichtbau-Teile, ${i.bestandteile} Anschlüsse/Bestandteile.${fehlt.length ? ` Ohne Vorlage übersprungen: ${fehlt.map(([c, n]) => n + '× ' + c.replace(/^Build_|_C$/g, '')).join(', ')}.` : ''}`, fehlt.length ? 'err' : 'ok');
+    } catch (e) { this.toast(e.message, 'err'); }
+  }
+  /** Menü: welche Kartenpunkte (Zahlen offen/alle, wenn ein Spielstand geladen ist) */
+  async weltPunkteMenue() {
+    const w = this.welt; let m = $('w-punkte-menue');
+    if (m && !m.hidden) { m.hidden = true; return; }
+    if (!m) { m = document.createElement('div'); m.id = 'w-punkte-menue'; m.className = 'w-punkte-menue'; $('w-canvas').parentElement.appendChild(m); }
+    if (!w.punkteAn) { w.punkteSetzen(true); $('w-punkte').setAttribute('aria-pressed', true); }
+    if (!w.punkte) await w.punkteHolen();
+    const { filterMenue, zahlenJeGruppe, filterLaden } = await import('./kartenpunkte.js');
+    w.punkteFilter ||= filterLaden();
+    filterMenue(m, w.punkteFilter, () => w.zeichne(), w.punkte ? zahlenJeGruppe(w.punkte) : {}, w.punkte, this.kat);
+    m.hidden = false;
+  }
+  weltPunkteStatus(w) { const m = $('w-punkte-menue'); if (m && !m.hidden) { m.hidden = true; this.weltPunkteMenue(); } }
+  weltEgoStatus(w) {
+    $('w-ego').setAttribute('aria-pressed', !!w.ego?.an);
+    if (w.ego?.an && w.ego.wartet) this.toast('Ego-Modus: in die Welt klicken = Startpunkt. Dann W A S D gehen (Umschalt = schneller), Leertaste / C = höher / tiefer schweben, Maus = umsehen, Esc = zurück.');
+  }
+  weltLeistungStatus(w) {
+    $('w-leistung').checked = !!w.leistung;
+    if (w.leistungAuto) { w.leistungAuto = false; this.toast(`Großer Spielstand (${Math.round(w.saetze.spielstand.dreiecke / 1e6)} Mio. Dreiecke): Leistungsmodus eingeschaltet. Ausschalten oben links mit dem Blitz.`, 'ok'); }
   }
   weltStatus(w) {
     const el = $('w-status'); if (!el) return;
     const z = Math.round(w.eye[2] / 100), b = Math.round(w.boden() / 100);
     el.innerHTML = `<span>Position</span><b>${Math.round(w.eye[0] / 100)} / ${Math.round(w.eye[1] / 100)} m</b><span>Höhe</span><b>${z} m (${z - b} m über Grund)</b>`
-      + `<span>Gelände-Kacheln</span><b>${w.zahlKacheln || 0}${w.laden.size ? ` (+${w.laden.size} laden)` : ''}</b>${w.objekte ? `<span>Bauteile</span><b>${w.objekte.meta.anzahl.toLocaleString('de-DE')}</b>` : ''}`;
+      + `<span>Gelände-Kacheln</span><b>${w.zahlKacheln || 0}${w.laden.size ? ` (+${w.laden.size} laden)` : ''}</b>${w.objekte ? `<span>Bauteile</span><b>${w.objekte.meta.anzahl.toLocaleString('de-DE')}</b>` : ''}`
+      + (w.leistung && w.zellenStatus ? `<span>Leistungsmodus</span><b>${w.zellenStatus.gez} von ${w.zellenStatus.alle} Zellen im Bild, ${w.zellenStatus.nah} nah, ${w.zellenStatus.mittel || 0} vereinfacht</b>` : '');
   }
   showHelp(anker) { this.setMode('hilfe'); $('hilfe-frame').src = this.hilfeDatei() + (anker ? '#' + anker : ''); }
   hilfeDatei() { const l = this.cfg?.sprache; return l && l !== 'de' && this.cfg.hilfeSprachen?.includes(l) ? `hilfe.${l}.html` : 'hilfe.html'; }
@@ -1304,6 +1449,7 @@ class App {
     $('t-rotl').addEventListener('click', () => this.rotateSel(-90));
     $('t-rotr').addEventListener('click', () => this.rotateSel(90));
     $('t-kippen').addEventListener('click', () => this.openKippen());
+    $('t-mausdreh').addEventListener('click', () => this.mausDrehenSetzen(!this.mausDreh));
     $('t-hide').addEventListener('click', () => this.hideSel());
     $('t-isolate').addEventListener('click', () => this.isolateSel());
     $('t-showall').addEventListener('click', () => this.showAll());
@@ -1317,6 +1463,7 @@ class App {
     $('t-fit').addEventListener('click', () => this.fit());
     $('t-help').addEventListener('click', () => { $('help').hidden = !$('help').hidden; });
     $('btn-save').addEventListener('click', () => this.openSave());
+    $('costs-check').addEventListener('click', () => materialCheck(this, this.kostenSumme || [], this.bp?.name, $('session').value));
     $('save-cancel').addEventListener('click', () => $('dlg-save').close());
     $('save-ok').addEventListener('click', () => this.doSave());
     $('save-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); this.doSave(); } });
@@ -1392,6 +1539,7 @@ class App {
     this.fahrRaf = requestAnimationFrame(schritt);
   }
   onKey(e) {
+    if (this.area === 'start') return;
     if (e.target.closest('input, select, textarea, dialog')) return;
     if (!$('view-katalog').hidden) return;
     const ctrl = e.ctrlKey || e.metaKey, k = e.key;

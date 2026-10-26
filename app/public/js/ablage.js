@@ -245,6 +245,11 @@ export class AblageUI {
   renderDateien() {
     const F = $('ab-files');
     if (!this.aktuell) { F.innerHTML = '<div class="muted pad">Links einen Ordner wählen. Blaupausen aus der Liste links auf einen Ordner ziehen, um sie abzulegen.</div>'; return; }
+    // Scroll-Lage merken (Liste und alle scrollenden Eltern, z. B. das große Fenster) – nach dem Neuaufbau im selben Ordner wiederherstellen
+    const gleich = this.scrollOrdner === this.aktuell, lage = [];
+    if (gleich) { const l = F.querySelector('.ab-list'); if (l) lage.push([() => F.querySelector('.ab-list'), l.scrollTop]); for (let e = F; e && e !== document.body; e = e.parentElement) if (e.scrollTop) { const el = e; lage.push([() => el, e.scrollTop]); } }
+    this.scrollOrdner = this.aktuell;
+    queueMicrotask(() => { for (const [el, top] of lage) { const e = el(); if (e) e.scrollTop = top; } });
     const k = this.knoten.get(this.aktuell);
     const L = this.daten.ordner[this.aktuell] || [];
     const unter = k.kinder.filter((c) => c.n).map((c) => `<button type="button" class="ab-chip" data-rel="${esc(c.rel)}">${esc(c.titel)} <span>${c.a}/${c.n}</span></button>`).join('');
@@ -260,7 +265,7 @@ export class AblageUI {
       ${unter ? `<div class="ab-chips">${unter}</div>` : ''}
       <div class="bp-multi" id="ab-multi" hidden><span id="ab-multi-text"></span><span class="grow"></span><button type="button" class="btn small" data-multi="spiel">Ins Spiel</button><button type="button" class="btn small" data-multi="ablegen">Ablegen</button><button type="button" class="btn small" data-multi="del">Löschen</button><button type="button" class="btn small" data-multi="weg">Aufheben</button></div>
       <div class="ab-list${kacheln ? ' ab-kacheln' : ''}" tabindex="-1">${L.map((x) => { const falsch = x.aktiv && !(this.daten.spielSitzungen || []).includes(x.session); return `<div class="ab-file${x.aktiv ? ' aktiv' : ''}${falsch ? ' falsch' : ''}${this.abSel.has(x.name) ? ' mark' : ''}" draggable="true" data-name="${esc(x.name)}">${kacheln ? `<button type="button" class="ab-bild" data-open="1" title="Öffnen" aria-label="${esc(x.name)} öffnen"><canvas class="ab-k3d" width="320" height="210" data-quelle="${esc(x.aktiv ? `session=${encodeURIComponent(x.session)}&name=${encodeURIComponent(x.name)}` : `ablage=${encodeURIComponent(this.aktuell)}&name=${encodeURIComponent(x.name)}`)}"></canvas></button>` : ''}
-        <label class="ab-schalter" title="${falsch ? `Liegt im Ordner „${esc(x.session)}“ – das ist kein Spielstand, das Spiel sieht sie dort nicht. Klick: zurück in die Ablage, dann neu ins Spiel holen.` : x.aktiv ? 'Im Spiel (Spielstand ' + esc(x.session) + ') – Klick: ablegen' : 'Abgelegt – Klick: ins Spiel holen'}"><input type="checkbox" ${x.aktiv ? 'checked' : ''} aria-label="${esc(x.name)} im Spiel"><span class="sl"></span></label>
+        ${x.aktiv && !falsch ? '<span class="ab-badge">IM SPIEL</span>' : ''}<label class="ab-schalter" title="${falsch ? `Liegt im Ordner „${esc(x.session)}“ – das ist kein Spielstand, das Spiel sieht sie dort nicht. Klick: zurück in die Ablage, dann neu ins Spiel holen.` : x.aktiv ? 'Im Spiel (Spielstand ' + esc(x.session) + ') – Klick: ablegen' : 'Abgelegt – Klick: ins Spiel holen'}"><input type="checkbox" ${x.aktiv ? 'checked' : ''} aria-label="${esc(x.name)} im Spiel"><span class="sl"></span></label>
         <span class="n" title="${esc(x.name)}">${esc(x.name)}</span><span class="m">${falsch ? '⚠ nicht im Spiel · ' + esc(x.session) : x.aktiv ? 'im Spiel · ' + esc(x.session) : 'abgelegt'}</span>
         <button type="button" class="linkbtn" data-open="1">ansehen</button><button type="button" class="ab-del" data-del="1" title="Löschen (in den Papierkorb)" aria-label="${esc(x.name)} löschen">${ICON_DEL}</button></div>`; }).join('') || '<div class="muted pad">Leer – Blaupausen hierher ziehen.</div>'}</div>`;
     F.querySelectorAll('.ab-chip').forEach((b) => b.addEventListener('click', () => { this.aktuell = b.dataset.rel; lsSet('ablage-ordner', b.dataset.rel); this.render(); }));

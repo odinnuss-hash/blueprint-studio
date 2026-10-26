@@ -91,10 +91,11 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">About the app</h2>
 <table>
   <tr><th style="width:200px">Program</th><td><b>Blueprint Studio</b> – blueprint tool for Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version" data-version>1.4.3</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.5.0</td></tr>
   <tr><th>Author</th><td><b>ODINnuss</b> – idea, concept and design</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. All rights reserved.</td></tr>
   <tr><th>Implementation</th><td>Programmed on behalf of the author with AI assistance (Claude, Anthropic).</td></tr>
+  <tr data-spenden-zeile hidden><th>Support</th><td>Blueprint Studio is and stays free – every feature for everyone. If you would like to support further development, you can donate voluntarily: <a data-spenden href="#" target="_blank" rel="noopener">Donate</a></td></tr>
 </table>
 <h3>Terms of use</h3>
 <ol>
@@ -120,7 +121,9 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <ul>
   <li><b>Starting:</b> Double-click <code>start.bat</code> or the desktop shortcut. The app opens in its own window. If you close the window, the program exits by itself after about 25 seconds.</li>
   <li><b>At the top</b> you choose the area: <b>Blueprint</b> (view/edit), <b>Building catalog</b> (all buildables with data), <b>Organize</b> (unify names) and <b>Help</b> (this page).</li>
-  <li><b>Folder</b> opens the current blueprint folder in Explorer, <b>Settings</b> the paths, <b>Save</b> saves changes.</li>
+  <li>At the <b>top</b> there are only the areas, next to them <b>Guide</b> (?) and <b>Settings</b> (gear).</li>
+  <li>In the <b>blueprint editor</b> the tool bar starts with <b>Folder</b> (blueprint folder in Explorer), <b>show/hide storage</b> and <b>storage as a large window</b>; <b>Save …</b> is at the end of the bar, the current folder in the status line below.</li>
+  <li><b>Guide:</b> the first time you visit an area, the app offers a short guide at the bottom right. It highlights one control after another (the rest is dimmed) and explains it – <b>Next</b>/<b>Back</b> or arrow keys, <kbd>Esc</kbd> ends it. Restart it any time via <b>Guide</b> at the top right.</li>
 </ul>
 <div class="box"><p><b>Important:</b> The game reads blueprints when the save is loaded. So after saving or renaming, reload the save. Ideally edit while the game is closed or in the main menu.</p></div>
 
@@ -163,11 +166,13 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </table>
 <h3>Rotating / tilting around X, Y, Z</h3>
 <p>Tool <b>Rotate / Tilt</b> (axis-cross icon in the toolbar): choose the axis – <b>X</b> tilts forward/back, <b>Y</b> sideways, <b>Z</b> rotates like <kbd>Q</kbd>/<kbd>E</kbd> – and the angle (−90°, +90°, 180° or a custom value). Applies to the selection or, if nothing is selected, to the whole blueprint. “Set back on the ground” keeps the bottom edge the same. Example: tilt an intersection built upright by 90° around X or Y until the roadway is on top, then save it as a new blueprint. In the 3D view you can now also look from below.</p>
+<p><b>Mouse rotate</b> (toggle next to “Pen”): drag left – horizontal rotates, vertical tilts (15° steps, with Ctrl 1°). Without a selection the whole blueprint turns around its centre. Right mouse button = look around; one Ctrl+Z undoes the whole drag.</p>
 <h3>Hiding objects</h3>
 <p>To get at covered parts or parts behind others: make a selection and <b>Hide selection</b> (crossed-out eye, <kbd>H</kbd>) – or <b>Show selection only</b> (<kbd>I</kbd>), then everything else is gone. Hidden objects cannot be clicked and are drawn neither in 2D nor in 3D. The button “… hidden · show all” (or <kbd>Shift</kbd>+<kbd>H</kbd>) brings everything back. Hiding does not change the blueprint and is not saved.</p>
 <h3>Many levels</h3>
 <p>From eleven levels on, the bar is shown compactly: first level · five levels below and above the selected one · last level, plus arrows ‹ › and a list of all levels with their height.</p>
 <p>On the right, the <b>inspector</b> shows name, position, rotation, dimensions, power, recipe (with amounts per minute), color swatch, tier and build cost of the selected object; without a selection, the data of the whole blueprint and its build cost.</p>
+<p><b>Check materials</b> (below the build cost) compares the blueprint’s build cost with the stock in a save. The newest save of the session is preselected; you can pick another one at the top. For each material the table shows what is in your <b>inventory</b>, in the <b>Dimensional Depot</b> and in <b>containers</b> (storage containers and uploaders). When you build, the game takes items from the inventory and the Dimensional Depot – that counts as “enough”. If the rest is only in containers, it says “fetch … from containers”. <b>Copy missing items</b> puts a shopping list on the clipboard. The save is only read, never changed. The numbers are those of the last save.</p>
 
 <h2 class="sec" id="tauschen">Swap material / variant / Mk level</h2>
 <p>Select objects (e.g. “Parts” tab → all foundations) → on the right <b>Swap parts …</b>. Variants with the same dimensions are offered (Concrete → Asphalt, Grip Metal, Glass; Basic Wall → Window Wall …). Build cost and recipe list are recalculated when saving. Parts marked with <code>*</code> are derived from related parts. Machines (with connections/inventory) cannot be swapped.</p>
@@ -180,6 +185,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Open as new blueprint</b> – preview; changes to the values are visible immediately. Then edit and save as usual.</li>
   <li><b>Insert into open blueprint</b> – places the shape on top of the open blueprint (selected, move it with the arrow keys).</li>
   <li><b>Pixel art from image:</b> choose an image (PNG, JPG, GIF …), the width in pixels, the pixel size (0.5 / 1 / 2 m), wall or floor, optionally glowing. Each pixel becomes a square sign in the image colour (like the community pixel-art blueprints); transparent pixels can be left out. Below the settings you see the scaled-down image, <b>View in 3D</b> shows the wall, <b>Save as blueprint</b> stores it. At most 20,000 pixels – small images with clear colours work best.</li>
+  <li><b>Special character signs …</b> (Shapes, bottom): click characters the game’s font knows (arrows, box lines, blocks, symbols …) by group; each line in the text field becomes a sign. Sign size, columns and colours can be chosen; “Whole group as grid” puts each character on its own sign. So you don’t have to type special characters by hand in the game. Character list: satisfactory-symbol-db (public domain).</li>
   <li><b>Building from floor plan (image):</b> draw the floor plan on a grid (e.g. in Paint, one square = one 8 × 8 m foundation) – <b>black</b> lines = wall, <b>blue</b> = window, <b>red</b> = door, gap = open passage. Choose the image and set “Width (foundations)” to the number of squares across the image width. The check image shows the grid, the detected walls/windows/doors and in green the floor areas (everything inside a closed outer wall). Then choose floors, floor height and parts; windows and doors sit in the lowest wall row of each floor. The top of the image is at the back of the blueprint when you look in the same direction as at the image while placing it.</li>
 </ul>
 
@@ -196,6 +202,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 
 <h2 class="sec" id="ordnen">Organize – give all blueprints consistent names</h2>
 <p>The <b>Organize</b> area reads in <b>all</b> blueprints: all save folders under <code>SaveGames\blueprints</code> (with subfolders) and the library folders from the <a href="#einstellungen">Settings</a> (e.g. <code data-pfad="bibliothek">…\Meine Blaupausen</code>). Folders named <code>_Archiv</code>, <code>_Pakete</code> or <code>_Duplikate</code> are skipped.</p>
+<p>With <b>Edit folder structure …</b> (left, below the legend) you change the groups and subgroups of storage; afterwards Organize recalculates its suggestions. The expandable panel <b>How organizing works</b> explains the steps, the line below the bar the chosen filter.</p>
 <ol class="steps">
   <li><b>Reading in:</b> The first time it takes 20–60 seconds depending on the number, after that it is fast (cache).</li>
   <li><b>Check suggestions:</b> For each blueprint there is a <b>new name</b> following the <a href="#schema">scheme</a>. Reason “from name” = derived from the old name; “from content” = the old name was meaningless (e.g. <code>2025_10_10 13_40_24</code>), the suggestion comes from the content (product, machines, parts, dimensions) – please look at these especially carefully. The filter “Name from content (check!)” shows only these.</li>
@@ -280,6 +287,24 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Water & several sources:</b> if an item comes from several rows, all of them are connected (belts via one merger each, pipes via one junction each from above). Whatever the factory produces itself (e.g. water from the aluminium chain) is used first; only the <b>remainder</b> comes from outside – for pipes via a junction with one connector pointing <b>up</b> (sign “ZULAUF VON OBEN”). With <b>Build water extractors too</b> in the dialog, the planner places extractors with power for the missing water (120 m³/min each; the game only allows this via blueprints).</li>
   <li><b>Limits:</b> some buildings have no row plan yet (greyed out, hover to see why) – free inputs/outputs with signs are created there. Blueprints made by the planner are never used as part templates; if a template has items in its inventory, save a blueprint with the empty building in the game.</li>
 </ul>
+<h3 id="planer-rechenweg">Calculation and alternate recipes</h3>
+<p>On the left under <b>Calculation</b>: <b>Simple</b> (one recipe per item, as before), <b>Optimal</b> (calculates the whole factory at once with as few raw resources as possible – scarce ores count more; loops such as recycled plastic and byproducts balance out) or <b>Maximum from “Available”</b> (as much of the goals as possible from the supplies). For Optimal and Maximum, <b>“Alternate recipes …”</b> sets which alternates the planner may use – ideally the ones you have unlocked in the game.</p>
+<p><b>Supplies</b> (Available) are no longer produced in the factory itself. In the graph the box is green (“Input secured”) when the supply is enough, orange with a red “missing – supply” when something is still missing, and grey when it is not needed at all.</p>
+<p><b>Overclock</b> (at the top next to the calculation): 150, 200 or 250 % – the planner then uses fewer machines and counts the <b>power shards</b> needed (one shard per machine for each started 50 % above 100 %). The build list shows clock speed and shards per step.</p>
+<h3 id="planer-spielstand">Info from the save</h3>
+<p>The icons at the top left open a panel on the left; choose the save at its top. A click into the graph closes it again.</p>
+<ul>
+  <li><b>Production:</b> what your factories produce and consume per minute (nominal or measured utilisation, including power plants). <b>Tick</b> = use the surplus as supply right away, untick = remove.</li>
+  <li><b>Power &amp; power plants:</b> produced, consumed, reserve; power plants with fuel per minute.</li>
+  <li><b>Stock:</b> inventory, dimensional depot and containers (item counts).</li>
+  <li><b>Resource nodes:</b> free and occupied per purity and what they would give with Miner Mk.3 or pumps at 250 %. Tick to use as supply – fits the “Maximum” calculation.</li>
+  <li><b>Build list</b> (clipboard icon): the steps of the active factory in build order to tick off, machines and power shards, and the <b>build cost</b> of the machines – with a save, against inventory and Dimensional Depot (green = enough, red = missing). Belts, pipes, foundations and power poles are not included.</li>
+  <li><b>Plan board …</b> (top of the planner): builds the factory’s flow plan as a blueprint made of signs to put up at the construction site – raw resources, per stage the machines with recipe, inputs and outputs per minute (with images of material and machine), result, machines and power. The <b>cards</b> style uses the community blueprint “Alternate Prod Sign (3/6 inputs)” if it is in your blueprints (digit signs, orange on black), otherwise the <b>simple line board</b>. “Plan boards of this factory” (build list) lists the latest boards; the tick puts them into the game or sets them aside. The images come from your game’s icon library (setup “Terrain &amp; rocks”).</li>
+</ul>
+<h3 id="planer-welt">Several factories, world plan and supply routes</h3>
+<p>At the top left under <b>Factory</b> you add more factories (+), rename them (✎) or delete them (✕). The <b>world plan</b> (globe) shows all factories with machines and power, the raw demand of all factories as bars against all nodes of the map and – with a save – against the free nodes (miner tier and clock selectable), and the power against the reserve in the save.</p>
+<p><b>Supply routes:</b> if a factory lists something under “Available” that another one produces, the world plan shows “who feeds whom” with amount and the belts or pipes needed. Whatever no factory takes can be entered as a supply in another factory with <b>“deliver to …”</b>.</p>
+<p><b>Deliveries automatically</b> enters intermediate products that another factory has left over as supplies – only if its surplus fully covers the demand. Under <b>Power plants (planned)</b> you plan generators with fuel, count and clock speed: the world plan calculates power, fuel per minute, cooling water and nuclear waste and takes the fuel from the factories’ surplus (the rest comes “from outside”). <b>Export</b>/<b>Import</b> saves the whole world plan as a file (<code>.bsplan</code>) or loads it – e.g. to share it or as a backup.</p>
 <h2 class="sec" id="masterclass">Master Class – ready-made textbook factories</h2>
 <p><b>Master Class …</b> in the planner shows cleanly built template factories by tier (highest milestone needed) and topic. The source are the Master Class folders (default: <code>blueprints\Sortieren\Tschukki</code> and the archive “10 Master Class”).</p>
 <ul>
@@ -295,7 +320,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <ul>
   <li>Choose the save on the left. The first time it is opened, reading takes a few seconds; after that it comes from the cache (<code>userdata\karten</code>) as long as the file does not change.</li>
   <li>Drag = pan, mouse wheel = zoom, click = show part (name, position, height, count in the save). “Fit” shows your builds, “Whole world” the whole map (grid = 500 m).</li>
-  <li>Switch <b>Levels</b> on/off on the left (e.g. foundations off to see machines). Resource nodes are off initially.</li>
+  <li>Switch <b>levels</b> on/off with the button in the tool bar (▾), e.g. foundations off to see machines. The button shows how many are off; resource nodes are off initially. The left side lists only saves – megaprints are under the <b>Megaprints</b> tool.</li>
   <li><b>Highlight a part:</b> type a name into the search field (e.g. “Constructor”) – matching parts stay colored, floors are dimmed. On the right, “Most common parts” is clickable.</li>
 </ul>
 <ul>
@@ -303,6 +328,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Height from – to</b> (meters): shows only parts in this range, e.g. a single floor of a large factory.</li>
   <li>On the right, <b>Buildings by type</b>: all machines, generators, storage, trains etc. with their count. <b>Checking</b> them highlights them, everything else is dimmed (several checkmarks possible; the checkmark on the group takes the whole group, e.g. all pipelines). <b>“All normal”</b> (at the top) or <kbd>Esc</kbd> undoes this.</li>
   <li><b>Open in 3D</b>: shows the save in the <a href="#welt">world view</a> (3D with terrain, see below).</li>
+  <li><b>Points</b> (pin, ▾ = choose): resource nodes, gas sources, geysers, crash sites and collectibles as in the <a href="#welt-werkzeuge">world view</a> – with their state from the chosen save (occupied/collected faded). Hovering a point shows type, purity and position.</li>
+  <li><b>Megaprints</b> (button in the tool bar): search by name or folder. With a save loaded, a click lays the megaprint <b>semi-transparently over the save</b> – at its original position, with its size and the number of your parts in the same area (✕ hides it again). Without the tick at “Lay over the loaded save” it is shown on its own (see <a href="#megaprints">Megaprints</a>).</li>
 </ul>
 <p>The map itself does not change the save.</p>
 <h3>Copying out an area as a blueprint</h3>
@@ -318,6 +345,11 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>The blueprint is aligned to the center of the area (8 m grid) and bottom edge 0. Large areas need mods like Blueprint Designer Plus in the game.</li>
   <li>This does not work (yet) from Megaprints – use a save for that.</li>
 </ul>
+<h3>Transfer an area into another save</h3>
+<p><b>Transfer to another save …</b> puts the marked area at <b>exactly the same spot</b> in another save – for example a factory from an old world into a new one. You choose the target save, whether it is <b>cleared</b> there first (everything in the same area is removed; hidden layers and the height filter apply) or the area is only <b>added</b>, and a name. The result is always a <b>new file</b> next to the target; source and target stay unchanged. If the name already exists, the app asks and backs up the old file first.</p>
+<p>Buildings come over 1:1 with recipe and settings. Foundations, walls and beams are taken over with their <b>original data</b> (material, pattern, color). Swatches from the color palette show the target’s palette – if the palettes differ, a color may look different. Connections leading out of the area are dropped, so draw the area generously around the whole building. Both saves must have been saved in the current game; load and save an older one in the game once first. Vehicles, trains and drone routes are not transferred.</p>
+<p><b>Drone ports</b> come over without their pairing: partner port and drone stay in the source save, the port starts in the target as if freshly built. Set up drones and routes there again.</p>
+<p><b>Colours:</b> when transferring, the app asks whether to keep the <b>target’s colour palette</b> (default) or <b>take over the source’s</b>. With the source palette the colour swatches look exactly as in the source – but the colours then also change for everything else in the target.</p>
 <h3>Map image from your own game (FModel)</h3>
 <ol>
   <li>In FModel (see <a href="#fmodel">FModel</a>) go to <code>FactoryGame/Content/FactoryGame/Interface/UI/Assets/MapTest/SlicedMap</code>.</li>
@@ -327,16 +359,26 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h3 id="welt">World view (3D with terrain)</h3>
 <p>The <b>World</b> area shows the whole game world in 3D – terrain at 1 m resolution with the map image on top, rocks and cliffs as real game models – and optionally a save with all its parts. Meant for planning without starting the game; it does not replace the game.</p>
 <ul>
-  <li>Choose a save at the top → <b>Load</b> (or <b>Open in 3D</b> on the map). Without a save: terrain only.</li>
+  <li>Choose a save at the top → <b>Load</b> (or <b>Open in 3D</b> on the map). Without a save: terrain only. <b>Reset</b> next to it unloads the save and discards placed blueprints and changes (asks first if something is unsaved).</li>
   <li>Click into the view, then <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> to fly, <kbd>Space</kbd>/<kbd>C</kbd> (or <kbd>E</kbd>/<kbd>Q</kbd>) up/down, <kbd>Shift</kbd> faster; drag the mouse to look around, mouse wheel = forward/back. The speed adapts to the flight height.</li>
   <li><b>Placing blueprints</b>: under “Place blueprints”, <b>Choose from storage …</b> opens the large storage window with tiles and 3D previews – a click on a tile takes the blueprint. <b>Storage as a separate window</b> opens the same tiles in a window of their own (e.g. on a second screen) that stays open after each pick; alternatively search for a blueprint from the storage or a game session → <b>Place</b>. The blue preview follows the mouse and sits on the visible surface (terrain, rocks, buildings). <b>Click</b> places it (as often as you like, green = placed), <kbd>R</kbd> rotates by 90° (<kbd>Shift</kbd>+<kbd>R</kbd> by 15°), <kbd>Page↑</kbd>/<kbd>Page↓</kbd> changes the height by 1 m (with <kbd>Shift</kbd> 4 m), <kbd>Esc</kbd> or a right-click ends. Then enter a name → <b>Save to save game</b>: this creates a <b>new</b> save file next to the loaded one; the original stays unchanged.</li>
-  <li><b>Older blueprints</b> (saved with game version 1.0/1.1) are converted to the current format automatically when saving – otherwise the game would not load them cleanly in the save. Even older ones (before 1.0) cannot be placed; open them once in the game's blueprint designer and save them again.</li>
+  <li><b>Older blueprints</b> are converted to the current format automatically when saving – from Update 6 (before game version 1.0) up to 1.1, otherwise the game would not load them cleanly in the save. Signs keep their layout. Even older ones cannot be placed; open them once in the game’s blueprint designer and save them again.</li>
   <li><b>Placed blueprints</b> (green) can be clicked – in the world or in the list on the left: a small menu offers <b>Move</b> (pick it up again; <kbd>Esc</kbd> puts it back), <b>Rotate 90°</b> and <b>Delete</b>. Arrow keys, <kbd>Page↑</kbd>/<kbd>Page↓</kbd>, <kbd>R</kbd> and <kbd>Del</kbd> then act on this blueprint.</li>
+  <li><b>Exact placement:</b> the menu of a placed blueprint has fields for the position (<b>X</b>, <b>Y</b>, <b>Z</b> in metres), the rotation (<b>°</b>) and <b>tilting</b> about X and Y (<b>↻X</b>, <b>↻Y</b>, e.g. 90° for a wall from a floor blueprint). <b>Grid</b> sets the step size of the arrow keys. Tilting is written into the save as well.</li>
   <li><b>Changing existing parts</b>: <b>click</b> a part of the loaded save to select it (yellow), <kbd>Ctrl</kbd>+click adds or removes more. <kbd>Arrow keys</kbd> move by 1 m along the axis closest to your view direction (<kbd>Shift</kbd> = 8 m, the foundation grid), <kbd>Page↑</kbd>/<kbd>Page↓</kbd> change the height, <kbd>R</kbd> rotates around the centre of the selection, <kbd>Del</kbd> deletes. <kbd>Esc</kbd> or a click on the terrain finishes the selection; <b>Discard</b> undoes all changes. Saving works as with placing, into a <b>new</b> file. Deleted machines take their power cables with them; belts, pipes, rails and hypertubes can be clicked, moved and deleted in the same way; connections to machines are not re-linked.</li>
+  <li><b>Clicking a machine:</b> next to production buildings, miners, pumps and generators a small panel appears with recipe, clock speed, utilization and inputs and outputs per minute – as set in the save.</li>
   <li><b>Invert mouse left/right</b> if looking around feels the wrong way (remembered).</li>
   <li>The app creates terrain and rocks once from your game files (helper program <code>werkzeuge\gelaende</code>, into <code>userdata\gelaende</code> and <code>userdata\welt</code>, about 1 minute): automatically when <b>fetching the game models</b> in the setup wizard, or at any time under <b>Settings → Requirements → Terrain &amp; rocks → Create</b> (e.g. after a big game update). The world view does not change the save.</li>
 </ul>
 
+<h3 id="welt-werkzeuge">World: tools, performance mode, pen, map points</h3>
+<p>The tools sit at the top left above the view: <b>pen</b> with <b>depth</b>, <b>storage</b>, <b>storage as a separate window</b>, <b>search</b> and <b>place</b>, <b>first-person mode</b> (figure), <b>performance mode</b> (lightning), <b>map points</b> (pin, ▾ = choose) and <b>map image</b>.</p>
+<ul>
+  <li><b>Performance mode:</b> draws only what is in view: full quality up to 300 m, <b>simplified models</b> up to 1.2 km (far fewer triangles), simple boxes in their colour further away. For very large saves (over 50 million triangles) it switches on by itself when loading; switched off by hand, it stays off. The default is full quality.</li>
+  <li><b>Pen:</b> switch it on, then outline an area with the left mouse button held. Everything inside is selected – including hidden parts inside a building – but only up to the set <b>depth</b> behind the front part (default 600 m, 0 = everything). Shift = add, Ctrl = remove, right mouse button = look around. A small box then appears above the area: <b>“Save as blueprint …”</b> (choose the game session and a name – what is saved is what the loaded save contains), <b>Delete</b> (takes effect when saving to the new file) or <b>Cancel</b>.</li>
+  <li><b>Map points:</b> resource nodes (colour and short name per resource; dashed ring = impure, single = normal, double = pure), resource wells, geysers, crash sites, power slugs, somersloops and Mercer spheres. The ▾ menu shows or hides kinds and single resources. With a loaded save, occupied nodes and collected objects appear faded (or hidden) and opened crash sites hollow; the tooltip names kind, purity, state and position. The setup reads the data once from your game (“Terrain &amp; rocks”).</li>
+  <li><b>First-person mode</b> (figure): switch it on and click into the world – you start there at eye level (like a pin in a maps app). <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> to walk (<kbd>Shift</kbd> = faster), <kbd>Space</kbd>/<kbd>C</kbd> float higher/lower, mouse = look around, <kbd>Esc</kbd> takes you back to where you were. Over open terrain the height follows the ground; on foundations it stays the same. For large factories best combined with performance mode.</li>
+</ul>
 <h2 class="sec" id="megaprints">Megaprints (.cbp)</h2>
 <p>Megaprints are exports from <i>satisfactory-calculator.com</i> (file extension <code>.cbp</code>, compressed JSON with all objects including position and properties). The map lists them below the saves (folder in Settings, e.g. <code data-pfad="megaprints">…\Megaprints</code>, without <code>_Archiv</code>) and shows them at their original position on the world map – with levels, highlighting and “Buildings by type”. Even very large Megaprints (400 MB JSON, 300,000 parts) are read in about 2 seconds. Belts and pipelines appear as dots instead of lines for now.</p>
 
@@ -601,7 +643,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Models are rotated/offset in the app</td><td>The FModel mesh format must be <code>glTF 2.0 (binary)</code>; run the tool again.</td></tr>
   <tr><td>Gray boxes instead of models</td><td>A model is missing for this part (see the tool's message) – or it is a belt/pipeline/railway/lift (intentionally without a model).</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.4.3</span> · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.5.0</span> · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen
@@ -611,6 +653,7 @@ if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrol
 // Pfade in der Hilfe aus den eigenen Einstellungen einsetzen (keine festen Pfade im Text)
 fetch('/api/config').then((r) => r.json()).then((c) => {
   if (c.version) document.querySelectorAll('[data-version]').forEach((e) => { e.textContent = c.version; }); // Version immer aus der laufenden App
+  if (c.spenden) { document.querySelectorAll('[data-spenden]').forEach((e) => { e.href = c.spenden; }); document.querySelectorAll('[data-spenden-zeile]').forEach((e) => { e.hidden = false; }); } // Spenden-Link aus app/update.json
   const j = (...t) => t.filter(Boolean).join('\\');
   const w = { appDir: c.appDir, blueprintDir: c.blueprintDir, saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0], megaprints: (c.megaprints || [])[0],
     fmodel: c.fmodelDir, fmodelOutput: c.fmodelDir && j(c.fmodelDir, 'Output'), fmodelExport: c.fmodelExport, usmap: c.gameDir && j(c.gameDir, 'CommunityResources', 'FactoryGame.usmap') };

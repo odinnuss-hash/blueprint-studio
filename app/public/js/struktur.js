@@ -81,6 +81,7 @@ export class StrukturUI {
       this.app.cfg = await (await fetch('/api/config')).json();
       this.app.einstellungenStruktur?.();
       await this.app.ablage.laden();
+      if (this.app.area === 'ordnen') this.app.ordnen.load(true); // Vorschläge und Legende zur neuen Struktur
     } catch (e) { f.textContent = e.message; f.hidden = false; }
   }
 }

@@ -92,6 +92,7 @@ export function rechne(kat, plan) {
     let ziel = null, mangel = 0;
     for (const [it, v] of Object.entries(b)) {
       if (v >= -EPS || istRohstoff(kat, it)) continue;
+      if (vorhanden[it] != null) continue; // zugeliefert: nicht selbst herstellen – ein Rest erscheint als „fehlt“ (zusätzlich zuliefern)
       if (!wahl[it]) wahl[it] = standardRezept(kat, it, liste);
       if (!wahl[it]) continue; // nicht herstellbar -> Zulieferung
       if (-v > mangel) { mangel = -v; ziel = it; }
@@ -103,12 +104,30 @@ export function rechne(kat, plan) {
     if (!Number.isFinite(maschinen[id]) || maschinen[id] > 1e6) { runden = 2000; break; }
   }
   if (runden >= 2000) warnungen.push('Die Rechnung ist nicht ganz aufgegangen (Kreislauf in den Rezepten) – Werte sind Näherungen.');
+  return auswerten(kat, plan, maschinen, wahl, warnungen, liste);
+}
 
+/** Aus Maschinenzahlen je Rezept (Bruch) das Ergebnis bilden: Schritte, Rohstoffe, Überschuss, Kanten, Strom (auch für planer-optimierer.js) */
+export function auswerten(kat, plan, maschinen, wahl, warnungen = [], liste = rezepteJeItem(kat)) {
+  const ziele = (plan.ziele || []).filter((z) => z.item && z.menge > 0);
+  const vorhanden = {};
+  for (const v of plan.vorhanden || []) if (v.item && v.menge > 0) vorhanden[v.item] = (vorhanden[v.item] || 0) + v.menge;
+  const bilanz = () => {
+    const b = {};
+    for (const [it, m] of Object.entries(vorhanden)) b[it] = (b[it] || 0) + m;
+    for (const z of ziele) b[z.item] = (b[z.item] || 0) - z.menge;
+    for (const [id, n] of Object.entries(maschinen)) {
+      const r = kat.rezepte[id];
+      for (const p of r.produkte) b[p.item] = (b[p.item] || 0) + p.proMin * n;
+      for (const z of r.zutaten) b[z.item] = (b[z.item] || 0) - z.proMin * n;
+    }
+    return b;
+  };
   const b = bilanz();
   const rohstoffe = {}, ueberschuss = {}, fehlt = {};
   for (const [it, v] of Object.entries(b)) {
-    if (v < -1e-6) { if (istRohstoff(kat, it)) rohstoffe[it] = -v; else fehlt[it] = -v; }
-    else if (v > 1e-6) ueberschuss[it] = v;
+    if (v < -1e-3) { if (istRohstoff(kat, it)) rohstoffe[it] = -v; else fehlt[it] = -v; }
+    else if (v > 1e-3) ueberschuss[it] = v;
   }
   // vorhandene Zulieferungen, die nicht (ganz) gebraucht werden, sind kein „Überschuss“ der Fabrik
   for (const [it, m] of Object.entries(vorhanden)) if (ueberschuss[it]) { ueberschuss[it] = Math.max(0, ueberschuss[it] - m); if (ueberschuss[it] < 1e-6) delete ueberschuss[it]; }
@@ -130,10 +149,12 @@ export function rechne(kat, plan) {
   const maxT = Math.max(0, ...Object.values(tiefe));
   const schritte = ids.map((id) => {
     const r = kat.rezepte[id], n = maschinen[id];
-    const anzahl = Math.max(1, Math.ceil(n - 1e-6));
+    // Übertakten (plan.takt 100–250 %): weniger Maschinen, je angefangene 50 % über 100 % eine Power-Shard pro Maschine
+    const ziel = Math.min(250, Math.max(100, +plan.takt || 100)) / 100;
+    const anzahl = Math.max(1, Math.ceil(n / ziel - 1e-6)), takt = (n / anzahl) * 100;
     return {
       rezept: id, name: r.name, gebaeude: r.gebaeude.find((g) => PRODUKTION.includes(g)), alternativ: !!r.alternativ,
-      maschinen: n, anzahl, takt: (n / anzahl) * 100, ebene: maxT - tiefe[id],
+      maschinen: n, anzahl, takt, shards: takt > 100.001 ? anzahl * Math.ceil((takt - 100) / 50 - 1e-9) : 0, ebene: maxT - tiefe[id],
       zutaten: r.zutaten.map((z) => ({ item: z.item, proMin: z.proMin * n })),
       produkte: r.produkte.map((p) => ({ item: p.item, proMin: p.proMin * n })),
       optionen: (liste[r.produkte[0].item] || []).length,
@@ -160,7 +181,8 @@ export function rechne(kat, plan) {
     }
   }
   const strom = schritte.reduce((a, s) => a + (kat.gebaeude[s.gebaeude]?.werte?.strom || 0) * s.anzahl * Math.pow(s.takt / 100, 1.321928), 0);
-  return { schritte, rohstoffe, fehlt, vorhanden, ueberschuss, kanten, ziele, wahl, strom, warnungen };
+  const shards = schritte.reduce((a, s) => a + s.shards, 0);
+  return { schritte, rohstoffe, fehlt, vorhanden, ueberschuss, kanten, ziele, wahl, strom, shards, warnungen };
 }
 
 /** Rezepte, aus denen der Nutzer für ein Item wählen kann */

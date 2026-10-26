@@ -2,12 +2,25 @@
 // Ergebnis als Graph (Rohstoffe -> Fertigungsschritte -> Ziel) und als Liste; daraus wird später die Blaupause erzeugt.
 
 import { rechne, rezeptOptionen, istRohstoff, rezepteJeItem, standardRezept, PRODUKTION, vorstufen } from './planer-rechner.js';
+import { rechneOptimal } from './planer-optimierer.js';
 import { bildwahl, itemBild } from './bildwahl.js';
 import { tileHtml, fmt, ICONS, iconFile } from './katalog.js';
+import { eingabe, frage, auswahl } from './dialog.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const SPEICHER = 'bs.planer';
+const WELT_SPEICHER = 'bs.planer.welt'; // mehrere Fabriken: { fabriken: [{ name, plan }], aktiv, miner, takt }
+// Kraftwerke für den Welt-Plan: Leistung (MW bei 100 %), Kühlwasser (m³/min), mögliche Brennstoffe
+const KRAFT_ARTEN = {
+  Build_GeneratorCoal_C: { name: 'Kohlegenerator', mw: 75, wasser: 45, fuels: ['Desc_Coal_C', 'Desc_CompactedCoal_C', 'Desc_PetroleumCoke_C'] },
+  Build_GeneratorFuel_C: { name: 'Treibstoffgenerator', mw: 250, wasser: 0, fuels: ['Desc_LiquidFuel_C', 'Desc_LiquidTurboFuel_C', 'Desc_LiquidBiofuel_C', 'Desc_RocketFuel_C', 'Desc_IonizedFuel_C'] },
+  Build_GeneratorNuclear_C: { name: 'Atomkraftwerk', mw: 2500, wasser: 240, fuels: ['Desc_NuclearFuelRod_C', 'Desc_PlutoniumFuelRod_C', 'Desc_FicsoniumFuelRod_C'] },
+  Build_GeneratorBiomass_Automated_C: { name: 'Biomasse-Brenner', mw: 30, wasser: 0, fuels: ['Desc_Biofuel_C', 'Desc_GenericBiomass_C'] },
+  Build_GeneratorGeoThermal_C: { name: 'Geothermie-Generator', mw: 200, wasser: 0, fuels: [] },
+};
+const KRAFT_ABFALL = { Desc_NuclearFuelRod_C: ['Desc_NuclearWaste_C', 50], Desc_PlutoniumFuelRod_C: ['Desc_PlutoniumWaste_C', 10] };
+const LEER = () => ({ ziele: [], vorhanden: [], wahl: {}, band: 5, stockwerke: 1 });
 // Gebäude mit Reihen-Bauplan: Anschlüsse [Band ein, Rohr ein, Band aus, Rohr aus] (wie lib/fabrik.mjs GEO)
 const ANSCHLUSS = {
   Build_SmelterMk1_C: [1, 0, 1, 0], Build_ConstructorMk1_C: [1, 0, 1, 0], Build_AssemblerMk1_C: [2, 0, 1, 0], Build_FoundryMk1_C: [2, 0, 1, 0],
@@ -18,14 +31,63 @@ const kurzGeb = (g) => g.replace(/^Build_/, '').replace(/Mk1_C$|_C$/, '');
 export class PlanerUI {
   constructor(app) {
     this.app = app;
-    this.plan = { ziele: [], vorhanden: [], wahl: {}, band: 5, stockwerke: 1 };
+    this.plan = LEER();
     try { const s = JSON.parse(localStorage.getItem(SPEICHER) || 'null'); if (s?.ziele) this.plan = { ...this.plan, ...s }; } catch { /* egal */ }
+    // Welt-Planer: mehrere Fabriken; der bisherige Einzelplan wird zur ersten Fabrik
+    try { this.welt = JSON.parse(localStorage.getItem(WELT_SPEICHER) || 'null'); } catch { this.welt = null; }
+    if (!this.welt?.fabriken?.length) this.welt = { fabriken: [{ name: 'Fabrik 1', plan: this.plan }], aktiv: 0 };
+    this.welt.aktiv = Math.min(this.welt.aktiv || 0, this.welt.fabriken.length - 1);
+    this.welt.miner ||= 3; this.welt.takt ||= 250;
+    this.plan = { ...LEER(), ...this.welt.fabriken[this.welt.aktiv].plan };
     this.ansicht = { x: 0, y: 0, z: 1 };
     this.ergebnis = null;
     this.gebaut = false;
   }
   get kat() { return this.app.kat; }
-  speichern() { if (this.grundlage) return; try { localStorage.setItem(SPEICHER, JSON.stringify(this.plan)); } catch { /* egal */ } }
+  speichern() {
+    if (this.grundlage) return;
+    this.welt.fabriken[this.welt.aktiv].plan = this.plan;
+    try { localStorage.setItem(SPEICHER, JSON.stringify(this.plan)); localStorage.setItem(WELT_SPEICHER, JSON.stringify(this.welt)); } catch { /* egal */ }
+  }
+  // ------------------------------------------------------------ Mehrere Fabriken
+  fabrikListe() {
+    const sel = $('pl-fabrik'); if (!sel) return;
+    sel.innerHTML = this.welt.fabriken.map((f, i) => `<option value="${i}"${i === this.welt.aktiv ? ' selected' : ''}>${esc(f.name)}</option>`).join('');
+    $('pl-fabrik-weg').disabled = this.welt.fabriken.length < 2;
+  }
+  fabrikWechseln(i) {
+    if (this.grundlage) { this.app.toast('Erst „Zurück zu meinem Plan“ wählen.', 'err'); this.fabrikListe(); return; }
+    this.speichern();
+    this.welt.aktiv = i; this.plan = { ...LEER(), ...this.welt.fabriken[i].plan };
+    this.eingepasst = false; this.speichern(); this.fabrikListe();
+    $('pl-modus').value = this.plan.modus || 'einfach'; $('pl-takt').value = String(this.plan.takt || 100); this.modusHinweis();
+    this.zeichneEingaben(); this.rechnen();
+    if (this.seiteArt === 'welt') this.seiteZeichnen();
+  }
+  async fabrikNeu() {
+    const name = await eingabe({ titel: 'Neue Fabrik', wert: `Fabrik ${this.welt.fabriken.length + 1}`, ok: 'Anlegen' }); if (!name) return;
+    this.speichern();
+    this.welt.fabriken.push({ name: name.slice(0, 60), plan: { ...LEER(), modus: this.plan.modus, alternativen: this.plan.alternativen } });
+    this.fabrikWechseln(this.welt.fabriken.length - 1);
+  }
+  async fabrikUmbenennen() {
+    const f = this.welt.fabriken[this.welt.aktiv];
+    const name = await eingabe({ titel: 'Fabrik umbenennen', wert: f.name, ok: 'Umbenennen' }); if (!name) return;
+    f.name = name.slice(0, 60); this.speichern(); this.fabrikListe(); if (this.seiteArt === 'welt') this.seiteZeichnen();
+  }
+  async fabrikLoeschen() {
+    if (this.welt.fabriken.length < 2) return;
+    const f = this.welt.fabriken[this.welt.aktiv];
+    if (!(await frage({ art: 'loeschen', titel: `„${f.name}“ löschen?`, text: 'Die Fabrik wird aus dem Welt-Plan entfernt (ihre Ziele und Zulieferungen).', ok: 'Löschen' }))) return;
+    this.welt.fabriken.splice(this.welt.aktiv, 1);
+    this.welt.aktiv = Math.max(0, this.welt.aktiv - 1); this.plan = { ...LEER(), ...this.welt.fabriken[this.welt.aktiv].plan };
+    this.fabrikWechseln(this.welt.aktiv);
+  }
+  /** Ergebnis einer beliebigen Fabrik (ohne die aktive Anzeige zu ändern) */
+  ergebnisVon(plan) {
+    if (!plan.ziele?.some((z) => z.item && z.menge > 0)) return null;
+    try { return (plan.modus || 'einfach') === 'einfach' ? rechne(this.kat, plan) : rechneOptimal(this.kat, plan); } catch { return null; }
+  }
 
   show() {
     if (!this.gebaut) this.aufbauen();
@@ -51,10 +113,29 @@ export class PlanerUI {
       document.querySelector('.pl-zeile[data-liste="vorhanden"]:last-child .pl-menge')?.select();
     });
     $('pl-zuruecksetzen').addEventListener('click', () => { this.plan.wahl = {}; this.speichern(); this.rechnen(); });
+    $('pl-takt').value = String(this.plan.takt || 100);
+    $('pl-takt').addEventListener('change', (e) => { this.plan.takt = +e.target.value; this.speichern(); this.rechnen(); });
+    $('pl-modus').value = this.plan.modus || 'einfach';
+    $('pl-modus').addEventListener('change', (e) => { this.plan.modus = e.target.value; this.speichern(); this.modusHinweis(); this.rechnen(); });
+    $('pl-alt').addEventListener('click', () => this.alternativenWahl());
+    this.modusHinweis();
     $('pl-fit').addEventListener('click', () => this.einpassen());
     document.querySelectorAll('[name=pl-ansicht]').forEach((r) => r.addEventListener('change', () => this.zeichneErgebnis()));
     $('pl-bp').addEventListener('click', () => this.stufeWaehlen());
+    $('pl-tafel').addEventListener('click', () => this.plantafelDialog());
     $('pl-mc').addEventListener('click', () => this.masterclassWahl());
+    $('pl-aus-spielstand').addEventListener('click', () => this.seite('produktion'));
+    $('pl-fabrik').addEventListener('change', (e) => this.fabrikWechseln(+e.target.value));
+    $('pl-fabrik-neu').addEventListener('click', () => this.fabrikNeu());
+    $('pl-fabrik-name').addEventListener('click', () => this.fabrikUmbenennen());
+    $('pl-fabrik-weg').addEventListener('click', () => this.fabrikLoeschen());
+    this.fabrikListe();
+    document.querySelectorAll('.pl-wz[data-seite]').forEach((b) => b.addEventListener('click', () => this.seite(b.dataset.seite)));
+    // Klick ins Leere (Graph, Liste, rechte Spalte) schließt das Seitenfeld; links (Eingaben) bleibt es offen
+    document.addEventListener('pointerdown', (e) => {
+      if (!this.seiteArt || $('view-planer').hidden || $('pl-seite').contains(e.target)) return;
+      if (e.target.closest('.pl-stage, #pl-info')) this.seite(this.seiteArt);
+    });
     $('pl-auto').addEventListener('click', () => { this.plan.layout = {}; this.speichern(); this.zeichneGraph(); this.einpassen(); });
     // Graph: Hintergrund ziehen = Ansicht verschieben, Kasten ziehen = Kasten verschieben, Kasten klicken = Rezept wählen
     const svg = $('pl-svg');
@@ -169,11 +250,46 @@ export class PlanerUI {
     if (fokusLetzter) document.querySelector(`.pl-zeile[data-liste="${art}"]:last-child .pl-item`)?.focus();
   }
 
+  /** Hinweis zum Rechenweg und Zahl der erlaubten Alternativrezepte */
+  modusHinweis() {
+    const m = this.plan.modus || 'einfach', a = this.plan.alternativen;
+    const n = a === 'alle' ? Object.values(this.kat?.rezepte || {}).filter((r) => r.alternativ).length : (a || []).length;
+    $('pl-modus-hilfe').textContent = m === 'einfach' ? 'Je Item das gewählte Rezept (Tabelle) – wie bisher.'
+      : m === 'optimal' ? `Rechnet die ganze Fabrik auf einmal mit möglichst wenig Rohstoffen (knappe Erze zählen mehr). Kreisläufe und Nebenprodukte gehen auf. Erlaubte Alternativrezepte: ${n}.`
+        : `So viel wie möglich von den Zielen (im Verhältnis ihrer Mengen) aus den Zulieferungen unter „Vorhanden“. Erlaubte Alternativrezepte: ${n}.`;
+    $('pl-alt').hidden = m === 'einfach';
+  }
+  /** Erlaubte Alternativrezepte wählen (für „Optimal“ und „Maximum“) */
+  alternativenWahl() {
+    const alle = Object.entries(this.kat.rezepte).filter(([, r]) => r.alternativ).sort((a, b) => a[1].name.localeCompare(b[1].name));
+    const an = this.plan.alternativen === 'alle' ? new Set(alle.map(([id]) => id)) : new Set(this.plan.alternativen || []);
+    let d = $('dlg-pl-alt');
+    if (!d) { d = document.createElement('dialog'); d.id = 'dlg-pl-alt'; d.className = 'dlg-gross'; document.body.appendChild(d); }
+    d.innerHTML = `<form method="dialog" class="dlg"><h2>Alternativrezepte</h2>
+      <p class="muted">Angehakte Rezepte darf der Optimierer nutzen (z. B. die, die du im Spiel freigeschaltet hast). Er nimmt nur die, die sich lohnen.</p>
+      <div class="pl-alt-kopf"><input type="search" id="pl-alt-suche" placeholder="Suchen …" aria-label="Suchen"><button type="button" class="btn small" id="pl-alt-alle">Alle</button><button type="button" class="btn small" id="pl-alt-keine">Keine</button></div>
+      <div class="pl-alt-liste">${alle.map(([id, r]) => `<label class="check" data-n="${esc((r.name + ' ' + r.produkte.map((p) => this.itemName(p.item)).join(' ')).toLowerCase())}"><input type="checkbox" value="${esc(id)}"${an.has(id) ? ' checked' : ''}> <span data-no-i18n>${esc(r.name.replace(/^Alternativ: /, ''))}</span> <small class="muted" data-no-i18n>${esc(r.produkte.map((p) => this.itemName(p.item)).join(', '))} · ${esc(this.kat.gebaeude[r.gebaeude[0]]?.name || '')}</small></label>`).join('')}</div>
+      <div class="dlg-actions"><button type="button" class="btn" value="nein">Abbrechen</button><button type="button" class="btn primary" id="pl-alt-ok">Übernehmen</button></div></form>`;
+    const boxen = () => [...d.querySelectorAll('.pl-alt-liste input')];
+    d.querySelector('#pl-alt-suche').addEventListener('input', (e) => { const q = e.target.value.toLowerCase(); d.querySelectorAll('.pl-alt-liste label').forEach((l) => { l.hidden = q && !l.dataset.n.includes(q); }); });
+    d.querySelector('#pl-alt-alle').addEventListener('click', () => boxen().forEach((b) => { if (!b.closest('label').hidden) b.checked = true; }));
+    d.querySelector('#pl-alt-keine').addEventListener('click', () => boxen().forEach((b) => { if (!b.closest('label').hidden) b.checked = false; }));
+    d.querySelector('[value=nein]').addEventListener('click', () => d.close());
+    d.querySelector('#pl-alt-ok').addEventListener('click', () => {
+      const ids = boxen().filter((b) => b.checked).map((b) => b.value);
+      this.plan.alternativen = ids.length === alle.length ? 'alle' : ids;
+      this.speichern(); d.close(); this.modusHinweis(); this.rechnen();
+    });
+    d.showModal();
+  }
+
   rechnen() {
     if (!this.kat) return;
     const ziele = this.plan.ziele.filter((z) => z.item && z.menge > 0);
     if (!ziele.length) { this.ergebnis = null; this.zeichneErgebnis(); return; }
-    this.ergebnis = rechne(this.kat, this.plan);
+    this.ergebnis = (this.plan.modus || 'einfach') === 'einfach' ? rechne(this.kat, this.plan) : rechneOptimal(this.kat, this.plan);
+    if (this.seiteArt === 'welt') { const d = this.spDaten?.['welt|' + this.spielstandId]; if (d) this.seiteWelt(d); }
+    if (this.seiteArt === 'bau') { const d = this.spDaten?.['bau|' + this.spielstandId]; if (d) this.seiteBau(d); }
     this.zeichneErgebnis();
   }
 
@@ -192,7 +308,7 @@ export class PlanerUI {
       <div class="label">Maschinen</div><ul class="pl-liste">${Object.entries(maschinen).map(([g, n]) => `<li>${tileHtml(this.kat.gebaeude[g], g)}<span data-no-i18n>${esc(this.kat.gebaeude[g]?.name || g)}</span><b>${n}×</b></li>`).join('')}</ul>
       <p class="muted">Strombedarf ca. <b>${fmt(r.strom, 0)} MW</b></p>
       ${r.warnungen.map((w) => `<p class="err">${esc(w)}</p>`).join('')}`;
-    $('pl-status').textContent = `${r.schritte.length} Fertigungsschritte · ${r.schritte.reduce((a, s) => a + s.anzahl, 0)} Maschinen · ${fmt(r.strom, 0)} MW`;
+    $('pl-status').textContent = `${r.schritte.length} Fertigungsschritte · ${r.schritte.reduce((a, s) => a + s.anzahl, 0)} Maschinen · ${fmt(r.strom, 0)} MW${r.shards ? ` · ${r.shards} Power-Shards` : ''}`;
     const tabelle = document.querySelector('[name=pl-ansicht]:checked')?.value === 'liste';
     $('pl-svg').style.display = tabelle ? 'none' : ''; $('pl-tabelle').hidden = !tabelle; // SVG kennt .hidden nicht
     if (tabelle) this.zeichneTabelle(); else this.zeichneGraph();
@@ -252,9 +368,17 @@ export class PlanerUI {
         extra = `data-schritt="${k.i}"`;
         if (s.alternativ) klasse += ' alt';
         if (this.gebautMarke(s, k.i)) { klasse += ' gebaut'; zeile2 = '▣ als Blaupause gebaut · ' + zeile2; }
-      } else if (k.art === 'roh' || k.art === 'vorhanden') {
-        const m = r.rohstoffe[k.item] || r.fehlt[k.item] || r.vorhanden[k.item];
-        titel = this.itemName(k.item); zeile2 = `${k.art === 'vorhanden' ? 'vorhanden' : 'Zulieferung'} · ${fmt(m, 1)} ${this.einheit(k.item)}`;
+      } else if (k.art === 'vorhanden') {
+        // grün = Zulieferung deckt den Bedarf, orange = Rest muss zusätzlich zugeliefert werden
+        const m = r.vorhanden[k.item], f = r.fehlt[k.item], genutzt = r.kanten.filter((e) => e.von === k.key).reduce((a, e) => a + e.menge, 0);
+        titel = this.itemName(k.item);
+        if (f) { klasse += ' teil'; zeile2 = `vorhanden ${fmt(m, 1)} · fehlt ${fmt(f, 1)} ${this.einheit(k.item)}`; }
+        else if (genutzt < 0.01) { klasse += ' ungenutzt'; zeile2 = `nicht gebraucht · ${fmt(m, 1)} ${this.einheit(k.item)}`; }
+        else { klasse += ' gesichert'; zeile2 = `Input gesichert · ${fmt(genutzt, 1)} von ${fmt(m, 1)} ${this.einheit(k.item)}`; }
+      } else if (k.art === 'roh') {
+        const m = r.rohstoffe[k.item] || r.fehlt[k.item];
+        titel = this.itemName(k.item);
+        if (r.fehlt[k.item]) { klasse += ' fehlt'; zeile2 = `fehlt – zuliefern · ${fmt(m, 1)} ${this.einheit(k.item)}`; } else zeile2 = `Zulieferung · ${fmt(m, 1)} ${this.einheit(k.item)}`;
       } else { titel = this.itemName(k.item); zeile2 = `${k.art === 'ziel' ? 'Ergebnis' : 'Überschuss'} · ${fmt(k.menge, 1)} ${this.einheit(k.item)}`; }
       const item = k.art === 'schritt' ? this.kat.rezepte[k.s.rezept].produkte[0].item : k.item;
       return `<g class="pl-knoten ${klasse}" transform="translate(${k.x},${k.y})" data-key="${esc(k.key)}" ${extra}>
@@ -427,7 +551,7 @@ export class PlanerUI {
       <p class="muted" id="pl-bp-info"></p>`}
       <div class="dlg-actions"><button type="button" class="btn" value="nein">Schließen</button>${grund ? '' : '<button type="button" class="btn" id="pl-bp-3d">In 3D ansehen</button><button type="button" class="btn primary" id="pl-bp-ok">Als Blaupause speichern</button>'}</div></form>`;
     d.querySelector('[value=nein]').addEventListener('click', () => d.close());
-    const planDaten = () => ({ ziele: this.plan.ziele, vorhanden: this.plan.vorhanden, wahl: this.ergebnis.wahl, layout: this.plan.layout || {} });
+    const planDaten = () => ({ ziele: this.plan.ziele, vorhanden: this.plan.vorhanden, wahl: this.ergebnis.wahl, layout: this.plan.layout || {}, modus: this.plan.modus, alternativen: this.plan.alternativen, takt: this.plan.takt });
     const daten = () => ({ ...(kette ? { kette: true, bis: bis ? bis.rezept : undefined, plan: planDaten() } : { schritt: { rezept: s.rezept, maschinen: s.maschinen } }), bandMax: +$('pl-bp-band').value, wasser: !!$('pl-bp-wasser')?.checked });
     const post = async (url, body) => {
       const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify(body) });
@@ -533,6 +657,318 @@ export class PlanerUI {
       } catch (err) { this.app.toast(err.message, 'err'); }
     });
     d.showModal();
+  }
+
+  // ------------------------------------------------------------ Infos aus dem Spielstand (Seitenfeld links im Planer)
+  // Symbole oben links: Produktion, Strom, Vorräte, Rohstoff-Knoten. Ein Spielstand für alle Felder; Daten werden je Feld einmal geholt.
+  /** Feld öffnen/schließen (art: 'produktion' | 'strom' | 'vorraete' | 'knoten') */
+  async seite(art) {
+    const s = $('pl-seite');
+    this.seiteArt = this.seiteArt === art ? null : art;
+    document.querySelectorAll('.pl-wz[data-seite]').forEach((b) => b.setAttribute('aria-pressed', b.dataset.seite === this.seiteArt));
+    s.hidden = !this.seiteArt; if (!this.seiteArt) return;
+    if (!this.spListe) {
+      try { this.spListe = ((await fetch('/api/karte/liste', { cache: 'no-store' }).then((r) => r.json())).spielstaende || []).sort((a, b) => b.geaendert - a.geaendert); } catch { this.spListe = []; }
+      const sitz = this.app.spielSession?.();
+      this.spielstandId ||= (this.spListe.find((x) => x.sitzung === sitz) || this.spListe[0])?.id;
+    }
+    this.seiteZeichnen();
+  }
+  /** Daten für das aktuelle Feld holen (einmal je Spielstand) */
+  async seiteDaten(art) {
+    const id = this.spielstandId; if (!id) return null;
+    this.spDaten ||= {}; const k = art + '|' + id;
+    if (this.spDaten[k]) return this.spDaten[k];
+    const url = { bau: '/api/vorraete?id=', welt: '/api/welt/punkte?id=', produktion: '/api/planer/spielstand?id=', strom: '/api/planer/spielstand?id=', vorraete: '/api/vorraete?id=', knoten: '/api/welt/punkte?id=' }[art] + encodeURIComponent(id);
+    const r = await fetch(url, { cache: 'no-store' }); const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status);
+    this.spDaten[k] = j; if (art === 'bau') this.spDaten['vorraete|' + id] = j; if (art === 'vorraete') this.spDaten['bau|' + id] = j; if (art === 'welt') this.spDaten['knoten|' + id] = j; if (art === 'knoten') this.spDaten['welt|' + id] = j; if (art === 'produktion') this.spDaten['strom|' + id] = j; if (art === 'strom') this.spDaten['produktion|' + id] = j;
+    return j;
+  }
+  async seiteZeichnen() {
+    const s = $('pl-seite'), art = this.seiteArt; if (!art) return;
+    const titel = { bau: 'Bauliste', welt: 'Welt-Plan', produktion: 'Produktion im Spielstand', strom: 'Strom & Kraftwerke', vorraete: 'Vorräte', knoten: 'Rohstoff-Knoten' }[art];
+    const liste = this.spListe || [];
+    s.innerHTML = `<div class="pl-seite-kopf"><b>${titel}</b><button type="button" class="btn small" id="pls-zu" aria-label="Schließen">✕</button></div>
+      <select id="pls-stand" aria-label="Spielstand" data-no-i18n>${liste.map((x) => `<option value="${esc(x.id)}"${x.id === this.spielstandId ? ' selected' : ''}>${esc(x.name)}${x.sitzung ? ' · ' + esc(x.sitzung) : ''}</option>`).join('')}</select>
+      <div id="pls-inhalt"><p class="muted">Spielstand wird gelesen …</p></div>`;
+    $('pls-zu').addEventListener('click', () => this.seite(art));
+    $('pls-stand').addEventListener('change', (e) => { this.spielstandId = e.target.value; this.seiteZeichnen(); });
+    if (!liste.length) { $('pls-inhalt').innerHTML = '<p class="muted">Keine Spielstände gefunden.</p>'; return; }
+    let d; try { d = await this.seiteDaten(art); } catch (e) { $('pls-inhalt').innerHTML = `<p class="err">Fehler: ${esc(e.message)}</p>`; return; }
+    if (this.seiteArt !== art) return;
+    ({ bau: () => this.seiteBau(d), welt: () => this.seiteWelt(d), produktion: () => this.seiteProduktion(d), strom: () => this.seiteStrom(d), vorraete: () => this.seiteVorraete(d), knoten: () => this.seiteKnoten(d) })[art]();
+  }
+  /** Haken = sofort als Zulieferung übernehmen (ersetzt Einträge desselben Items), Haken weg = Zulieferung entfernen */
+  hakenBinden() {
+    $('pls-inhalt').querySelectorAll('input[data-it]').forEach((c) => c.addEventListener('change', () => {
+      const it = c.dataset.it;
+      this.plan.vorhanden = this.plan.vorhanden.filter((v) => v.item !== it);
+      if (c.checked) this.plan.vorhanden.push({ item: it, menge: Math.round(+c.dataset.m * 10) / 10 });
+      this.speichern(); this.zeichneEingaben(); this.rechnen();
+    }));
+  }
+  /** Sortierung nach Item-Name (wie im Spiel angezeigt) */
+  nachName(a, b) { return this.itemName(a).localeCompare(this.itemName(b), 'de'); }
+  /** Lieferungen automatisch: braucht Fabrik B ein Zwischenprodukt, das Fabrik A übrig hat, und deckt A den Bedarf ganz, wird es in B als Zulieferung eingetragen (B stellt es dann nicht mehr selbst her). Bis nichts mehr passt. */
+  lieferungenAutomatisch(d) {
+    this.speichern();
+    const W = this.welt; let neu = 0;
+    for (let runde = 0; runde < 6; runde++) {
+      const erg = W.fabriken.map((f) => this.ergebnisVon(f.plan));
+      const rest = erg.map((e) => { const a = {}; if (!e) return a; for (const z of e.ziele) a[z.item] = (a[z.item] || 0) + z.menge; for (const [it, m] of Object.entries(e.ueberschuss)) a[it] = (a[it] || 0) + m; return a; });
+      // schon vergebene Lieferungen von den Überschüssen abziehen
+      W.fabriken.forEach((f, j) => { for (const v of f.plan.vorhanden || []) for (let i = 0; i < rest.length; i++) if (i !== j && rest[i][v.item] > 0) { const m = Math.min(rest[i][v.item], v.menge); rest[i][v.item] -= m; break; } });
+      let geaendert = false;
+      W.fabriken.forEach((f, j) => {
+        const e = erg[j]; if (!e) return;
+        const bedarf = {}; for (const st of e.schritte) for (const z of st.zutaten) if (!istRohstoff(this.kat, z.item)) bedarf[z.item] = (bedarf[z.item] || 0) + z.proMin;
+        const selbst = new Set(e.schritte.flatMap((st) => st.produkte.map((p) => p.item)));
+        for (const [it, m] of Object.entries(bedarf)) {
+          if (!selbst.has(it) || (f.plan.vorhanden || []).some((v) => v.item === it) || e.ziele.some((z) => z.item === it)) continue;
+          const i = rest.findIndex((a, k) => k !== j && a[it] >= m - 0.01); if (i < 0) continue;
+          (f.plan.vorhanden ||= []).push({ item: it, menge: Math.round(m * 10) / 10 }); rest[i][it] -= m; neu++; geaendert = true;
+        }
+      });
+      if (!geaendert) break;
+    }
+    this.plan = { ...this.plan, ...W.fabriken[W.aktiv].plan };
+    this.speichern(); this.zeichneEingaben(); this.rechnen(); this.seiteWelt(d);
+    this.app.toast(neu ? `${neu} Lieferungen zwischen Fabriken eingetragen.` : 'Keine passenden Überschüsse gefunden (eine Fabrik muss den Bedarf ganz decken).', neu ? 'ok' : undefined);
+  }
+  /** Welt-Plan als Datei speichern */
+  weltExport() {
+    this.speichern();
+    const blob = new Blob([JSON.stringify({ art: 'blueprint-studio-weltplan', version: 1, welt: this.welt }, null, 1)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Welt-Plan.bsplan'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+  /** Welt-Plan aus Datei laden (ersetzt den aktuellen nach Rückfrage) */
+  weltImport(d) {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.bsplan,.json';
+    inp.addEventListener('change', async () => {
+      const f = inp.files?.[0]; if (!f) return;
+      let j; try { j = JSON.parse(await f.text()); } catch { this.app.toast('Die Datei ist kein Welt-Plan.', 'err'); return; }
+      if (j?.art !== 'blueprint-studio-weltplan' || !Array.isArray(j.welt?.fabriken) || !j.welt.fabriken.length) { this.app.toast('Die Datei ist kein Welt-Plan.', 'err'); return; }
+      if (!(await frage({ art: 'warnung', titel: 'Welt-Plan ersetzen?', text: `„${f.name}“ mit ${j.welt.fabriken.length} Fabrik(en) ersetzt deinen aktuellen Welt-Plan. Vorher am besten exportieren.`, ok: 'Ersetzen' }))) return;
+      this.welt = { miner: 3, takt: 250, ...j.welt, aktiv: 0 };
+      this.plan = { ...LEER(), ...this.welt.fabriken[0].plan }; this.fabrikListe(); this.fabrikWechseln(0);
+      this.app.toast('Welt-Plan geladen.', 'ok');
+    });
+    inp.click();
+  }
+  /** Welt-Plan: alle Fabriken, Rohstoffbedarf gegen das, was die Knoten der Karte hergeben, Strom */
+  seiteWelt(d) {
+    const W = this.welt, mk = W.miner, takt = W.takt / 100;
+    this.speichern();
+    const erg = W.fabriken.map((f) => ({ f, e: this.ergebnisVon(f.plan) }));
+    // Rohstoffbedarf aller Fabriken
+    const bedarf = {}; let mw = 0, masch = 0;
+    for (const { e } of erg) if (e) { for (const [it, m] of Object.entries(e.rohstoffe)) bedarf[it] = (bedarf[it] || 0) + m; mw += e.strom; masch += e.schritte.reduce((a, x) => a + x.anzahl, 0); }
+    // was die Knoten hergeben: alle bzw. nur freie (mit Spielstand)
+    const BASIS = [60, 120, 240][mk - 1], menge = (art, res, rein) => { const r = [0.5, 1, 2][rein] ?? 1; if (art === 'gasquelle') return 60 * r * takt; if (res === 'Desc_LiquidOil_C') return 120 * r * takt; return Math.min(1200, BASIS * r * takt); };
+    const welt = {}, frei = {};
+    for (const p of d.p) {
+      const art = d.arten[p[0]]; if ((art !== 'knoten' && art !== 'gasquelle') || p[4] < 0 || p[5] < 0) continue;
+      const res = d.ressourcen[p[4]], m = menge(art, res, p[5]);
+      welt[res] = (welt[res] || 0) + m; if (p[6] !== 1) frei[res] = (frei[res] || 0) + m;
+    }
+    const balken = (v, max) => { const q = max ? v / max : 0; return `<span class="pl-balken"><i style="width:${Math.min(100, q * 100).toFixed(1)}%" class="${q > 1 ? 'zu' : q > 0.8 ? 'knapp' : ''}"></i></span><small>${max ? fmt(q * 100, 0) + ' %' : '–'}</small>`; };
+    const roh = Object.keys({ ...bedarf, ...welt }).filter((it) => it !== 'Desc_Water_C' && (bedarf[it] || 0) > 0.5).sort((a, b) => (bedarf[b] || 0) / (welt[b] || 1e9) - (bedarf[a] || 0) / (welt[a] || 1e9));
+    const st = this.spDaten?.['strom|' + this.spielstandId]?.strom;
+    // geplante Kraftwerke: Leistung, Brennstoff, Kühlwasser, Abfall
+    W.kraftwerke ||= [];
+    const kw = W.kraftwerke.map((k) => {
+      const g = KRAFT_ARTEN[k.gen] || KRAFT_ARTEN.Build_GeneratorCoal_C, t = (k.takt || 100) / 100, n = Math.max(0, +k.anzahl || 0);
+      const mw = g.mw * t * n, e = this.kat.items[k.fuel]?.energieMJ, fl = this.einheit(k.fuel) !== '/min';
+      const fuel = g.fuels.length && e ? mw * 60 / (e * (fl ? 1000 : 1)) : 0;
+      return { ...k, g, mw, verbrauch: fuel, wasser: g.wasser * t * n, abfall: KRAFT_ABFALL[k.fuel] ? fuel * KRAFT_ABFALL[k.fuel][1] : 0 };
+    });
+    const kwMW = kw.reduce((a, k) => a + k.mw, 0);
+    for (const k of kw) if (k.fuel && istRohstoff(this.kat, k.fuel)) bedarf[k.fuel] = (bedarf[k.fuel] || 0) + k.verbrauch;
+    // Lieferwege: „Vorhanden“ jeder Fabrik aus Zielen/Überschüssen anderer Fabriken decken (der Reihe nach); Rest = offen bzw. von außen
+    W.band ||= 6;
+    const BAND = [60, 120, 270, 480, 780, 1200][W.band - 1], ROHR = 600;
+    const fluessig = (it) => this.einheit(it) !== '/min';
+    const transport = (it, m) => fluessig(it) ? `${Math.ceil(m / ROHR - 1e-9)}× Rohr Mk.2` : `${Math.ceil(m / BAND - 1e-9)}× Band Mk.${W.band}`;
+    const rest = erg.map(({ e }) => { const a = {}; if (!e) return a; for (const z of e.ziele) a[z.item] = (a[z.item] || 0) + z.menge; for (const [it, m] of Object.entries(e.ueberschuss)) a[it] = (a[it] || 0) + m; return a; });
+    const wege = [], offen = [];
+    erg.forEach(({ f }, j) => {
+      for (const v of f.plan.vorhanden || []) {
+        if (!(v.menge > 0) || !v.item) continue;
+        let fehlt = v.menge;
+        for (let i = 0; i < erg.length && fehlt > 0.01; i++) {
+          if (i === j || !(rest[i][v.item] > 0.01)) continue;
+          const m = Math.min(fehlt, rest[i][v.item]); rest[i][v.item] -= m; fehlt -= m; wege.push({ von: i, nach: j, item: v.item, menge: m });
+        }
+        if (fehlt > 0.01) offen.push({ nach: j, item: v.item, menge: fehlt });
+      }
+    });
+    // Kraftwerke nehmen Brennstoff aus den Überschüssen der Fabriken; Rest = von außen
+    for (const k of kw) {
+      if (!k.fuel || istRohstoff(this.kat, k.fuel)) continue;
+      let fehlt = k.verbrauch;
+      for (let i = 0; i < erg.length && fehlt > 0.01; i++) { if (!(rest[i][k.fuel] > 0.01)) continue; const m = Math.min(fehlt, rest[i][k.fuel]); rest[i][k.fuel] -= m; fehlt -= m; wege.push({ von: i, nach: -1, item: k.fuel, menge: m }); }
+      if (fehlt > 0.01) offen.push({ nach: -1, item: k.fuel, menge: fehlt });
+    }
+    // was keine andere Fabrik abnimmt (Endprodukte, Überschüsse)
+    const uebrig = []; rest.forEach((a, i) => { for (const [it, m] of Object.entries(a)) if (m > 0.05) uebrig.push({ von: i, item: it, menge: m, ziel: !!erg[i].e?.ziele.some((z) => z.item === it) }); });
+    const fname = (i) => i < 0 ? '<span>Kraftwerke</span>' : `<span data-no-i18n>${esc(W.fabriken[i].name)}</span>`;
+    const itemZ = (it) => `<span class="pl-seite-item">${itemBild(this.kat, it, 'mini')}<span data-no-i18n>${esc(this.itemName(it))}</span></span>`;
+    const lieferHtml = `<div class="label">Lieferwege – wer beliefert wen</div>
+      ${wege.length ? `<table class="rz pl-seite-tab"><thead><tr><th>von → nach</th><th>Item</th><th class="mat-n">/min</th><th>Transport</th></tr></thead><tbody>${wege.map((w) => `<tr><td>${fname(w.von)} → ${fname(w.nach)}</td><td>${itemZ(w.item)}</td><td class="mat-n">${fmt(w.menge, 1)}</td><td>${transport(w.item, w.menge)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Noch keine Lieferungen zwischen Fabriken.</p>'}
+      ${offen.length ? `<div class="label">Zulieferung von außen</div><table class="rz pl-seite-tab"><tbody>${offen.map((o) => `<tr><td>→ ${fname(o.nach)}</td><td>${itemZ(o.item)}</td><td class="mat-n">${fmt(o.menge, 1)}</td><td class="${istRohstoff(this.kat, o.item) ? 'muted' : 'mat-kiste'}">${istRohstoff(this.kat, o.item) ? 'Rohstoff' : 'keine Fabrik liefert'}</td></tr>`).join('')}</tbody></table>` : ''}
+      ${uebrig.length ? `<div class="label">Nicht abgenommen (Endprodukte, Überschüsse)</div><table class="rz pl-seite-tab"><tbody>${uebrig.map((x, k) => `<tr><td>${fname(x.von)}</td><td>${itemZ(x.item)}</td><td class="mat-n">${fmt(x.menge, 1)}</td><td><button type="button" class="btn small" data-liefer="${k}" title="Diese Menge als Zulieferung in eine andere Fabrik eintragen">liefern an …</button></td></tr>`).join('')}</tbody></table>` : ''}`;
+    $('pls-inhalt').innerHTML = `<div class="pl-seite-opt"><label>Miner <select id="plw-mk">${[1, 2, 3].map((m) => `<option value="${m}"${m === mk ? ' selected' : ''}>Mk.${m}</option>`).join('')}</select></label><label>Takt <select id="plw-takt">${[100, 150, 200, 250].map((t) => `<option value="${t}"${t === W.takt ? ' selected' : ''}>${t} %</option>`).join('')}</select></label><label>Bänder <select id="plw-band">${[1, 2, 3, 4, 5, 6].map((b) => `<option value="${b}"${b === W.band ? ' selected' : ''}>Mk.${b}</option>`).join('')}</select></label></div>
+      <div class="label">Fabriken</div>
+      <table class="rz pl-seite-tab"><thead><tr><th>Fabrik</th><th>Ziele</th><th class="mat-n">Masch.</th><th class="mat-n">MW</th></tr></thead><tbody>${erg.map(({ f, e }, i) => `<tr class="${i === W.aktiv ? 'pl-aktiv' : ''}"><td><a href="#" data-fabrik="${i}" data-no-i18n>${esc(f.name)}</a></td><td>${(f.plan.ziele || []).filter((z) => z.item && z.menge > 0).map((z) => `<span class="pl-seite-item" title="${esc(this.itemName(z.item))}">${itemBild(this.kat, z.item, 'mini')}${fmt(z.menge, 1)}</span>`).join(' ') || '<span class="muted">–</span>'}</td><td class="mat-n">${e ? e.schritte.reduce((a, x) => a + x.anzahl, 0) : '–'}</td><td class="mat-n">${e ? fmt(e.strom, 0) : '–'}</td></tr>`).join('')}
+        <tr class="pl-summe"><td>Summe</td><td></td><td class="mat-n">${masch}</td><td class="mat-n">${fmt(mw, 0)}</td></tr></tbody></table>
+      <div class="pl-knoepfe"><button type="button" class="btn small" id="plw-neu">+ Fabrik</button><button type="button" class="btn small" id="plw-auto" title="Zwischenprodukte, die eine andere Fabrik übrig hat, als Zulieferung eintragen (nur wenn deren Überschuss den Bedarf ganz deckt)">Lieferungen automatisch</button><button type="button" class="btn small" id="plw-export" title="Welt-Plan als Datei speichern (.bsplan)">Exportieren</button><button type="button" class="btn small" id="plw-import" title="Welt-Plan aus einer Datei laden (ersetzt den aktuellen)">Importieren</button></div>
+      <div class="label">Rohstoffe aller Fabriken</div>
+      <table class="rz pl-seite-tab"><thead><tr><th>Rohstoff</th><th class="mat-n">Bedarf</th><th>von der Karte</th>${d.mitSpielstand ? '<th>von freien Knoten</th>' : ''}</tr></thead><tbody>${roh.map((it) => `<tr><td><span class="pl-seite-item">${itemBild(this.kat, it, 'mini')}<span data-no-i18n>${esc(this.itemName(it))}</span></span></td><td class="mat-n">${fmt(bedarf[it] || 0, 0)}</td><td title="${fmt(welt[it] || 0, 0)} /min möglich">${balken(bedarf[it] || 0, welt[it])}</td>${d.mitSpielstand ? `<td title="${fmt(frei[it] || 0, 0)} /min an freien Knoten">${balken(bedarf[it] || 0, frei[it])}</td>` : ''}</tr>`).join('')}</tbody></table>
+      <p class="hint">Karte = alle Knoten mit Miner Mk.${mk} bzw. Pumpen bei ${W.takt} % (Bandgrenze 1 200/min).${d.mitSpielstand ? ' Freie Knoten laut gewähltem Spielstand.' : ''} Wasser unbegrenzt. Lieferungen zwischen Fabriken zählen in der empfangenden Fabrik als „Vorhanden“ – unten mit „liefern an …“ eintragen.</p>
+      ${lieferHtml}
+      <div class="label">Kraftwerke (geplant)</div>
+      ${kw.length ? `<table class="rz pl-seite-tab pl-kw-tab"><tbody>${kw.map((k, i) => `<tr><td><select data-kw="${i}" data-f="gen">${Object.entries(KRAFT_ARTEN).map(([g, a]) => `<option value="${g}"${g === k.gen ? ' selected' : ''}>${esc(this.kat.gebaeude[g]?.name || a.name)}</option>`).join('')}</select>${k.g.fuels.length ? `<select data-kw="${i}" data-f="fuel" data-no-i18n>${k.g.fuels.map((f) => `<option value="${f}"${f === k.fuel ? ' selected' : ''}>${esc(this.itemName(f))}</option>`).join('')}</select>` : ''}</td><td><input type="number" min="0" max="999" value="${k.anzahl}" data-kw="${i}" data-f="anzahl" style="width:56px">×</td><td><select data-kw="${i}" data-f="takt">${[100, 150, 200, 250].map((t) => `<option value="${t}"${t === (k.takt || 100) ? ' selected' : ''}>${t} %</option>`).join('')}</select></td><td class="mat-n">${fmt(k.mw, 0)} MW${k.fuel && k.verbrauch ? `<br><small class="muted">${fmt(k.verbrauch, 1)} ${this.einheit(k.fuel)}</small>` : ''}</td><td><button type="button" class="btn small" data-kw-weg="${i}" aria-label="Entfernen">✕</button></td></tr>`).join('')}</tbody></table>` : '<p class="muted">Noch keine Kraftwerke geplant.</p>'}
+      <button type="button" class="btn small" id="plw-kw-neu">+ Kraftwerk</button>
+      ${kw.some((k) => k.wasser || k.abfall) ? `<p class="hint">Kühlwasser ${fmt(kw.reduce((a, k) => a + k.wasser, 0), 0)} m³/min${kw.some((k) => k.abfall) ? ` · Atommüll ${fmt(kw.reduce((a, k) => a + k.abfall, 0), 1)} /min` : ''}.</p>` : ''}
+      <div class="label">Strom</div>
+      <div class="k-kv"><span>Bedarf aller Fabriken</span><b>${fmt(mw, 0)} MW</b>${kw.length ? `<span>Geplante Kraftwerke</span><b class="${kwMW - mw < 0 ? 'mat-fehlt' : 'mat-ok'}">${fmt(kwMW, 0)} MW (${kwMW - mw >= 0 ? '+' : ''}${fmt(kwMW - mw, 0)} MW)</b>` : ''}${st ? `<span>Reserve im Spielstand</span><b class="${st.erzeugt - st.verbraucht - mw < 0 ? 'mat-fehlt' : 'mat-ok'}">${fmt(st.erzeugt - st.verbraucht, 0)} MW → danach ${fmt(st.erzeugt - st.verbraucht - mw, 0)} MW</b>` : '<span class="muted">Reserve</span><b class="muted">Feld „Strom“ einmal öffnen</b>'}</div>`;
+    $('pls-inhalt').querySelectorAll('[data-fabrik]').forEach((a) => a.addEventListener('click', (ev) => { ev.preventDefault(); this.fabrikWechseln(+a.dataset.fabrik); }));
+    $('plw-neu').addEventListener('click', () => this.fabrikNeu());
+    $('plw-kw-neu').addEventListener('click', () => { W.kraftwerke.push({ gen: 'Build_GeneratorFuel_C', fuel: 'Desc_LiquidFuel_C', anzahl: 10, takt: 100 }); this.speichern(); this.seiteWelt(d); });
+    $('pls-inhalt').querySelectorAll('[data-kw]').forEach((el) => el.addEventListener('change', () => {
+      const k = W.kraftwerke[+el.dataset.kw], f = el.dataset.f; k[f] = f === 'gen' || f === 'fuel' ? el.value : +el.value;
+      if (f === 'gen') k.fuel = KRAFT_ARTEN[k.gen].fuels[0] || null;
+      this.speichern(); this.seiteWelt(d);
+    }));
+    $('pls-inhalt').querySelectorAll('[data-kw-weg]').forEach((b) => b.addEventListener('click', () => { W.kraftwerke.splice(+b.dataset.kwWeg, 1); this.speichern(); this.seiteWelt(d); }));
+    $('plw-auto').addEventListener('click', () => this.lieferungenAutomatisch(d));
+    $('plw-export').addEventListener('click', () => this.weltExport());
+    $('plw-import').addEventListener('click', () => this.weltImport(d));
+    $('plw-band').addEventListener('change', (e) => { W.band = +e.target.value; this.speichern(); this.seiteWelt(d); });
+    $('pls-inhalt').querySelectorAll('[data-liefer]').forEach((b) => b.addEventListener('click', async () => {
+      const x = uebrig[+b.dataset.liefer], ziele = W.fabriken.map((f, i) => ({ wert: String(i), text: f.name })).filter((o) => +o.wert !== x.von);
+      if (!ziele.length) { this.app.toast('Erst eine zweite Fabrik anlegen.'); return; }
+      const w = await auswahl({ titel: `${this.itemName(x.item)} liefern an`, text: `${fmt(x.menge, 1)} ${this.einheit(x.item)} aus „${W.fabriken[x.von].name}“ – wird in der gewählten Fabrik als Zulieferung eingetragen.`, ok: 'Eintragen', optionen: ziele });
+      if (!w) return;
+      const t = +w.wert, plan = t === W.aktiv ? this.plan : W.fabriken[t].plan;
+      plan.vorhanden ||= []; const v = plan.vorhanden.find((y) => y.item === x.item);
+      if (v) v.menge = Math.round((v.menge + x.menge) * 10) / 10; else plan.vorhanden.push({ item: x.item, menge: Math.round(x.menge * 10) / 10 });
+      this.speichern();
+      if (t === W.aktiv) { this.zeichneEingaben(); this.rechnen(); } else this.seiteWelt(d);
+      this.app.toast(`Lieferung eingetragen: ${this.itemName(x.item)} → ${W.fabriken[t].name}.`, 'ok');
+    }));
+    $('plw-mk').addEventListener('change', (e) => { W.miner = +e.target.value; this.speichern(); this.seiteWelt(d); });
+    $('plw-takt').addEventListener('change', (e) => { W.takt = +e.target.value; this.speichern(); this.seiteWelt(d); });
+  }
+  /** Bauliste der aktiven Fabrik: Schritte zum Abhaken (gebaut), Maschinen und Baukosten gegen Inventar + Dimensionslager */
+  /** Plan-Tafel: Ablaufplan als Schild-Wand bauen und in einer Spiel-Sitzung speichern; gemerkt je Fabrik (plan.tafeln) */
+  async plantafelDialog() {
+    const r = this.ergebnis; if (!r?.schritte?.length) { this.app.toast('Erst ein Ziel eingeben – dann gibt es einen Plan.', 'err'); return; }
+    let d = $('dlg-pl-tafel');
+    if (!d) { d = document.createElement('dialog'); d.id = 'dlg-pl-tafel'; document.body.appendChild(d); }
+    const sessions = (this.app.cfg?.sessions || []).filter((x) => !x.lib).map((x) => x.name);
+    const ziel = this.bpZiel || this.app.spielSession?.() || sessions[0] || '';
+    const fabrik = this.welt?.fabriken?.[this.welt.aktiv]?.name || 'Fabrik';
+    const vorschlag = ('Plan_' + fabrik).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_').slice(0, 32);
+    d.innerHTML = `<form method="dialog" class="dlg"><h2>Plan-Tafel</h2>
+      <p class="hint">Baut den Ablaufplan dieser Fabrik als Wand aus 4-m-Schildern: Rohstoffe, je Stufe die Maschinen mit Rezept, Ein- und Ausgängen pro Minute (mit Bildern), Ergebnis und Strom. Im Spiel als Blaupause an der Baustelle aufstellen.</p>
+      <div class="pl-bp-grid"><label for="pl-tafel-titel">Überschrift</label><input id="pl-tafel-titel" type="text" maxlength="60" value="${esc(fabrik)}" data-no-i18n>
+      <label for="pl-tafel-name">Name der Blaupause</label><input id="pl-tafel-name" type="text" maxlength="32" value="${esc(vorschlag)}" spellcheck="false" data-no-i18n>
+      <label for="pl-tafel-stil">Stil</label><select id="pl-tafel-stil"><option value="vorlage">Karten wie „Alternate Prod Sign“ (aus deiner Ablage)</option><option value="einfach">Einfache Zeilen-Tafel</option></select>
+      <label for="pl-tafel-ziel">Sitzung</label><select id="pl-tafel-ziel" data-no-i18n>${sessions.map((x) => `<option${x === ziel ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
+      <div class="dlg-actions"><button type="button" class="btn" value="nein">Abbrechen</button><button type="button" class="btn primary" id="pl-tafel-ok">Tafel erstellen</button></div></form>`;
+    d.querySelector('[value=nein]').addEventListener('click', () => d.close());
+    try { const st = await (await fetch('/api/planer/plantafel/stile')).json(); if (!st.vorlage) { $('pl-tafel-stil').value = 'einfach'; $('pl-tafel-stil').options[0].disabled = true; $('pl-tafel-stil').title = 'Vorlage „Alternate Prod Sign (3/6 inputs)“ nicht in deinen Blaupausen gefunden'; } } catch { /* einfach bleibt wählbar */ }
+    $('pl-tafel-ok').addEventListener('click', async () => {
+      const name = $('pl-tafel-name').value.trim(), session = $('pl-tafel-ziel').value, titel = $('pl-tafel-titel').value.trim();
+      const schritte = r.schritte.map((st) => ({ rezept: st.rezept, gebaeude: st.gebaeude, anzahl: st.anzahl, takt: Math.round(st.takt * 10) / 10 }));
+      try {
+        const res = await fetch('/api/planer/plantafel', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ session, name, titel, schritte, stil: $('pl-tafel-stil').value }) });
+        const j = await res.json(); if (!res.ok) throw new Error(j.fehler || res.status);
+        const t = this.plan.tafeln ||= []; t.unshift({ session, name, datum: j.datum }); t.splice(8); this.speichern();
+        this.app.toast(`Plan-Tafel „${name}“ in „${session}“ gespeichert: ${j.info.schilder} Schilder, ${j.info.breite} × ${j.info.hoehe} m.`, 'ok');
+        d.close(); if (this.seiteArt === 'bau') this.tafelnZeigen(); if ($('session').value === session) this.app.loadList();
+      } catch (e) { this.app.toast(e.message, 'err'); }
+    });
+    d.showModal();
+  }
+  /** Liste der Plan-Tafeln dieser Fabrik mit „im Spiel“ (an = im Spiel-Ordner, aus = in der App beiseitegelegt) */
+  async tafelnZeigen() {
+    const el = $('pl-tafeln'); if (!el) return;
+    const liste = this.plan.tafeln || [];
+    if (!liste.length) { el.innerHTML = '<p class="muted">Noch keine – „Plan-Tafel …“ oben erstellt eine.</p>'; return; }
+    let st = liste.map((x) => ({ ...x, status: '?' }));
+    try { st = await (await fetch('/api/planer/plantafel/status', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ liste }) })).json(); } catch { /* ohne Status */ }
+    el.innerHTML = st.map((x, i) => `<label class="check pl-tafel" title="${x.status === 'fehlt' ? 'Datei nicht mehr vorhanden' : 'Haken = im Spiel sichtbar (Blaupause in der Sitzung), ohne Haken = in der App beiseitegelegt'}"><input type="checkbox" data-tafel="${i}"${x.status === 'an' ? ' checked' : ''}${x.status === 'fehlt' ? ' disabled' : ''}> <span data-no-i18n>${esc(x.name)}</span> <small class="muted" data-no-i18n>${esc(x.session)} · ${new Date(liste[i].datum).toLocaleDateString('de-DE')}</small>${x.status === 'fehlt' ? ' <small class="muted">(fehlt)</small>' : ''}</label>`).join('')
+      + '<p class="hint">Haken = im Spiel (Blaupause in der Sitzung). Ohne Haken legt die App die Tafel beiseite; das Spiel sieht sie erst nach dem Neuladen nicht mehr.</p>';
+    el.querySelectorAll('input[data-tafel]').forEach((c) => c.addEventListener('change', async () => {
+      const x = liste[+c.dataset.tafel];
+      try { const res = await fetch('/api/planer/plantafel/schalten', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ session: x.session, name: x.name, an: c.checked }) }); const j = await res.json(); if (!res.ok) throw new Error(j.fehler || res.status); }
+      catch (e) { this.app.toast(e.message, 'err'); c.checked = !c.checked; }
+    }));
+  }
+  seiteBau(v) {
+    const r = this.ergebnis; if (!r) { $('pls-inhalt').innerHTML = '<p class="muted">Erst ein Ziel eingeben.</p>'; return; }
+    const gebaut = this.plan.gebaut ||= {};
+    const masch = {}, kosten = {};
+    for (const st of r.schritte) { masch[st.gebaeude] = (masch[st.gebaeude] || 0) + st.anzahl; for (const [it, n] of this.kat.gebaeude[st.gebaeude]?.kosten || []) kosten[it] = (kosten[it] || 0) + n * st.anzahl; }
+    const fertig = r.schritte.filter((st) => gebaut[st.rezept]).length;
+    const da = (it) => (v?.inventar?.[it] || 0) + (v?.lager?.[it] || 0);
+    $('pls-inhalt').innerHTML = `<p class="hint">Reihenfolge von den Rohstoffen zum Ziel. <b>Haken</b> = gebaut. Takt und Shards stellst du im Spiel an den Maschinen ein.</p>
+      <div class="pl-bau-fortschritt"><span class="pl-balken"><i style="width:${r.schritte.length ? (fertig / r.schritte.length * 100).toFixed(1) : 0}%"></i></span> ${fertig} von ${r.schritte.length} Schritten gebaut</div>
+      <table class="rz pl-seite-tab"><thead><tr><th></th><th>Schritt</th><th class="mat-n">Masch.</th><th class="mat-n">Takt</th><th class="mat-n">Shards</th></tr></thead><tbody>${r.schritte.map((st) => `<tr class="${gebaut[st.rezept] ? 'pl-gebaut' : ''}"><td><input type="checkbox" data-bau="${esc(st.rezept)}"${gebaut[st.rezept] ? ' checked' : ''}></td><td><span class="pl-seite-item">${itemBild(this.kat, this.kat.rezepte[st.rezept].produkte[0].item, 'mini')}<span data-no-i18n>${esc(st.name)}</span></span><br><small class="muted" data-no-i18n>${esc(this.kat.gebaeude[st.gebaeude]?.name || st.gebaeude)}</small></td><td class="mat-n">${st.anzahl}</td><td class="mat-n">${fmt(st.takt, 1)} %</td><td class="mat-n">${st.shards || ''}</td></tr>`).join('')}</tbody></table>
+      <div class="label">Maschinen</div>
+      <div class="k-kv">${Object.entries(masch).map(([g, n]) => `<span data-no-i18n>${esc(this.kat.gebaeude[g]?.name || g)}</span><b>${n}×</b>`).join('')}${r.shards ? `<span>Power-Shards</span><b>${r.shards}</b>` : ''}</div>
+      <div class="label">Baukosten der Maschinen</div>
+      <table class="rz pl-seite-tab"><thead><tr><th>Material</th><th class="mat-n">Benötigt</th>${v ? '<th class="mat-n">Inventar + Lager</th>' : ''}</tr></thead><tbody>${Object.entries(kosten).sort((a, b) => this.nachName(a[0], b[0])).map(([it, n]) => `<tr><td>${itemBild(this.kat, it, 'mini')} <span data-no-i18n>${esc(this.itemName(it))}</span></td><td class="mat-n">${fmt(n, 0)}</td>${v ? `<td class="mat-n ${da(it) >= n ? 'mat-ok' : 'mat-fehlt'}">${fmt(da(it), 0)}</td>` : ''}</tr>`).join('')}</tbody></table>
+      <p class="hint">Ohne Bänder, Rohre, Fundamente und Strommasten.${v ? ' Vorräte aus dem gewählten Spielstand (Inventar + Dimensionslager).' : ''}</p>
+      <div class="label">Plan-Tafeln dieser Fabrik</div><div id="pl-tafeln" class="pl-tafeln"></div>`;
+    this.tafelnZeigen();
+    $('pls-inhalt').querySelectorAll('input[data-bau]').forEach((c) => c.addEventListener('change', () => { gebaut[c.dataset.bau] = c.checked; if (!c.checked) delete gebaut[c.dataset.bau]; this.speichern(); this.seiteBau(v); }));
+  }
+  seiteProduktion(d) {
+    const gem = this.seiteGem, alle = this.seiteAlle, vorhanden = new Set(this.plan.vorhanden.map((v) => v.item));
+    const zeilen = Object.entries(d.items).map(([it, e]) => { const her = gem ? e.herGem : e.her, ver = gem ? e.verGem : e.ver; return { it, her, ver, rest: Math.round((her - ver) * 10) / 10 }; })
+      .filter((z) => alle || z.rest > 0.05).sort((a, b) => this.nachName(a.it, b.it));
+    $('pls-inhalt').innerHTML = `<div class="pl-seite-opt"><label class="check"><input type="checkbox" id="pls-gem"${gem ? ' checked' : ''}> gemessene Auslastung</label><label class="check"><input type="checkbox" id="pls-alle"${alle ? ' checked' : ''}> alle Items</label></div>
+      <p class="hint">${d.maschinen.toLocaleString('de-DE')} Maschinen, ${d.extraktoren.toLocaleString('de-DE')} Miner/Pumpen. Überschuss = hergestellt − verbraucht (Fabriken und Kraftwerke).</p>
+      <p class="hint"><b>Haken</b> = Überschuss als Zulieferung übernehmen, Haken weg = wieder entfernen.</p>
+      <table class="rz pl-seite-tab"><thead><tr><th></th><th>Item</th><th class="mat-n">Her</th><th class="mat-n">Verbr.</th><th class="mat-n">Überschuss</th></tr></thead><tbody>${zeilen.map((z) => `<tr><td>${z.rest > 0.05 ? `<input type="checkbox" data-it="${esc(z.it)}" data-m="${z.rest}"${vorhanden.has(z.it) ? ' checked' : ''}>` : ''}</td><td><span class="pl-seite-item">${itemBild(this.kat, z.it, 'mini')}<span data-no-i18n>${esc(this.itemName(z.it))}</span></span></td><td class="mat-n">${fmt(z.her, 0)}</td><td class="mat-n">${fmt(z.ver, 0)}</td><td class="mat-n ${z.rest < -0.05 ? 'mat-fehlt' : z.rest > 0.05 ? 'mat-ok' : ''}">${fmt(z.rest, 1)}</td></tr>`).join('')}</tbody></table>`;
+    $('pls-gem').addEventListener('change', (e) => { this.seiteGem = e.target.checked; this.seiteProduktion(d); });
+    $('pls-alle').addEventListener('change', (e) => { this.seiteAlle = e.target.checked; this.seiteProduktion(d); });
+    this.hakenBinden();
+  }
+  seiteStrom(d) {
+    const st = d.strom || {}, gem = this.seiteGem, erz = gem ? st.erzeugtGem : st.erzeugt, ver = gem ? st.verbrauchtGem : st.verbraucht;
+    $('pls-inhalt').innerHTML = `<div class="pl-seite-opt"><label class="check"><input type="checkbox" id="pls-gem"${gem ? ' checked' : ''}> gemessene Auslastung</label></div>
+      <div class="k-kv"><span>Erzeugt</span><b>${fmt(erz, 0)} MW</b><span>Verbraucht (Maschinen, Miner, Pumpen)</span><b>${fmt(ver, 0)} MW</b><span>Reserve</span><b class="${erz - ver < 0 ? 'mat-fehlt' : 'mat-ok'}">${fmt(erz - ver, 0)} MW</b></div>
+      <div class="label">Kraftwerke</div>
+      ${Object.entries(d.kraftwerke || {}).map(([g, k]) => `<div class="pl-seite-kw"><b data-no-i18n>${esc(this.kat.gebaeude[g]?.name || g.replace(/^Build_|_C$/g, ''))}</b> <span>${k.anzahl}× · ${fmt(k.mw, 0)} MW</span>${Object.entries(k.brennstoffe).map(([f, m]) => `<div class="pl-seite-item">${itemBild(this.kat, f, 'mini')}<span data-no-i18n>${esc(this.itemName(f))}</span> <span class="muted">${fmt(m, 1)} ${this.einheit(f)}</span></div>`).join('')}</div>`).join('') || '<p class="muted">Keine Kraftwerke.</p>'}
+      <p class="hint">Geothermie als Mittelwert, Alien Power Augmenter ohne Netz-Bonus.</p>`;
+    $('pls-gem').addEventListener('change', (e) => { this.seiteGem = e.target.checked; this.seiteStrom(d); });
+  }
+  seiteVorraete(d) {
+    const its = new Set([...Object.keys(d.inventar), ...Object.keys(d.lager), ...Object.keys(d.kisten)]);
+    const zeilen = [...its].map((it) => ({ it, inv: d.inventar[it] || 0, lag: d.lager[it] || 0, ki: d.kisten[it] || 0 })).sort((a, b) => this.nachName(a.it, b.it));
+    $('pls-inhalt').innerHTML = `<p class="hint">Stückzahlen (keine Mengen pro Minute) – Inventar, Dimensionslager und ${d.kistenAnzahl} Kisten/Uploader beim letzten Speichern.</p>
+      <table class="rz pl-seite-tab"><thead><tr><th>Item</th><th class="mat-n">Inventar</th><th class="mat-n">Lager</th><th class="mat-n">Kisten</th></tr></thead><tbody>${zeilen.map((z) => `<tr><td><span class="pl-seite-item">${itemBild(this.kat, z.it, 'mini')}<span data-no-i18n>${esc(this.itemName(z.it))}</span></span></td><td class="mat-n">${fmt(z.inv, 0)}</td><td class="mat-n">${fmt(z.lag, 0)}</td><td class="mat-n">${fmt(z.ki, 0)}</td></tr>`).join('')}</tbody></table>`;
+  }
+  seiteKnoten(d) {
+    // freie Knoten je Rohstoff und Reinheit; mögliche Menge bei Miner Mk.3 / Pumpen mit 250 % Takt (Bandgrenze Mk.6 = 1 200/min)
+    const MAX = (art, res, rein) => { const r = [0.5, 1, 2][rein] ?? 1; if (art === 'gasquelle') return 60 * r * 2.5; if (res === 'Desc_LiquidOil_C') return 120 * r * 2.5; return Math.min(1200, 240 * r * 2.5); };
+    const je = new Map();
+    for (const p of d.p) {
+      const art = d.arten[p[0]]; if (art !== 'knoten' && art !== 'gasquelle' || p[4] < 0) continue;
+      const res = d.ressourcen[p[4]], e = je.get(res) || { frei: [0, 0, 0], belegt: [0, 0, 0], menge: 0 };
+      if (p[5] >= 0) { if (p[6] === 1) e.belegt[p[5]]++; else { e.frei[p[5]]++; e.menge += MAX(art, res, p[5]); } }
+      je.set(res, e);
+    }
+    const zeilen = [...je].sort((a, b) => this.nachName(a[0], b[0]));
+    const vorhanden = new Set(this.plan.vorhanden.map((v) => v.item));
+    $('pls-inhalt').innerHTML = `<p class="hint">Freie Knoten (unrein / normal / rein) und was sie mit Miner Mk.3 bzw. Pumpen bei 250 % hergäben. <b>Haken</b> = als Zulieferung übernehmen (Haken weg = entfernen) – passt zum Rechenweg „Maximum“.</p>
+      <table class="rz pl-seite-tab"><thead><tr><th></th><th>Rohstoff</th><th class="mat-n">frei</th><th class="mat-n">belegt</th><th class="mat-n">bis /min</th></tr></thead><tbody>${zeilen.map(([res, e]) => `<tr><td>${e.menge > 0 ? `<input type="checkbox" data-it="${esc(res)}" data-m="${e.menge}"${vorhanden.has(res) ? ' checked' : ''}>` : ''}</td><td><span class="pl-seite-item">${itemBild(this.kat, res, 'mini')}<span data-no-i18n>${esc(this.itemName(res))}</span></span></td><td class="mat-n">${e.frei.join(' / ')}</td><td class="mat-n">${e.belegt.join(' / ')}</td><td class="mat-n">${fmt(e.menge, 0)}</td></tr>`).join('')}</tbody></table>
+      ${d.mitSpielstand ? '' : '<p class="hint">Ohne Spielstand-Abgleich – alle Knoten gelten als frei.</p>'}`;
+    this.hakenBinden();
   }
 
   // ------------------------------------------------------------ Master Class als Ziel-Auswahl (nach Stufe/Art)

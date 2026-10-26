@@ -1,4 +1,4 @@
-// Blaupausen-Objekte aus älteren Formaten (46–52, Spiel 1.0/1.1, Unreal bis 5.3) in die Kodierung von Format 60 (Spiel 1.2,
+// Blaupausen-Objekte aus älteren Formaten (33–52, Update 6 bis Spiel 1.1, Unreal bis 5.3) in die Kodierung von Format 60 (Spiel 1.2,
 // Unreal 5.4+) umrechnen – damit das Spiel eingefügte Objekte wie aktuelle liest (gemessen 21.10.2026: alte Objekte im
 // neuen Spielstand → Schilder-Ladefehler, Endlos-Laden).
 //
@@ -8,12 +8,14 @@
 //   (1 Index, 2 GUID, 8 native Kodierung, 0x10 Bool wahr), Wert. Struktur-Listen ohne inneren Kopf. Vor den Eigenschaften
 //   ein Steuerbyte. Typ-Bäume gelernt aus Format-60-Daten (umrechnen-typen.json).
 // Inhalt: einzige echte Typänderung mLastEditedBy (Schilder) → weglassen; mBlueprintProxy (alte Designer-Sitzung) → weglassen.
+// Vor 1.0 (33–42, gemessen 25.10.2026 an 708 133 Objekten, kein Typwechsel): mBuildTimeStamp und mDidFirstTimeUse gibt es in 60
+//   nicht mehr → weglassen; Schild-Layout mActivePrefabLayout (Objektverweis) heißt ab 1.0 mSoftActivePrefabLayout (Paket, Asset, Unterpfad).
 // Geprüft an 23 Blaupausen, die es alt und vom Spiel neu gespeichert gibt: 95,5 % der Objekte bytegleich (Rest: andere Inhalte).
 import fs from 'node:fs';
 
-export const UMRECHNEN_AB = 46, ZIEL_VERSION = 60;
+export const UMRECHNEN_AB = 33, ZIEL_VERSION = 60;
 const T = JSON.parse(fs.readFileSync(new URL('./umrechnen-typen.json', import.meta.url), 'utf8'));
-const WEG = new Set(['mLastEditedBy', 'mBlueprintProxy']);
+const WEG = new Set(['mLastEditedBy', 'mBlueprintProxy', 'mBuildTimeStamp', 'mDidFirstTimeUse']);
 const CORE = new Set(['Vector', 'Rotator', 'Quat', 'LinearColor', 'Color', 'Guid', 'Transform', 'Vector2D', 'Vector4', 'IntPoint', 'IntVector', 'Box', 'DateTime', 'Timespan', 'SoftObjectPath', 'SoftClassPath']);
 const NATIV = new Set(['Vector', 'Rotator', 'Quat', 'LinearColor', 'Color', 'Guid', 'Vector2D', 'Vector4', 'IntPoint', 'IntVector', 'Box', 'DateTime', 'Timespan', 'FluidBox', 'InventoryItem', 'RailroadTrackPosition']);
 
@@ -44,6 +46,12 @@ function liste(b, p, e, oben) {
     const wert = b.subarray(r.p, r.p + groesse); r.p += groesse;
     if (r.p > e) throw new Error(`Eigenschaft ${name}: Größe passt nicht`);
     if (oben && WEG.has(name)) continue;
+    if (oben && name === 'mActivePrefabLayout' && typ === 'ObjectProperty') { // Schild-Layout vor 1.0: Level + Pfad „Paket.Klasse“ → weicher Verweis
+      const w = new R(wert, 0, wert.length); w.str(); const pfad = w.str(), punkt = pfad.lastIndexOf('.');
+      if (punkt > 0) { const v = Buffer.concat([fstr(pfad.slice(0, punkt)), fstr(pfad.slice(punkt + 1)), fstr('')]);
+        teile.push(fstr('mSoftActivePrefabLayout'), baumBytes({ n: 'SoftObjectProperty', kinder: [] }), i32(v.length), Buffer.from([0]), v); }
+      continue;
+    }
     let baum, neuWert = wert, flags = 0;
     if (typ === 'StructProperty') {
       baum = { n: typ, kinder: [structBaum(sn)] };
@@ -57,7 +65,7 @@ function liste(b, p, e, oben) {
         neuWert = Buffer.concat(el);
       } else baum = T.prop[name + '|' + typ] || { n: typ, kinder: [{ n: inner, kinder: [] }] };
     } else if (typ === 'MapProperty') {
-      if (key === 'StructProperty' || val === 'StructProperty') throw new Error(`Map mit Struktur (${name}) wird nicht umgerechnet`);
+      if (key === 'StructProperty' || val === 'StructProperty') { if (oben) continue; throw new Error(`Map mit Struktur (${name}) wird nicht umgerechnet`); } // oben: weglassen (z. B. Fahrzeug-Statistik)
       baum = T.prop[name + '|' + typ] || { n: typ, kinder: [{ n: key, kinder: [] }, { n: val, kinder: [] }] };
     } else if (typ === 'ByteProperty' || typ === 'EnumProperty') {
       const eb = en && en !== 'None' ? (T.enum[en] || { n: en, kinder: [{ n: '/Script/FactoryGame', kinder: [] }] }) : null;

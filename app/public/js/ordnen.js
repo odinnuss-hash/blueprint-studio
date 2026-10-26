@@ -32,6 +32,20 @@ function zeichneVorschau(cv, d) {
   for (const l of d.lines) { ctx.strokeStyle = FARBEN[l[0]]; ctx.beginPath(); for (let i = 1; i < l.length; i += 2) { const px = ox + l[i] * sc, py = oy + l[i + 1] * sc; if (i === 1) ctx.moveTo(px, py); else ctx.lineTo(px, py); } ctx.stroke(); }
 }
 
+// Kurze Erklärung zu jedem Eintrag von „Anzeigen“
+const ORDNEN_FILTER = {
+  offen: 'Zu erledigen: alle Blaupausen, für die es einen Vorschlag gibt (umbenennen, einsortieren, Duplikat, löschen).',
+  umbenennen: 'Nur Umbenennen: Der Name passt nicht zum Namensschema – vorgeschlagen ist ein Name mit Gruppen-Nummern.',
+  einsortieren: 'Nur Einsortieren: Der Name passt, aber die Blaupause liegt nicht im Ordner ihrer Gruppe.',
+  duplikat: 'Nur Duplikate: gleicher Inhalt wie eine andere Blaupause – wird nach _Duplikate verschoben, nicht gelöscht.',
+  loeschen: 'Nur Löschen: zum Löschen vorgemerkt – kommt in den Papierkorb und lässt sich wiederherstellen.',
+  inhalt: 'Name aus Inhalt: Der Name wurde aus den Gebäuden in der Blaupause geraten – bitte prüfen und bei Bedarf ändern.',
+  doppelt: 'Duplikate & Ähnliche: gleiche oder fast gleiche Blaupausen nebeneinander mit Vorschau – zum Vergleichen, bevor etwas wegkommt.',
+  fehler: 'Ungültige Namen: Der neue Name passt nicht zum Schema (unbekannte Gruppe, über 32 Zeichen oder Zeichen, die das Spiel nicht erlaubt) – bitte im Feld korrigieren.',
+  gleich: 'Passen schon: Name und Ordner stimmen – hier ist nichts zu tun.',
+  alle: 'Alle: jede gefundene Blaupause, auch die, die schon passen.',
+};
+
 export class Ordnen {
   constructor(app) {
     this.app = app;
@@ -39,10 +53,13 @@ export class Ordnen {
     this.f = { gruppe: '', ort: '', ordner: '', art: 'offen', q: '' };
     this.saveT = 0;
     $('o-load').addEventListener('click', () => this.load(true));
+    $('o-struktur').addEventListener('click', () => this.app.struktur.zeigen());
     $('o-apply').addEventListener('click', () => this.apply());
     $('o-uebernehmen').addEventListener('click', () => this.uebernehmen());
     $('o-protokoll').addEventListener('click', () => this.protokoll());
     $('o-all').addEventListener('change', (e) => this.selectAll(e.target.checked));
+    const artText = () => { $('o-art-text').textContent = ORDNEN_FILTER[$('o-art').value] || ''; };
+    $('o-art').addEventListener('change', artText); artText();
     for (const id of ['o-ort', 'o-ordner', 'o-art']) $(id).addEventListener('change', () => { this.f.ort = $('o-ort').value; this.f.ordner = $('o-ordner').value; this.f.art = $('o-art').value; this.render(); });
     $('o-suche').addEventListener('input', () => { this.f.q = $('o-suche').value.trim().toLowerCase(); clearTimeout(this.qt); this.qt = setTimeout(() => this.render(), 150); });
     $('o-body').addEventListener('input', (e) => this.onEdit(e));

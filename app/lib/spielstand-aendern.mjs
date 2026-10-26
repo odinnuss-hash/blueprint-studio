@@ -14,7 +14,7 @@ import { hauptLevel, packeSpielstand } from './spielstand-einfuegen.mjs';
 const i32 = (v) => { const b = Buffer.alloc(4); b.writeInt32LE(v); return b; };
 
 /** Einträge des Leichtbau-Subsystems mit Byte-Lage (gleiche Leselogik wie sav.mjs readLightweight) */
-function leichtbauLage(body, o) {
+export function leichtbauLage(body, o) {
   let p = body.indexOf('None\0', o.dBody, 'latin1') + 5;
   if (p < o.dBody + 5 || p > o.dEnd) throw new Error('Leichtbau-Daten nicht gefunden');
   const str = () => { const n = body.readInt32LE(p); const s = n > 0 ? body.toString('latin1', p + 4, p + 3 + n) : ''; p += 4 + (n < 0 ? -n * 2 : n); return s; };
@@ -27,22 +27,24 @@ function leichtbauLage(body, o) {
     for (let k = 0; k < n; k++) {
       const a = p; p += 80;
       str(); str(); for (let j = 0; j < 6; j++) str();
-      p += 32; str(); str(); p++; str(); str(); str(); str();
+      p += 32; str(); str(); p++; str(); str();
+      const proxyA = p; str(); str(); const proxyE = p;
       if (body.readInt32LE(p)) { p += 4; str(); str(); const sz = body.readInt32LE(p); p += 4 + sz; } else p += 4;
       if (version >= 4) p += 5;
-      eintraege.push({ a, e: p });
+      eintraege.push({ a, e: p, proxyA, proxyE });
     }
     klassen.push({ typePath, ka, anzPos, eintraege });
   }
   if (p !== o.dEnd) throw new Error('Leichtbau-Daten: Länge passt nicht');
-  return { kopfEnde, klassen };
+  return { kopfEnde, klassen, version };
 }
 
 /**
  * buf = Spielstand; loeschen = [ref]; verschieben = [{ ref, pos:[x,y,z], rot:[qx,qy,qz,qw] }]. Liefert { ausgabe, info }.
  * Selbstprüfung: neu einlesen, Anzahl stimmt, verschobene Lagen stehen so im Ergebnis.
  */
-export function spielstandAendern(buf, { loeschen = [], verschieben = [], speichername } = {}) {
+export function spielstandAendern(buf, { loeschen = [], verschieben = [], ersetzen = null, speichername } = {}) {
+  // ersetzen: Map(pathName → neue Objektdaten) – z. B. Farbpalette (Eigenschaft im BP_BuildableSubsystem)
   const header = readSavHeader(buf);
   const s = readSave(buf, { props: false }), b = s.body;
   if (b.readBigInt64LE(0) !== BigInt(b.length - 8)) throw new Error('Spielstand: Gesamtlänge unerwartet');
@@ -60,9 +62,25 @@ export function spielstandAendern(buf, { loeschen = [], verschieben = [], speich
     raus.add(r.a);
   }
   if (raus.size) {
-    for (const o of L.P) if (o.kind === 0 && [...raus].some((a) => o.parent === a || o.pathName.startsWith(a + '.'))) raus.add(o.pathName);
-    const namen = loeschen.filter((r) => r.a).map((r) => Buffer.from(r.a + '.', 'latin1')); // Kabel verweisen auf Komponenten des Akteurs
-    for (const o of L.P) if (o.kind === 1 && /Build_PowerLine_C$/.test(o.typePath) && !raus.has(o.pathName) && namen.some((n) => b.subarray(o.dBody, o.dEnd).includes(n))) raus.add(o.pathName);
+    // Nachschlagen statt jeden Namen gegen jedes Objekt zu prüfen – beim Freiräumen großer Bereiche (Tausende Teile) sonst Minuten
+    const unterRaus = (n) => { for (let p = n.indexOf('.'); p >= 0; p = n.indexOf('.', p + 1)) if (raus.has(n.slice(0, p))) return true; return false; };
+    for (const o of L.P) if (o.kind === 0 && (raus.has(o.parent) || unterRaus(o.pathName))) raus.add(o.pathName);
+    // Kabel verweisen auf Komponenten des Akteurs („<Akteur>.<Anschluss>“)
+    const PL = 'PersistentLevel.', akteure = loeschen.filter((r) => r.a).map((r) => r.a), wort = new Map();
+    for (const a of akteure) { const i = a.indexOf(PL); if (i >= 0) wort.set(a.slice(i + PL.length), a); }
+    const schnell = wort.size === akteure.length;
+    const namen = schnell ? null : akteure.map((a) => Buffer.from(a + '.', 'latin1'));
+    const wortEnde = (s, e) => { while (e < s.length) { const c = s.charCodeAt(e); if (!((c >= 48 && c <= 57) || (c >= 65 && c <= 90) || (c >= 97 && c <= 122) || c === 95)) break; e++; } return e; };
+    const haengtDran = (d) => {
+      if (!schnell) return namen.some((n) => d.includes(n));
+      const s = d.toString('latin1');
+      for (let p = s.indexOf(PL); p >= 0; p = s.indexOf(PL, p + PL.length)) {
+        const a = p + PL.length, e = wortEnde(s, a), voll = wort.get(s.slice(a, e));
+        if (voll && s[e] === '.' && s.startsWith(voll, e - voll.length)) return true;
+      }
+      return false;
+    };
+    for (const o of L.P) if (o.kind === 1 && /Build_PowerLine_C$/.test(o.typePath) && !raus.has(o.pathName) && haengtDran(b.subarray(o.dBody, o.dEnd))) raus.add(o.pathName);
   }
   let kabel = 0; for (const n of raus) if (/PowerLine/.test(n)) kabel++;
 
@@ -73,7 +91,7 @@ export function spielstandAendern(buf, { loeschen = [], verschieben = [], speich
   for (let k = 0; k < L.P.length; k++) {
     const o = L.P[k], kk = L.koepfe[k];
     if (raus.has(o.pathName)) continue;
-    let kopf = b.subarray(kk.a, kk.e), nutz = b.subarray(o.dBody, o.dEnd);
+    let kopf = b.subarray(kk.a, kk.e), nutz = ersetzen?.get(o.pathName) || b.subarray(o.dBody, o.dEnd);
     const v = lage.get('a:' + o.pathName);
     if (v && kk.tf >= 0) {
       kopf = Buffer.from(kopf); const t = kk.tf - kk.a;

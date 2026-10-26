@@ -91,10 +91,11 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">Zur App</h2>
 <table>
   <tr><th style="width:200px">Programm</th><td><b>Blueprint Studio</b> – Blaupausen-Werkzeug für Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version" data-version>1.4.3</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.5.0</td></tr>
   <tr><th>Urheber</th><td><b>ODINnuss</b> – Idee, Konzept und Gestaltung</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Alle Rechte vorbehalten.</td></tr>
   <tr><th>Umsetzung</th><td>Programmiert im Auftrag des Urhebers mit KI-Unterstützung (Claude, Anthropic).</td></tr>
+  <tr data-spenden-zeile hidden><th>Unterstützen</th><td>Blueprint Studio ist und bleibt kostenlos – alle Funktionen für alle. Wer die Weiterentwicklung unterstützen möchte, kann freiwillig spenden: <a data-spenden href="#" target="_blank" rel="noopener">Spenden</a></td></tr>
 </table>
 <h3>Nutzungsbedingungen</h3>
 <ol>
@@ -120,7 +121,9 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <ul>
   <li><b>Starten:</b> Doppelklick auf <code>start.bat</code> oder die Desktop-Verknüpfung. Die App öffnet sich in einem eigenen Fenster. Schließt du das Fenster, beendet sich das Programm nach ca. 25 Sekunden von selbst.</li>
   <li><b>Oben</b> wählst du den Bereich: <b>Blaupause</b> (ansehen/bearbeiten), <b>Gebäude-Katalog</b> (alle Bauteile mit Daten), <b>Ordnen</b> (Namen vereinheitlichen) und <b>Hilfe</b> (diese Seite).</li>
-  <li><b>Ordner</b> öffnet den aktuellen Blaupausen-Ordner im Explorer, <b>Einstellungen</b> die Pfade, <b>Speichern</b> sichert Änderungen.</li>
+  <li><b>Oben</b> stehen nur die Bereiche, daneben <b>Einführung</b> (?) und <b>Einstellungen</b> (Zahnrad).</li>
+  <li>Im <b>Blaupausen-Editor</b> beginnt die Werkzeugleiste mit <b>Ordner</b> (Blaupausen-Ordner im Explorer), <b>Ablage ein-/ausblenden</b> und <b>Ablage als großes Fenster</b>; <b>Speichern …</b> steht am Ende der Leiste, der aktuelle Ordner unten in der Statuszeile.</li>
+  <li><b>Einführung:</b> Beim ersten Besuch eines Bereichs bietet die App unten rechts eine kurze Einführung an. Sie hebt ein Bedienelement nach dem anderen hervor (der Rest wird abgedunkelt) und erklärt es – <b>Weiter</b>/<b>Zurück</b> oder Pfeiltasten, <kbd>Esc</kbd> beendet. Jederzeit neu startbar über <b>Einführung</b> oben rechts.</li>
 </ul>
 <div class="box"><p><b>Wichtig:</b> Das Spiel liest Blaupausen beim Laden des Spielstands. Nach dem Speichern oder Umbenennen also den Spielstand neu laden. Am besten bearbeiten, während das Spiel geschlossen ist oder im Hauptmenü steht.</p></div>
 
@@ -163,11 +166,13 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 </table>
 <h3>Drehen / Kippen um X, Y, Z</h3>
 <p>Werkzeug <b>Drehen / Kippen</b> (Symbol mit Achsenkreuz in der Werkzeugleiste): Achse wählen – <b>X</b> kippt nach vorn/hinten, <b>Y</b> zur Seite, <b>Z</b> dreht wie <kbd>Q</kbd>/<kbd>E</kbd> – und den Winkel (−90°, +90°, 180° oder eigener Wert). Gilt für die Auswahl oder, wenn nichts ausgewählt ist, für die ganze Blaupause. „Auf den Boden setzen“ hält die Unterkante gleich. Beispiel: eine hochkant gebaute Kreuzung mit X oder Y um 90° kippen, bis die Fahrbahn oben ist, dann als neue Blaupause speichern. In der 3D-Ansicht kann man jetzt auch von unten schauen.</p>
+<p><b>Maus-Drehen</b> (Schalter neben „Stift“): links ziehen – waagerecht dreht, senkrecht kippt (15°-Schritte, mit Strg 1°). Ohne Auswahl dreht sich die ganze Blaupause um ihre Mitte. Rechte Maustaste = umsehen; ein Strg+Z nimmt den ganzen Zug zurück.</p>
 <h3>Objekte ausblenden</h3>
 <p>Um an verdeckte oder dahinterliegende Teile heranzukommen: Auswahl treffen und <b>Ausblenden</b> (durchgestrichenes Auge, <kbd>H</kbd>) – oder <b>Nur Auswahl zeigen</b> (<kbd>I</kbd>), dann ist alles andere weg. Ausgeblendete Objekte lassen sich nicht anklicken und werden weder in 2D noch in 3D gezeichnet. Der Knopf „… ausgeblendet · alle zeigen“ (bzw. <kbd>Umschalt</kbd>+<kbd>H</kbd>) holt alles zurück. Ausblenden ändert die Blaupause nicht und wird nicht gespeichert.</p>
 <h3>Viele Ebenen</h3>
 <p>Ab elf Ebenen zeigt die Leiste kompakt: erste Ebene · fünf Ebenen unter und über der gewählten · letzte Ebene, dazu Pfeile ‹ › und eine Liste mit allen Ebenen und ihrer Höhe.</p>
 <p>Rechts im <b>Inspektor</b> stehen Name, Position, Drehung, Maße, Strom, Rezept (mit Mengen pro Minute), Farbmuster, Stufe und Baukosten des gewählten Objekts; ohne Auswahl die Daten der ganzen Blaupause und ihre Baukosten.</p>
+<p><b>Material prüfen</b> (unter den Baukosten): vergleicht die Baukosten der Blaupause mit den Vorräten in einem Spielstand. Vorgewählt ist der neueste Spielstand der Sitzung, andere lassen sich oben wählen. Die Tabelle zeigt je Material, was im <b>Inventar</b>, im <b>Dimensionslager</b> und in <b>Kisten</b> (Lagerkisten und Uploader) liegt. Beim Bauen nimmt das Spiel aus Inventar und Dimensionslager – das zählt als „reicht“. Liegt der Rest nur in Kisten, steht dort „aus Kisten holen“. <b>Fehlendes kopieren</b> legt einen Einkaufszettel in die Zwischenablage. Der Spielstand wird nur gelesen, nie verändert. Gezählt wird der Stand beim letzten Speichern.</p>
 
 <h2 class="sec" id="tauschen">Material / Variante / Mk-Stufe tauschen</h2>
 <p>Objekte auswählen (z. B. Reiter „Bauteile“ → alle Fundamente) → rechts <b>Material / Variante tauschen …</b>. Angeboten werden Varianten mit gleichen Maßen (Beton → Asphalt, Riffelblech, Glas; Standardwand → Fensterwand …). Baukosten und Rezeptliste werden beim Speichern neu berechnet. Bauteile mit <code>*</code> sind aus verwandten Teilen abgeleitet. Maschinen (mit Anschlüssen/Lager) lassen sich nicht tauschen.</p>
@@ -180,6 +185,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Als neue Blaupause öffnen</b> – Vorschau; Änderungen der Werte sieht man sofort. Danach wie gewohnt bearbeiten und speichern.</li>
   <li><b>In geöffnete Blaupause einfügen</b> – setzt die Form oben auf die offene Blaupause (ausgewählt, mit Pfeiltasten verschieben).</li>
   <li><b>Pixel-Art aus Bild:</b> Bild wählen (PNG, JPG, GIF …), Breite in Pixeln, Pixelgröße (0,5 / 1 / 2 m), Wand oder Boden, auf Wunsch leuchtend. Je Pixel entsteht ein quadratisches Schild in der Bildfarbe (wie bei den Pixel-Art-Blaupausen der Community); transparente Pixel können wegbleiben. Unter den Einstellungen siehst du das verkleinerte Bild, <b>In 3D ansehen</b> zeigt die Wand, <b>Als Blaupause speichern</b> legt sie ab. Höchstens 20 000 Pixel – kleine Bilder mit klaren Farben wirken am besten.</li>
+  <li><b>Sonderzeichen-Schilder …</b> (Formen, unten): Zeichen, die die Schrift im Spiel kennt (Pfeile, Rahmenlinien, Blöcke, Symbole …), nach Gruppen anklicken; jede Zeile im Textfeld wird ein Schild. Schildgröße, Spalten und Farben wählbar, „Ganze Gruppe als Raster“ legt jedes Zeichen auf ein eigenes Schild. So musst du Sonderzeichen im Spiel nicht von Hand eingeben. Zeichenliste: satisfactory-symbol-db (gemeinfrei).</li>
   <li><b>Gebäude aus Grundriss (Bild):</b> Grundriss auf ein Raster zeichnen (z. B. in Paint, ein Kästchen = ein Fundament 8 × 8 m) – <b>schwarze</b> Linien = Wand, <b>blau</b> = Fenster, <b>rot</b> = Tür, Lücke = offener Durchgang. Bild wählen und „Breite (Fundamente)“ auf die Zahl der Kästchen über die Bildbreite setzen. Das Kontrollbild zeigt das Raster, die erkannten Wände/Fenster/Türen und grün die Bodenflächen (alles, was innerhalb einer geschlossenen Außenwand liegt). Dazu Etagen, Etagenhöhe und Bauteile wählen; Fenster und Türen sitzen in der untersten Wandreihe jeder Etage. Oben im Bild liegt in der Blaupause hinten, wenn du beim Setzen in dieselbe Richtung wie auf das Bild schaust.</li>
 </ul>
 
@@ -196,6 +202,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 
 <h2 class="sec" id="ordnen">Ordnen – alle Blaupausen einheitlich benennen</h2>
 <p>Der Bereich <b>Ordnen</b> liest <b>alle</b> Blaupausen ein: alle Spielstand-Ordner unter <code>SaveGames\blueprints</code> (mit Unterordnern) und die Bibliotheks-Ordner aus den <a href="#einstellungen">Einstellungen</a> (z. B. <code data-pfad="bibliothek">…\Meine Blaupausen</code>). Ordner, die mit <code>_Archiv</code>, <code>_Pakete</code> oder <code>_Duplikate</code> heißen, werden übersprungen.</p>
+<p>Mit <b>Ordnerstruktur bearbeiten …</b> (links unter der Legende) änderst du Gruppen und Untergruppen der Ablage; danach rechnet Ordnen die Vorschläge neu. Das aufklappbare Feld <b>So funktioniert Ordnen</b> erklärt die Schritte, die Zeile unter der Leiste den gewählten Filter.</p>
 <ol class="steps">
   <li><b>Einlesen:</b> Beim ersten Mal dauert es je nach Anzahl 20–60 Sekunden, danach geht es schnell (Zwischenspeicher).</li>
   <li><b>Vorschläge prüfen:</b> Für jede Blaupause steht ein <b>neuer Name</b> nach dem <a href="#schema">Schema</a>. Grund „aus Name“ = aus dem alten Namen abgeleitet; „aus Inhalt“ = der alte Name war nichtssagend (z. B. <code>2025_10_10 13_40_24</code>), der Vorschlag kommt aus dem Inhalt (Produkt, Maschinen, Bauteile, Maße) – diese bitte besonders ansehen. Filter „Name aus Inhalt (prüfen!)“ zeigt nur diese.</li>
@@ -280,6 +287,24 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Wasser & mehrere Quellen:</b> Kommt ein Stoff aus mehreren Reihen, werden alle angeschlossen (Bänder über je einen Merger, Rohre über je eine Kreuzung von oben). Was in der Fabrik selbst entsteht (z. B. Wasser aus der Aluminium-Kette), wird zuerst verwendet; nur der <b>Rest</b> kommt von außen – bei Rohren über eine Kreuzung mit einem Anschluss <b>nach oben</b> (Schild „ZULAUF VON OBEN“). Mit <b>Wasserextraktoren mitbauen</b> im Dialog stellt der Planer für fehlendes Wasser Extraktoren samt Strom daneben (je 120 m³/min; im Spiel geht das nur über Blaupausen).</li>
   <li><b>Grenzen:</b> Für manche Gebäude gibt es noch keinen Reihen-Bauplan (ausgegraut, die Maus zeigt den Grund) – dort entstehen freie Ein-/Ausgänge mit Schild. Blaupausen, die der Planer erzeugt hat, dienen nie als Bauteil-Vorlagen; hat eine Vorlage Gegenstände im Lager, speichere im Spiel eine Blaupause mit dem leeren Gebäude.</li>
 </ul>
+<h3 id="planer-rechenweg">Rechenweg und Alternativrezepte</h3>
+<p>Links unter <b>Rechenweg</b>: <b>Einfach</b> (ein Rezept je Item, wie bisher), <b>Optimal</b> (rechnet die ganze Fabrik auf einmal mit möglichst wenig Rohstoffen – knappe Erze zählen mehr; Kreisläufe wie recycelter Kunststoff und Nebenprodukte gehen auf) oder <b>Maximum aus „Vorhanden“</b> (so viel wie möglich von den Zielen aus den Zulieferungen). Bei Optimal und Maximum legt <b>„Alternativrezepte …“</b> fest, welche Alternativen der Planer nutzen darf – am besten die, die du im Spiel freigeschaltet hast.</p>
+<p><b>Zulieferungen</b> (Vorhanden) werden nicht mehr selbst hergestellt. Im Graphen ist der Kasten grün („Input gesichert“), wenn die Zulieferung reicht, orange mit rotem „fehlt – zuliefern“, wenn noch etwas fehlt, und grau, wenn sie gar nicht gebraucht wird.</p>
+<p><b>Übertakten</b> (oben neben dem Rechenweg): 150, 200 oder 250 % – der Planer rechnet dann mit weniger Maschinen und zählt die nötigen <b>Power-Shards</b> (je angefangene 50 % über 100 % ein Shard pro Maschine). Die Bauliste zeigt Takt und Shards je Schritt.</p>
+<h3 id="planer-spielstand">Infos aus dem Spielstand</h3>
+<p>Die Symbole oben links öffnen links ein Feld; oben darin wählst du den Spielstand. Ein Klick in den Graphen schließt es wieder.</p>
+<ul>
+  <li><b>Produktion:</b> was deine Fabriken pro Minute herstellen und verbrauchen (Nennwerte oder gemessene Auslastung, mit Kraftwerken). <b>Haken</b> = Überschuss sofort als Zulieferung übernehmen, Haken weg = entfernen.</li>
+  <li><b>Strom &amp; Kraftwerke:</b> erzeugt, verbraucht, Reserve; Kraftwerke mit Brennstoff pro Minute.</li>
+  <li><b>Vorräte:</b> Inventar, Dimensionslager und Kisten (Stückzahlen).</li>
+  <li><b>Rohstoff-Knoten:</b> frei und belegt je Reinheit und was sie mit Miner Mk.3 bzw. Pumpen bei 250 % hergäben. Angehakt als Zulieferung – passt zum Rechenweg „Maximum“.</li>
+  <li><b>Bauliste</b> (Klemmbrett-Symbol): die Schritte der aktiven Fabrik in Bau-Reihenfolge zum Abhaken, Maschinen und Power-Shards sowie die <b>Baukosten</b> der Maschinen – mit Spielstand gegen Inventar und Dimensionslager (grün = reicht, rot = fehlt). Bänder, Rohre, Fundamente und Strommasten sind nicht mitgerechnet.</li>
+  <li><b>Plan-Tafel …</b> (oben im Planer): baut den Ablaufplan der Fabrik als Blaupause aus Schildern zum Aufstellen an der Baustelle – Rohstoffe, je Stufe die Maschinen mit Rezept, Ein- und Ausgängen pro Minute (mit Bildern von Material und Maschine), Ergebnis, Maschinen und Strom. Stil <b>Karten</b> nutzt die Community-Blaupause „Alternate Prod Sign (3/6 inputs)“, wenn sie in deinen Blaupausen liegt (Ziffern-Schilder, orange auf schwarz), sonst die <b>einfache Zeilen-Tafel</b>. Unter „Plan-Tafeln dieser Fabrik“ (Bauliste) stehen die letzten Tafeln; der Haken legt sie ins Spiel bzw. beiseite. Die Bilder kommen aus der Symbol-Bibliothek deines Spiels (Einrichtung „Gelände &amp; Felsen“).</li>
+</ul>
+<h3 id="planer-welt">Mehrere Fabriken, Welt-Plan und Lieferwege</h3>
+<p>Links oben unter <b>Fabrik</b> legst du weitere Fabriken an (+), benennst sie um (✎) oder löschst sie (✕). Der <b>Welt-Plan</b> (Globus) zeigt alle Fabriken mit Maschinen und Strom, den Rohstoffbedarf aller Fabriken als Balken gegen alle Knoten der Karte und – mit Spielstand – gegen die freien Knoten (Miner-Stufe und Takt wählbar) sowie den Strom gegen die Reserve im Spielstand.</p>
+<p><b>Lieferwege:</b> Steht in einer Fabrik etwas unter „Vorhanden“, das eine andere herstellt, zeigt der Welt-Plan „wer beliefert wen“ mit Menge und nötigen Bändern bzw. Rohren. Was keine Fabrik abnimmt, lässt sich mit <b>„liefern an …“</b> als Zulieferung in eine andere Fabrik eintragen.</p>
+<p><b>Lieferungen automatisch</b> trägt Zwischenprodukte, die eine andere Fabrik übrig hat, als Zulieferung ein – nur, wenn deren Überschuss den Bedarf ganz deckt. Unter <b>Kraftwerke (geplant)</b> planst du Generatoren mit Brennstoff, Anzahl und Takt: Der Welt-Plan rechnet Leistung, Brennstoff pro Minute, Kühlwasser und Atommüll und nimmt den Brennstoff aus den Überschüssen der Fabriken (der Rest kommt „von außen“). <b>Exportieren</b>/<b>Importieren</b> speichert den ganzen Welt-Plan als Datei (<code>.bsplan</code>) bzw. lädt ihn – z. B. zum Weitergeben oder als Sicherung.</p>
 <h2 class="sec" id="masterclass">Master Class – fertige Lehrbuch-Fabriken</h2>
 <p><b>Master Class …</b> im Planer zeigt sauber aufgebaute Vorlagen-Fabriken nach Stufe (höchster nötiger Meilenstein) und Thema. Quelle sind die Master-Class-Ordner (Standard: <code>blueprints\Sortieren\Tschukki</code> und die Ablage „10 Master Class“).</p>
 <ul>
@@ -295,7 +320,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <ul>
   <li>Links den Spielstand wählen. Beim ersten Öffnen dauert das Lesen einige Sekunden; danach kommt er aus dem Zwischenspeicher (<code>userdata\karten</code>), solange sich die Datei nicht ändert.</li>
   <li>Ziehen = verschieben, Mausrad = Zoom, Klick = Bauteil anzeigen (Name, Position, Höhe, Anzahl im Spielstand). „Einpassen“ zeigt deine Bauten, „Ganze Welt“ die ganze Karte (Raster = 500 m).</li>
-  <li><b>Ebenen</b> links ein-/ausschalten (z. B. Fundamente aus, um Maschinen zu sehen). Ressourcen-Knoten sind anfangs aus.</li>
+  <li><b>Ebenen</b> (Knopf in der Werkzeugleiste, ▾) ein-/ausschalten, z. B. Fundamente aus, um Maschinen zu sehen. Der Knopf zeigt, wie viele aus sind; Ressourcen-Knoten sind anfangs aus. Links stehen nur die Spielstände – Megaprints findest du über das Werkzeug <b>Megaprints</b>.</li>
   <li><b>Bauteil hervorheben:</b> Name ins Suchfeld (z. B. „Konstruktor“) – passende Teile bleiben farbig, Böden werden abgedunkelt. Rechts „Häufigste Bauteile“ ist anklickbar.</li>
 </ul>
 <ul>
@@ -303,6 +328,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Höhe von – bis</b> (Meter): zeigt nur Bauteile in diesem Bereich, z. B. eine einzelne Etage einer großen Fabrik.</li>
   <li>Rechts <b>Gebäude nach Art</b>: alle Maschinen, Generatoren, Lager, Bahn usw. mit Anzahl. <b>Anhaken</b> hebt sie hervor, alles andere wird abgedunkelt (mehrere Häkchen möglich, das Häkchen an der Gruppe nimmt die ganze Gruppe, z. B. alle Rohre). <b>„Alle normal“</b> (oben) oder <kbd>Esc</kbd> hebt das wieder auf.</li>
   <li><b>In 3D öffnen</b>: zeigt den Spielstand in der <a href="#welt">Welt-Ansicht</a> (3D mit Gelände, siehe unten).</li>
+  <li><b>Punkte</b> (Stecknadel, ▾ = Auswahl): Rohstoff-Knoten, Gasquellen, Geysire, Absturzstellen und Sammelobjekte wie in der <a href="#welt-werkzeuge">Welt-Ansicht</a> – mit Zustand aus dem gewählten Spielstand (belegt/eingesammelt blass). Die Maus über einem Punkt zeigt Art, Reinheit und Lage.</li>
+  <li><b>Megaprints</b> (Knopf in der Werkzeugleiste): nach Name oder Ordner suchen. Ist ein Spielstand geladen, legt ein Klick den Megaprint <b>halbtransparent über den Spielstand</b> – an seiner Original-Position, mit Maßen und der Zahl deiner Bauteile im selben Bereich (✕ blendet ihn wieder aus). Ohne Haken bei „Über den geladenen Spielstand legen“ wird er allein gezeigt (siehe <a href="#megaprints">Megaprints</a>).</li>
 </ul>
 <p>Die Karte selbst verändert den Spielstand nicht.</p>
 <h3>Bereich als Blaupause herauskopieren</h3>
@@ -318,6 +345,11 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>Die Blaupause wird auf die Mitte des Bereichs (8-m-Raster) und die Unterkante 0 ausgerichtet. Große Bereiche brauchen im Spiel Mods wie Blueprint Designer Plus.</li>
   <li>Aus Megaprints geht das (noch) nicht – dafür einen Spielstand verwenden.</li>
 </ul>
+<h3>Bereich in einen anderen Spielstand übertragen</h3>
+<p>Mit <b>In anderen Spielstand übertragen …</b> kommt der markierte Bereich an <b>genau dieselbe Stelle</b> in einem anderen Spielstand – etwa eine Fabrik aus einer alten Welt in eine neue. Du wählst den Ziel-Spielstand, ob dort vorher <b>frei geräumt</b> wird (alles im selben Bereich wird entfernt; ausgeblendete Ebenen und der Höhenfilter gelten mit) oder nur <b>hinzugefügt</b>, und einen Namen. Das Ergebnis ist immer eine <b>neue Datei</b> neben dem Ziel; Quelle und Ziel bleiben unverändert. Gibt es den Namen schon, fragt die App und sichert die alte Datei vorher.</p>
+<p>Gebäude kommen 1:1 mit Rezept und Einstellungen. Fundamente, Wände und Träger werden mit ihren <b>Originaldaten</b> übernommen (Material, Muster, Farbe). Farbfelder aus der Farbpalette zeigen dabei die Palette des Ziels – sind die Paletten verschieden, kann eine Farbe anders aussehen. Verbindungen nach außerhalb des Bereichs fallen weg; den Bereich deshalb großzügig um das ganze Gebäude ziehen. Beide Spielstände müssen im aktuellen Spiel gespeichert sein; einen älteren Stand vorher einmal im Spiel laden und speichern. Fahrzeuge, Züge und Drohnen-Routen werden nicht mit übertragen.</p>
+<p><b>Drohnenstationen</b> kommen ohne Kopplung mit: Partner-Station und Drohne bleiben im Quell-Spielstand, die Station startet im Ziel wie frisch gebaut. Drohnen und Routen richtest du dort neu ein.</p>
+<p><b>Farben:</b> Beim Übertragen fragt die App, ob die <b>Farbpalette des Ziels</b> bleibt (Standard) oder die <b>der Quelle übernommen</b> wird. Mit der Quell-Palette sehen die Farbfelder genau wie in der Quelle aus – die Farben ändern sich dann aber auch für alles andere im Ziel.</p>
 <h3>Kartenbild aus dem eigenen Spiel (FModel)</h3>
 <ol>
   <li>In FModel (siehe <a href="#fmodel">FModel</a>) zu <code>FactoryGame/Content/FactoryGame/Interface/UI/Assets/MapTest/SlicedMap</code> gehen.</li>
@@ -327,16 +359,26 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h3 id="welt">Welt-Ansicht (3D mit Gelände)</h3>
 <p>Der Bereich <b>Welt</b> zeigt die ganze Spielwelt in 3D – Gelände in 1-m-Auflösung, Kartenbild darauf, Felsen und Klippen als echte Spielmodelle – und auf Wunsch einen Spielstand mit allen Bauteilen. Gedacht zum Planen ohne das Spiel zu starten; es ersetzt das Spiel nicht.</p>
 <ul>
-  <li>Oben einen Spielstand wählen → <b>Laden</b> (oder in der Karte <b>In 3D öffnen</b>). Ohne Spielstand: nur Gelände.</li>
+  <li>Oben einen Spielstand wählen → <b>Laden</b> (oder in der Karte <b>In 3D öffnen</b>). Ohne Spielstand: nur Gelände. <b>Zurücksetzen</b> daneben entlädt den Spielstand und verwirft gesetzte Blaupausen und Änderungen (mit Rückfrage, wenn noch etwas ungespeichert ist).</li>
   <li>In die Ansicht klicken, dann <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> fliegen, <kbd>Leertaste</kbd>/<kbd>C</kbd> (oder <kbd>E</kbd>/<kbd>Q</kbd>) hoch/runter, <kbd>Umschalt</kbd> schneller; Maus ziehen = umsehen, Mausrad = vor/zurück. Das Tempo passt sich der Flughöhe an.</li>
   <li><b>Blaupausen setzen</b>: unter „Blaupausen setzen“ <b>Aus der Ablage wählen …</b> öffnet das große Ablage-Fenster mit Kacheln und 3D-Vorschau – ein Klick auf eine Kachel übernimmt die Blaupause. <b>Ablage als eigenes Fenster</b> öffnet dieselben Kacheln in einem eigenen Fenster (z. B. auf dem zweiten Bildschirm), das nach jeder Wahl offen bleibt; alternativ eine Blaupause aus der Ablage oder einer Spiel-Sitzung suchen → <b>Setzen</b>. Die blaue Vorschau folgt der Maus und liegt auf der sichtbaren Oberfläche (Gelände, Felsen, Bauten). <b>Klick</b> setzt ab (beliebig oft, grün = gesetzt), <kbd>R</kbd> dreht um 90° (<kbd>Umschalt</kbd>+<kbd>R</kbd> um 15°), <kbd>Bild↑</kbd>/<kbd>Bild↓</kbd> ändert die Höhe um 1 m (mit <kbd>Umschalt</kbd> 4 m), <kbd>Esc</kbd> oder Rechtsklick beendet. Danach einen Namen eingeben → <b>In Spielstand speichern</b>: Es entsteht eine <b>neue</b> Spielstand-Datei neben dem geladenen; das Original bleibt unverändert.</li>
-  <li><b>Ältere Blaupausen</b> (gespeichert mit Spielversion 1.0/1.1) rechnet die App beim Speichern automatisch ins aktuelle Format um – sonst würde das Spiel sie im Spielstand nicht sauber laden. Noch ältere (vor 1.0) lassen sich nicht setzen; sie einmal im Spiel im Blaupausen-Designer öffnen und neu speichern.</li>
+  <li><b>Ältere Blaupausen</b> rechnet die App beim Speichern automatisch ins aktuelle Format um – ab Update 6 (Spielversion vor 1.0) bis 1.1, sonst würde das Spiel sie im Spielstand nicht sauber laden. Schilder behalten dabei ihr Layout. Noch ältere lassen sich nicht setzen; sie einmal im Spiel im Blaupausen-Designer öffnen und neu speichern.</li>
   <li><b>Gesetzte Blaupausen</b> (grün) lassen sich anklicken – in der Welt oder in der Liste links: Ein kleines Menü bietet <b>Verschieben</b> (wieder an die Maus nehmen; <kbd>Esc</kbd> legt sie an den alten Platz zurück), <b>Drehen 90°</b> und <b>Löschen</b>. Pfeiltasten, <kbd>Bild↑</kbd>/<kbd>Bild↓</kbd>, <kbd>R</kbd> und <kbd>Entf</kbd> wirken dann auf diese Blaupause.</li>
+  <li><b>Genau setzen:</b> Im Menü einer gesetzten Blaupause stehen Felder für die Lage (<b>X</b>, <b>Y</b>, <b>Z</b> in Metern), die Drehung (<b>°</b>) und das <b>Kippen</b> um X und Y (<b>↻X</b>, <b>↻Y</b>, z. B. 90° für eine Wand aus einem Boden-Bauplan). <b>Raster</b> legt die Schrittweite der Pfeiltasten fest. Kippen wird beim Speichern mit in den Spielstand übernommen.</li>
   <li><b>Bestehendes ändern</b>: <b>Klick</b> auf ein Bauteil des geladenen Spielstands wählt es aus (gelb), <kbd>Strg</kbd>+Klick nimmt weitere dazu oder wieder weg. <kbd>Pfeiltasten</kbd> verschieben um 1 m entlang der Achse, die deiner Blickrichtung am nächsten ist (<kbd>Umschalt</kbd> = 8 m, das Fundament-Raster), <kbd>Bild↑</kbd>/<kbd>Bild↓</kbd> ändert die Höhe, <kbd>R</kbd> dreht um die Mitte der Auswahl, <kbd>Entf</kbd> löscht. <kbd>Esc</kbd> oder ein Klick ins Gelände schließt die Auswahl ab; <b>Verwerfen</b> nimmt alle Änderungen zurück. Gespeichert wird wie beim Setzen in eine <b>neue</b> Datei. Gelöschte Maschinen nehmen ihre Stromkabel mit; Bänder, Rohre, Schienen und Hypertubes lassen sich ebenso anklicken, verschieben und löschen; Anschlüsse an Maschinen werden dabei nicht neu verbunden.</li>
+  <li><b>Maschine anklicken:</b> Neben Fertigungsgebäuden, Minern, Pumpen und Generatoren erscheint ein kleines Feld mit Rezept, Takt, Auslastung sowie Ein- und Ausgängen pro Minute – so, wie es im Spielstand eingestellt ist.</li>
   <li><b>Maus links/rechts umkehren</b>, falls sich das Umsehen falsch herum anfühlt (wird gemerkt).</li>
   <li>Gelände und Felsen erzeugt die App einmalig aus deinen Spieldateien (Hilfsprogramm <code>werkzeuge\gelaende</code>, nach <code>userdata\gelaende</code> und <code>userdata\welt</code>, ca. 1 Minute): automatisch beim <b>Holen der Spielmodelle</b> im Einrichtungs-Assistenten oder jederzeit unter <b>Einstellungen → Voraussetzungen → Gelände &amp; Felsen → Erzeugen</b> (z. B. nach einem großen Spiel-Update). Die Welt-Ansicht verändert den Spielstand nicht.</li>
 </ul>
 
+<h3 id="welt-werkzeuge">Welt: Werkzeuge, Leistungsmodus, Stift, Kartenpunkte</h3>
+<p>Oben links über der Ansicht liegen die Werkzeuge: <b>Stift</b> mit <b>Tiefe</b>, <b>Ablage</b>, <b>Ablage als eigenes Fenster</b>, <b>Suche</b> und <b>Setzen</b>, <b>Ego-Modus</b> (Figur), <b>Leistungsmodus</b> (Blitz), <b>Kartenpunkte</b> (Stecknadel, ▾ = Auswahl) und <b>Kartenbild</b>.</p>
+<ul>
+  <li><b>Leistungsmodus:</b> zeichnet nur, was im Bild ist: bis 300 m in voller Qualität, bis 1,2 km mit <b>vereinfachten Modellen</b> (deutlich weniger Dreiecke), weiter weg als einfache Quader in ihrer Farbe. Bei sehr großen Spielständen (über 50 Mio. Dreiecke) schaltet er sich beim Laden selbst ein; von Hand ausgeschaltet bleibt er aus. Standard ist volle Qualität.</li>
+  <li><b>Stift:</b> einschalten, dann mit gedrückter linker Maustaste einen Bereich umranden. Gewählt wird alles darin – auch verdeckte Teile im Inneren eines Gebäudes –, aber nur bis zur eingestellten <b>Tiefe</b> hinter dem vordersten Teil (Standard 600 m, 0 = alles). Umschalt = dazu, Strg = weg, rechte Maustaste = umsehen. Über dem Bereich erscheint dann ein kleines Feld: <b>„Als Blaupause speichern …“</b> (Spiel-Sitzung und Namen wählen – gespeichert wird, was im geladenen Spielstand steht), <b>Löschen</b> (wirksam erst beim Speichern in die neue Datei) oder <b>Abbrechen</b>.</li>
+  <li><b>Kartenpunkte:</b> Rohstoff-Knoten (Farbe und Kürzel je Rohstoff; Ring gestrichelt = unrein, einfach = normal, doppelt = rein), Gasquellen, Geysire, Absturzstellen, Power-Slugs, Somersloops und Mercer-Kugeln. Im Menü ▾ lassen sich Arten und einzelne Rohstoffe ein- und ausblenden. Mit geladenem Spielstand erscheinen belegte Knoten und eingesammelte Objekte blass (oder ausgeblendet), geöffnete Absturzstellen hohl; der Tooltip nennt Art, Reinheit, Zustand und Lage. Die Daten liest die Einrichtung einmalig aus deinem Spiel („Gelände &amp; Felsen“).</li>
+  <li><b>Ego-Modus</b> (Figur): einschalten und in die Welt klicken – dort beginnst du auf Augenhöhe (wie ein Pin in einer Karten-App). <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> gehen (<kbd>Umschalt</kbd> = schneller), <kbd>Leertaste</kbd>/<kbd>C</kbd> höher/tiefer schweben, Maus = umsehen, <kbd>Esc</kbd> bringt dich zurück an die alte Stelle. Über freiem Gelände folgt die Höhe dem Boden, auf Fundamenten bleibt sie gleich. Für große Fabriken am besten mit Leistungsmodus.</li>
+</ul>
 <h2 class="sec" id="megaprints">Megaprints (.cbp)</h2>
 <p>Megaprints sind Exporte von <i>satisfactory-calculator.com</i> (Dateiendung <code>.cbp</code>, gepacktes JSON mit allen Objekten samt Lage und Eigenschaften). Die Karte listet sie unter den Spielständen (Ordner in den Einstellungen, z. B. <code data-pfad="megaprints">…\Megaprints</code>, ohne <code>_Archiv</code>) und zeigt sie an ihrer Original-Position auf der Weltkarte – mit Ebenen, Hervorheben und „Gebäude nach Art“. Auch sehr große Megaprints (400 MB JSON, 300.000 Teile) sind in rund 2 Sekunden gelesen. Bänder und Rohre erscheinen dabei vorerst als Punkte statt als Linien.</p>
 
@@ -601,7 +643,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Modelle liegen in der App verdreht/versetzt</td><td>FModel-Mesh-Format muss <code>glTF 2.0 (binary)</code> sein; Werkzeug erneut laufen lassen.</td></tr>
   <tr><td>Graue Kästen statt Modellen</td><td>Für dieses Bauteil fehlt ein Modell (siehe Meldung des Werkzeugs) – oder es ist ein Band/Rohr/Schiene/Lift (bewusst ohne Modell).</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.4.3</span> · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.5.0</span> · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen
@@ -611,6 +653,7 @@ if (location.hash) setTimeout(() => document.querySelector(location.hash)?.scrol
 // Pfade in der Hilfe aus den eigenen Einstellungen einsetzen (keine festen Pfade im Text)
 fetch('/api/config').then((r) => r.json()).then((c) => {
   if (c.version) document.querySelectorAll('[data-version]').forEach((e) => { e.textContent = c.version; }); // Version immer aus der laufenden App
+  if (c.spenden) { document.querySelectorAll('[data-spenden]').forEach((e) => { e.href = c.spenden; }); document.querySelectorAll('[data-spenden-zeile]').forEach((e) => { e.hidden = false; }); } // Spenden-Link aus app/update.json
   const j = (...t) => t.filter(Boolean).join('\\');
   const w = { appDir: c.appDir, blueprintDir: c.blueprintDir, saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0], megaprints: (c.megaprints || [])[0],
     fmodel: c.fmodelDir, fmodelOutput: c.fmodelDir && j(c.fmodelDir, 'Output'), fmodelExport: c.fmodelExport, usmap: c.gameDir && j(c.gameDir, 'CommunityResources', 'FactoryGame.usmap') };

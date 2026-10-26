@@ -1,7 +1,8 @@
 // Kartenansicht: Spielstand (.sav) als Draufsicht – WebGL2, Hunderttausende Teile flüssig.
 import { colorFor } from './scene.js';
 import { teilLabel } from './generator.js';
-import { ungespeichert } from './dialog.js';
+import { zeichnePunkte, filterLaden, filterMenue, zahlenJeGruppe, punktText } from './kartenpunkte.js';
+import { ungespeichert, auswahl, eingabe, frage } from './dialog.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -118,13 +119,14 @@ export class Karte {
     const zeile = (s) => `<button type="button" class="item${s.id === this.id ? ' on' : ''}" data-id="${esc(s.id)}">
       <span class="n">${esc(s.name)}</span><span class="m">${esc(s.sitzung)} · ${new Date(s.geaendert).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })} · ${(s.groesse / 1e6).toFixed(1)} MB${s.version && s.version < 46 ? ' · alt' : ''}</span></button>`;
     const sv = L.filter((s) => s.art !== 'megaprint'), mp = L.filter((s) => s.art === 'megaprint');
-    $('k-liste').innerHTML = (sv.map(zeile).join('') || '<div class="muted pad">Keine Spielstände gefunden.</div>')
-      + (mp.length ? `<div class="k-gruppe">Megaprints (${mp.length})</div>` + mp.map(zeile).join('') : '');
+    $('k-liste').innerHTML = sv.map(zeile).join('') || '<div class="muted pad">Keine Spielstände gefunden.</div>'; // Megaprints: Werkzeug „Megaprints“
+    void mp;
   }
 
   // ------------------------------------------------------------ Laden
   async lade(id) {
-    this.id = id; this.renderListe();
+    this.id = id; this.renderListe(); if (this.ueber) this.ueberWeg();
+    if (this.punkte) { this.punkte = null; if (this.punkteAn) this.punkteHolen(); }
     $('k-loading').hidden = false;
     $('k-loading-text').textContent = 'Spielstand wird gelesen … (beim ersten Mal einige Sekunden)';
     try {
@@ -175,6 +177,7 @@ export class Karte {
   }
 
   renderEbenen() {
+    this.ebenenKnopf();
     $('k-ebenen').innerHTML = EBENEN.map(([id, name, f]) => `<label class="check keb"><input type="checkbox" data-eb="${id}"${this.aus.has(id) ? '' : ' checked'}>
       <span class="sw" style="background:${f}"></span><span class="n">${esc(name)}</span><span class="c">${(this.zaehler?.[id] || 0).toLocaleString('de-DE')}</span></label>`).join('');
   }
@@ -194,6 +197,15 @@ export class Karte {
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.bInst = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.bInst);
     for (let a = 1; a <= 3; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, 48, (a - 1) * 16); gl.vertexAttribDivisor(a, 1); }
+    // Überlagerung (Megaprint über dem Spielstand): eigener Satz mit gleichem Aufbau
+    this.vaoBoxU = gl.createVertexArray(); gl.bindVertexArray(this.vaoBoxU);
+    gl.bindBuffer(gl.ARRAY_BUFFER, q); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    this.bInstU = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.bInstU);
+    for (let a = 1; a <= 3; a++) { gl.enableVertexAttribArray(a); gl.vertexAttribPointer(a, 4, gl.FLOAT, false, 48, (a - 1) * 16); gl.vertexAttribDivisor(a, 1); }
+    this.vaoLineU = gl.createVertexArray(); gl.bindVertexArray(this.vaoLineU);
+    this.bLineU = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.bLineU);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 24, 0);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 24, 8);
     gl.bindVertexArray(this.vaoLine);
     this.bLine = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.bLine);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 24, 0);
@@ -278,12 +290,130 @@ export class Karte {
       gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.nInst || 0);
       gl.bindVertexArray(this.vaoLine); set(this.pLine);
       gl.drawArrays(gl.LINES, 0, this.nLine || 0);
+      if (this.ueber?.nInst || this.ueber?.nLine) {
+        gl.bindVertexArray(this.vaoBoxU); set(this.pBox); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, this.ueber.nInst);
+        gl.bindVertexArray(this.vaoLineU); set(this.pLine); gl.drawArrays(gl.LINES, 0, this.ueber.nLine);
+      }
       // Spieler
       this.zeichneMarker(gl);
       this.zeichneBereich(gl);
     }
     gl.bindVertexArray(null);
     this.updateMassstab();
+    this.punkteZeichnen();
+  }
+
+  // ------------------------------------------------------------ Kartenpunkte (wie in der Welt-Ansicht, hier von oben)
+  punkteSetzen(an) { this.punkteAn = an; $('k-punkte').setAttribute('aria-pressed', an); if (an && !this.punkte) this.punkteHolen(); this.zeichne(); }
+  async punkteHolen() {
+    this.punkteFilter ||= filterLaden();
+    const id = this.id && !this.id.startsWith('mp:') ? this.id : null;
+    try {
+      const r = await fetch('/api/welt/punkte' + (id ? '?id=' + encodeURIComponent(id) : ''), { cache: 'no-store' });
+      const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status);
+      if (id !== (this.id && !this.id.startsWith('mp:') ? this.id : null)) return; // inzwischen anderer Spielstand
+      this.punkte = j; this.zeichne();
+      const m = $('k-punkte-menue'); if (m && !m.hidden) this.punkteMenue(true);
+    } catch (e) { this.app.toast(e.message, 'err'); }
+  }
+  /** 2D-Ebene über der Karte (Mausereignisse gehen durch) */
+  punkteZeichnen() {
+    const cv = $('k-canvas'); let c = this.pCv;
+    if (!this.punkteAn || !this.punkte) { if (c) c.style.display = 'none'; this.punkteGez = null; return; }
+    if (!c) { c = this.pCv = document.createElement('canvas'); c.className = 'w-punkte'; cv.parentElement.insertBefore(c, cv.nextSibling); }
+    const w = cv.clientWidth, h = cv.clientHeight, dpr = window.devicePixelRatio || 1;
+    c.style.display = ''; if (c.width !== Math.round(w * dpr) || c.height !== Math.round(h * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+    const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    // Größe folgt dem Zoom: ganze Welt im Bild = kleine Punkte, hineingezoomt bis 12 px
+    const s = this.cam.s, cx = this.cam.x, cy = this.cam.y, gr = Math.max(4, Math.min(12, s * 6000));
+    const proj = (x, y) => { const sx = (x - cx) * s + w / 2, sy = (y - cy) * s + h / 2; return sx < -20 || sy < -20 || sx > w + 20 || sy > h + 20 ? null : [sx, sy, 0]; };
+    this.punkteGez = zeichnePunkte(ctx, this.punkte, proj, this.punkteFilter, gr);
+  }
+  punktTipp(e) {
+    const cv = $('k-canvas'); let t = this.pTipp; const G = this.punkteGez;
+    if (!G || !G.length) { if (t) t.hidden = true; return; }
+    const r = cv.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+    let best = null, bd = Infinity; for (const g of G) { const d = Math.hypot(g.sx - mx, g.sy - my); if (d < g.r + 5 && d < bd) { bd = d; best = g; } }
+    if (!best) { if (t) t.hidden = true; return; }
+    if (!t) { t = this.pTipp = document.createElement('div'); t.className = 'w-punkt-tipp'; cv.parentElement.appendChild(t); }
+    t.textContent = punktText(this.punkte, this.punkte.p[best.i], this.app.kat); t.style.left = mx + 14 + 'px'; t.style.top = my + 10 + 'px'; t.hidden = false;
+  }
+  /** Ebenen-Knopf: Anzahl ausgeblendeter Ebenen */
+  ebenenKnopf() { const n = this.aus.size; $('k-eb-text').textContent = n ? `Ebenen (${n} aus)` : 'Ebenen'; $('k-eb-knopf').setAttribute('aria-pressed', n > 0); }
+  /** Megaprints: suchen und auf der Karte anzeigen (Liste aus /api/karte/liste) */
+  megaprintMenue() {
+    let m = $('k-mp-menue');
+    if (m && !m.hidden) { m.hidden = true; return; }
+    if (!m) {
+      m = document.createElement('div'); m.id = 'k-mp-menue'; m.className = 'w-punkte-menue k-mp-menue'; $('k-canvas').parentElement.appendChild(m);
+      m.innerHTML = '<input type="search" id="k-mp-suche" placeholder="Megaprint suchen …" aria-label="Megaprint suchen"><label class="check" id="k-mp-ueber-feld"><input type="checkbox" id="k-mp-ueber" checked> Über den geladenen Spielstand legen</label><div id="k-mp-liste" class="k-mp-liste"></div><p class="hint">Klick zeigt den Megaprint an seiner Original-Position. Ordner für Megaprints: Einstellungen → Ordner &amp; Spielstände.</p>';
+      $('k-mp-suche').addEventListener('input', () => this.megaprintListe());
+      $('k-mp-liste').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (!b) return; m.hidden = true; if (this.spielstandDa() && $('k-mp-ueber').checked) this.ueberLegen(b.dataset.id); else this.lade(b.dataset.id); });
+    }
+    $('k-mp-ueber-feld').hidden = !this.spielstandDa();
+    m.hidden = false; this.megaprintListe(); $('k-mp-suche').focus();
+  }
+  spielstandDa() { return !!(this.meta && this.id && !this.id.startsWith('mp:')); }
+  /** Karten-Daten (Kopf + Werte) eines Spielstands oder Megaprints holen */
+  async holeDaten(id) {
+    const r = await fetch('/api/karte/daten?id=' + encodeURIComponent(id), { cache: 'no-store' });
+    if (!r.ok) { let m = r.status; try { m = (await r.json()).fehler; } catch { /* */ } throw new Error(m); }
+    const buf = await r.arrayBuffer(), dv = new DataView(buf), jl = dv.getUint32(0, true);
+    const meta = JSON.parse(new TextDecoder().decode(new Uint8Array(buf, 4, jl))), off = 4 + jl + ((4 - ((4 + jl) % 4)) % 4);
+    return { meta, werte: new Float32Array(buf, off, meta.anzahl * 6) };
+  }
+  /** Megaprint halbtransparent über den Spielstand legen: Lage wie im Original, Zählung der Bauteile darunter */
+  async ueberLegen(id) {
+    $('k-loading').hidden = false; $('k-loading-text').textContent = 'Megaprint wird gelesen …';
+    try {
+      const { meta, werte } = await this.holeDaten(id), kat = this.app.kat?.gebaeude || {}, gl = this.gl;
+      const box = meta.klassen.map((c) => { const b = kat[c]?.box; return /^Build_Beam/.test(c) && b ? [0, 0, 400, 50] : b ? [(b[0] + b[3]) / 2, (b[1] + b[4]) / 2, b[3] - b[0], b[4] - b[1]] : [0, 0, 200, 200]; });
+      const inst = new Float32Array(meta.anzahl * 12), F = [0.2, 0.85, 1, 0.5];
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, n = 0;
+      for (let i = 0; i < meta.anzahl; i++) {
+        const x = werte[i * 6], y = werte[i * 6 + 1], a = werte[i * 6 + 3] * Math.PI / 180, b = box[werte[i * 6 + 4]], o = n * 12;
+        if (/^Build_PowerLine/.test(meta.klassen[werte[i * 6 + 4]]) || (Math.abs(x) < 100 && Math.abs(y) < 100)) continue; // Stromleitungen stehen im Megaprint bei 0/0 (Endpunkte fehlen)
+        n++;
+        inst.set([x, y, Math.cos(a), Math.sin(a), b[0], b[1], b[2], b[3], ...F], o);
+        if (x < x0) x0 = x; if (y < y0) y0 = y; if (x > x1) x1 = x; if (y > y1) y1 = y;
+      }
+      const lv = [], L = [0.2, 0.85, 1, 0.8];
+      for (const l of meta.linien) for (let j = 1; j + 3 < l.length; j += 2) lv.push(l[j], l[j + 1], ...L, l[j + 2], l[j + 3], ...L);
+      for (let j = 0; j + 3 < (meta.leitungen || []).length; j += 4) lv.push(meta.leitungen[j], meta.leitungen[j + 1], ...L, meta.leitungen[j + 2], meta.leitungen[j + 3], ...L);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.bInstU); gl.bufferData(gl.ARRAY_BUFFER, inst, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.bLineU); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lv), gl.STATIC_DRAW);
+      // Bauteile des Spielstands im Bereich des Megaprints (Raster 50 m, dann genau)
+      let darunter = 0; const W = this.werte, G = 5000;
+      for (let gx = Math.floor(x0 / G); gx <= Math.floor(x1 / G); gx++) for (let gy = Math.floor(y0 / G); gy <= Math.floor(y1 / G); gy++)
+        for (const i of this.raster.get(gx * 100000 + gy) || []) { const x = W[i * 6], y = W[i * 6 + 1]; if (x >= x0 && x <= x1 && y >= y0 && y <= y1) darunter++; }
+      const name = (this.liste || []).find((x) => x.id === id)?.name || id;
+      this.ueber = { id, name, nInst: n, nLine: lv.length / 6, bereich: [x0, y0, x1, y1], darunter };
+      $('k-mp-weg').hidden = false; $('k-mp-weg').title = `„${name}“ ausblenden`;
+      const w = Math.max(x1 - x0, 2000), h = Math.max(y1 - y0, 2000), cv = $('k-canvas');
+      this.cam.x = (x0 + x1) / 2; this.cam.y = (y0 + y1) / 2; this.cam.s = Math.min(cv.clientWidth / w, cv.clientHeight / h) * 0.6;
+      this.zeichne();
+      this.app.toast(`„${name}“ liegt über dem Spielstand: ${n.toLocaleString('de-DE')} Teile auf ${Math.round(w / 100)} × ${Math.round(h / 100)} m. Im selben Bereich stehen ${darunter.toLocaleString('de-DE')} Bauteile deines Spielstands.`, darunter ? 'err' : 'ok');
+    } catch (e) { this.app.toast('Megaprint konnte nicht gelesen werden: ' + e.message, 'err'); }
+    finally { $('k-loading').hidden = true; }
+  }
+  ueberWeg() { this.ueber = null; $('k-mp-weg').hidden = true; this.zeichne(); }
+  megaprintListe() {
+    const el = $('k-mp-liste'); if (!el) return;
+    const f = ($('k-mp-suche').value || '').toLowerCase().trim();
+    const alle = (this.liste || []).filter((s) => s.art === 'megaprint');
+    const L = alle.filter((s) => !f || (s.name + ' ' + s.sitzung).toLowerCase().includes(f)).sort((a, b) => a.name.localeCompare(b.name, 'de', { numeric: true }));
+    if (!alle.length) { el.innerHTML = '<div class="muted pad">Keine Megaprints gefunden. Ordner in den Einstellungen eintragen.</div>'; return; }
+    el.innerHTML = `<div class="muted k-mp-zahl">${L.length} von ${alle.length}</div>` + L.slice(0, 300).map((s) => `<button type="button" class="item${s.id === this.id ? ' on' : ''}" data-id="${esc(s.id)}"><span class="n">${esc(s.name)}</span><span class="m">${esc(s.sitzung)} · ${(s.groesse / 1e6).toFixed(1)} MB</span></button>`).join('') || '<div class="muted pad">Nichts gefunden.</div>';
+  }
+  /** Auswahl, welche Punkte (Zahlen offen/alle, wenn ein Spielstand geladen ist) */
+  async punkteMenue(neu = false) {
+    let m = $('k-punkte-menue');
+    if (!neu && m && !m.hidden) { m.hidden = true; return; }
+    if (!m) { m = document.createElement('div'); m.id = 'k-punkte-menue'; m.className = 'w-punkte-menue'; $('k-canvas').parentElement.appendChild(m); }
+    if (!this.punkteAn) this.punkteSetzen(true);
+    this.punkteFilter ||= filterLaden();
+    filterMenue(m, this.punkteFilter, () => this.zeichne(), this.punkte ? zahlenJeGruppe(this.punkte) : {}, this.punkte, this.app.kat);
+    m.hidden = false;
   }
 
   /** Hintergrund: 4 Kacheln der Spielkarte (Map_X-Y, X = Spalte, Y = Zeile), je 3750 x 3750 m */
@@ -422,6 +552,48 @@ export class Karte {
     finally { const b = $('k-bp-ok'); if (b) { b.disabled = false; b.textContent = 'Als Blaupause speichern'; } }
   }
 
+  /** Bereich an dieselbe Stelle in einen anderen Spielstand kopieren (Ergebnis als neue Datei neben dem Ziel) */
+  async bereichUebertragen() {
+    if (!this.bereichZahl) return;
+    const ziele = (this.liste || []).filter((s) => !s.id.startsWith('mp:') && s.id !== this.id).sort((a, b) => b.geaendert - a.geaendert);
+    if (!ziele.length) { this.app.toast('Kein anderer Spielstand gefunden.', 'err'); return; }
+    const w = await auswahl({ titel: 'In welchen Spielstand übertragen?', text: 'Der Bereich kommt an genau dieselbe Stelle. Der gewählte Spielstand bleibt unverändert, das Ergebnis wird eine neue Datei.', ok: 'Weiter',
+      optionen: ziele.map((s) => ({ wert: s.id, text: s.name, info: [s.sitzung, new Date(s.geaendert).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })].filter(Boolean).join(' · ') })) });
+    if (!w) return;
+    const ziel = ziele.find((s) => s.id === w.wert);
+    const art = await auswahl({ titel: 'Was steht im Ziel an dieser Stelle?', ok: 'Weiter', optionen: [
+      { wert: 'frei', text: 'Vorher frei räumen', info: 'Entfernt im Ziel alles im selben Bereich (ausgeblendete Ebenen und der Höhenfilter gelten mit), dann wird eingefügt.' },
+      { wert: 'dazu', text: 'Nur hinzufügen', info: 'Was im Ziel schon steht, bleibt – Neues kann sich damit überschneiden.' }] });
+    if (!art) return;
+    const pal = await auswahl({ titel: 'Farben', ok: 'Weiter', optionen: [
+      { wert: 'ziel', text: 'Farbpalette des Ziels behalten', info: 'Fundamente und Wände behalten ihre Farbfelder; die Farben kommen aus der Palette des Ziel-Spielstands.' },
+      { wert: 'quelle', text: 'Farbpalette der Quelle übernehmen', info: 'Die Farbfelder sehen aus wie im Quell-Spielstand – dafür ändern sich die Farben auch für alles andere im Ziel.' }] });
+    if (!pal) return;
+    const name = await eingabe({ titel: 'Name des neuen Spielstands', text: `Wird neben „${ziel.name}“ gespeichert.`, wert: (ziel.name + '_Uebertragen').slice(0, 60), ok: 'Übertragen' });
+    if (!name) return;
+    if (/[\\/:*?"<>|]/.test(name)) { this.app.toast('Bitte einen gültigen Namen angeben (ohne \\ / : * ? " < > |).', 'err'); return; }
+    const b = $('k-bp-uebertragen'); if (b) { b.disabled = true; b.textContent = 'Wird übertragen …'; }
+    const senden = (ueberschreiben) => fetch('/api/karte/uebertragen', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' },
+      body: JSON.stringify({ id: this.id, ohne: this.ohneKlassen(), bereich: this.bereichDaten(), ziel: ziel.id, name, frei: art.wert === 'frei', palette: pal.wert === 'quelle', ueberschreiben }) });
+    try {
+      let r = await senden(false), j = await r.json();
+      if (r.status === 409) {
+        if (!(await frage({ art: 'warnung', titel: 'Spielstand überschreiben?', text: `Den Spielstand „${name}“ gibt es schon. Die alte Datei wird vorher gesichert.`, ok: 'Überschreiben' }))) return;
+        r = await senden(true); j = await r.json();
+      }
+      if (!r.ok) throw new Error(j.fehler || r.status);
+      const i = j.info, fehlt = Object.entries(i.fehlend || {});
+      this.liste = null;
+      const teile = [`„${name}“ gespeichert: ${i.eingefuegt.toLocaleString('de-DE')} Objekte übertragen${i.entfernt ? `, ${i.entfernt.toLocaleString('de-DE')} im Ziel entfernt` : ''}.`];
+      if (i.palette) teile.push('Farbpalette der Quelle übernommen.');
+      if (i.leichtbau) teile.push(`${i.leichtbau.toLocaleString('de-DE')} Leichtbau-Teile mit Originaldaten übernommen.`);
+      if (fehlt.length) teile.push(`Ohne Vorlage übersprungen: ${fehlt.map(([c, n]) => n + '× ' + c.replace(/^Build_|_C$/g, '')).join(', ')}.`);
+      if (i.sicherung) teile.push(`Alte Datei gesichert: ${i.sicherung}`);
+      this.app.toast(teile.join(' · '), fehlt.length ? 'err' : 'ok');
+    } catch (e) { this.app.toast(e.message, 'err'); }
+    finally { const bb = $('k-bp-uebertragen'); if (bb) { bb.disabled = false; bb.textContent = 'In anderen Spielstand übertragen …'; } }
+  }
+
   zeichneMarker(gl) {
     const pts = this.meta.spieler || [];
     if (!pts.length) return;
@@ -531,6 +703,7 @@ export class Karte {
         <label class="nv-lbl" for="k-bp-ziel">Speichern in</label><select id="k-bp-ziel">${sessions.map((s) => `<option${s === (this.bpZiel || this.app.spielSession()) ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select>
         <div class="hint">Ausgeblendete Ebenen und der Höhenfilter gelten mit. ${z.n > 5000 ? '<b>Sehr groß</b> – das Spiel braucht dafür Mods wie Blueprint Designer Plus.' : ''}</div>
         <div class="nv-btns"><button type="button" class="btn primary small" id="k-bp-ok">Als Blaupause speichern</button><button type="button" class="btn small" id="k-bp-3d" title="Ausschnitt in der 3D-Ansicht der App zeigen (mit Spielmodellen) – nichts wird gespeichert">In 3D ansehen</button><button type="button" class="btn small" id="k-bp-weg">Verwerfen</button></div>
+        <div class="nv-btns"><button type="button" class="btn small" id="k-bp-uebertragen" title="Den Bereich an dieselbe Stelle in einen anderen Spielstand kopieren – als neue Datei">In anderen Spielstand übertragen …</button></div>
         ${this.bereichErgebnis ? `<div class="hint">Gespeichert: ${this.bereichErgebnis.objekte.toLocaleString('de-DE')} Objekte · <a href="#" id="k-bp-open">in „Blaupause“ öffnen</a></div>` : ''}`}
       </div>`;
     }
@@ -586,6 +759,7 @@ export class Karte {
     $('k-reset')?.addEventListener('click', () => this.zuruecksetzen());
     $('k-bp-ok')?.addEventListener('click', () => this.bereichSpeichern());
     $('k-bp-3d')?.addEventListener('click', () => this.bereichIn3D());
+    $('k-bp-uebertragen')?.addEventListener('click', () => this.bereichUebertragen());
     $('k-bp-name')?.addEventListener('input', (e) => { this.bpName = e.target.value; });
     $('k-bp-ziel')?.addEventListener('change', (e) => { this.bpZiel = e.target.value; });
     $('k-bp-weg')?.addEventListener('click', () => { this.bereich = null; this.bereichZahl = null; this.bereichErgebnis = null; this.bpName = null; this.zeichne(); this.renderInfo(); });
@@ -617,8 +791,19 @@ export class Karte {
     $('k-neu').addEventListener('click', () => { this.liste = null; this.ladeListe(); });
     $('k-ebenen').addEventListener('change', (e) => { const c = e.target.closest('input[data-eb]'); if (!c) return; if (c.checked) this.aus.delete(c.dataset.eb); else this.aus.add(c.dataset.eb); this.puffer(); });
     $('k-alle').addEventListener('click', () => { this.aus.clear(); this.renderEbenen(); this.puffer(); });
+    $('k-ebenen').addEventListener('change', () => this.ebenenKnopf());
+    $('k-eb-knopf').addEventListener('click', (e) => { e.stopPropagation(); const m = $('k-eb-menue'); m.hidden = !m.hidden; });
+    document.addEventListener('pointerdown', (e) => { const m = $('k-eb-menue'); if (!m.hidden && !m.contains(e.target) && !e.target.closest('#k-eb-knopf')) m.hidden = true; });
     $('k-fit').addEventListener('click', () => this.einpassen());
     $('k-welt').addEventListener('click', () => this.welt());
+    $('k-punkte').addEventListener('click', () => this.punkteSetzen(!this.punkteAn));
+    $('k-mp').addEventListener('click', (e) => { e.stopPropagation(); this.megaprintMenue(); });
+    $('k-mp-weg').addEventListener('click', () => this.ueberWeg());
+    document.addEventListener('pointerdown', (e) => { const m = $('k-mp-menue'); if (m && !m.hidden && !m.contains(e.target) && !e.target.closest('#k-mp')) m.hidden = true; });
+    $('k-punkte-wahl').addEventListener('click', (e) => { e.stopPropagation(); this.punkteMenue(); });
+    // Menü schließt bei Klick daneben
+    document.addEventListener('pointerdown', (e) => { const m = $('k-punkte-menue'); if (m && !m.hidden && !m.contains(e.target) && e.target.id !== 'k-punkte-wahl') m.hidden = true; });
+    cv.addEventListener('pointerleave', () => { if (this.pTipp) this.pTipp.hidden = true; });
     let t = null;
     $('k-bauteil').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { this.suche = $('k-bauteil').value.trim(); this.puffer(); this.renderInfo(); }, 200); });
     new ResizeObserver(() => this.resize()).observe(cv);
@@ -639,7 +824,8 @@ export class Karte {
       const r = cv.getBoundingClientRect();
       const [wx, wy] = this.zuWelt(e.clientX - r.left, e.clientY - r.top);
       $('k-pos').textContent = `X ${m0(wx)} m · Y ${m0(wy)} m`;
-      if (!drag) return;
+      if (!drag) { this.punktTipp(e); return; }
+      if (this.pTipp) this.pTipp.hidden = true;
       if (drag.rahmen) { this.bereich.x1 = wx; this.bereich.y1 = wy; this.zeichne(); return; }
       if (drag.stift) {
         const P = this.bereich.poly, last = P[P.length - 1];

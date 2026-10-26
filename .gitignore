@@ -17,6 +17,7 @@ werkzeuge/FModel/
 werkzeuge/test-generator.mjs
 testdata/
 test-ausgabe/
+test-ergebnisse/
 # Symbol-Kopien der Verknüpfung, Systemdateien
 app/icon-*.ico
 desktop.ini

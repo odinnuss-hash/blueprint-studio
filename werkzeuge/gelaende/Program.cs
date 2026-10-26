@@ -30,6 +30,53 @@ Console.WriteLine($"{provider.Files.Count} Dateien");
 var muster = new Regex(a.GetValueOrDefault("muster", "Landscape|Heightmap|GameLevel01"), RegexOptions.IgnoreCase);
 var treffer = provider.Files.Keys.Where(k => muster.IsMatch(k)).ToList();
 Console.WriteLine($"{treffer.Count} Treffer für {muster}");
+if (a.ContainsKey("json"))
+{
+    // Assets (Treffer von --muster) mit allen Exporten als JSON speichern – z. B. die Symbol-Bibliothek (IconLibrary) für Schild-Symbole
+    var liste = new List<object>();
+    foreach (var k in treffer.Where(k => k.EndsWith(".uasset", StringComparison.OrdinalIgnoreCase)))
+    {
+        try { var pkg = provider.LoadPackage(k); liste.Add(new { pfad = k, exporte = pkg.GetExports() }); Console.WriteLine("OK " + k); }
+        catch (Exception e) { Console.WriteLine("FEHLER " + k + " " + e.Message); }
+    }
+    File.WriteAllText(a["json"], Newtonsoft.Json.JsonConvert.SerializeObject(liste, Newtonsoft.Json.Formatting.Indented));
+    Console.WriteLine("FERTIG " + liste.Count + " Assets");
+    return;
+}
+if (a.ContainsKey("punkte"))
+{
+    // Kartenpunkte für Welt/Karte/Planer: Rohstoff-Knoten (Art, Reinheit), Vorkommen, Geysire, Gasquellen, Absturzstellen, Sammelobjekte.
+    // Lage = RelativeLocation der RootComponent des Akteurs; der Akteurname entspricht dem Namen im Spielstand (Abgleich belegt/eingesammelt).
+    var arten = new HashSet<string> { "BP_ResourceNode_C", "BP_ResourceDeposit_C", "BP_ResourceNodeGeyser_C", "BP_FrackingCore_C", "BP_FrackingSatellite_C",
+        "BP_DropPod_C", "BP_Crystal_C", "BP_Crystal_mk2_C", "BP_Crystal_mk3_C", "BP_WAT1_C", "BP_WAT2_C" };
+    var punkte = new System.Collections.Concurrent.ConcurrentBag<string>();
+    var zellenP = provider.Files.Keys.Where(k => k.Contains("Persistent_Level") && k.EndsWith(".umap")).ToList();
+    int fertigP = 0;
+    string Kurz(string? s) => s == null ? "" : s.Contains("::") ? s[(s.LastIndexOf("::") + 2)..] : s;
+    Parallel.ForEach(zellenP, new ParallelOptions { MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount - 1) }, z =>
+    {
+        try
+        {
+            var pkg = provider.LoadPackage(z);
+            foreach (var e in pkg.GetExports())
+            {
+                if (!arten.Contains(e.ExportType)) continue;
+                var root = e.GetOrDefault<CUE4Parse.UE4.Objects.UObject.FPackageIndex>("RootComponent")?.ResolvedObject?.Load();
+                if (root == null) continue;
+                var p = root.GetOrDefault<CUE4Parse.UE4.Objects.Core.Math.FVector>("RelativeLocation");
+                var res = e.GetOrDefault<CUE4Parse.UE4.Objects.UObject.FPackageIndex>("mResourceClass")?.Name ?? "";
+                var pur = Kurz(e.Properties.FirstOrDefault(x => x.Name.Text == "mPurity")?.Tag?.GenericValue?.ToString()); // Enum, fehlt = Standard der Klasse
+                punkte.Add($"{{\"t\":\"{e.ExportType}\",\"n\":\"{e.Name}\",\"x\":{Math.Round(p.X)},\"y\":{Math.Round(p.Y)},\"z\":{Math.Round(p.Z)},\"r\":\"{res}\",\"p\":\"{pur}\"}}");
+            }
+        }
+        catch { }
+        var f = Interlocked.Increment(ref fertigP); if (f % 50 == 0) Console.WriteLine($"FORTSCHRITT {f} {zellenP.Count}");
+    });
+    var liste = punkte.ToList(); liste.Sort(StringComparer.Ordinal);
+    File.WriteAllText(a["punkte"], "[\n" + string.Join(",\n", liste) + "\n]\n");
+    Console.WriteLine($"FERTIG {liste.Count} Kartenpunkte");
+    return;
+}
 if (a.ContainsKey("export"))
 {
     // Höhenraster der ganzen Karte: alle Streaming-Zellen, alle Landschaftskomponenten → Raster (Standard 4 m), höchster Wert je Feld.

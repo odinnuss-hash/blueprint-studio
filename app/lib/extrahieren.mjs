@@ -10,6 +10,7 @@
 // - Alles wird so verschoben, dass die Mitte des Bereichs (auf 8 m gerundet) bei 0 und die Unterkante bei 0 liegt.
 
 import { readSave, readLightweight } from './sav.mjs';
+import { zerlege } from './eigenschaften.mjs';
 import { createBlueprint, readBlueprint } from './sbp.mjs';
 import { templateFor, makeHead, newInstance } from './vorlagen.mjs';
 
@@ -57,15 +58,16 @@ function setzeLaenge(content, len) {
 
 /**
  * bereich: { x0, y0, x1, y1, z0?, z1? } in cm (Welt), ohne: Set mit Klassen, die ausgeblendet sind
+ * auswahl: statt Bereich genau diese Teile { a: Set(Akteur-Pfade), l: Map(Leichtbau-Klasse → Set(Nr.)) } (Stift in der Welt, auch verdeckte)
  * Liefert { datei: Buffer, cfg?, info }
  */
-export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(), log = () => {} }) {
+export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(), log = () => {}, weltkoordinaten = false, leichtbauAlsAkteure = true, auswahl = null }) {
   const save = readSave(savBuf, { props: false });
   const { header, body, objects } = save;
   const ver = header.saveVersion;
   const basis = lib.basen?.[String(ver)] || (lib.basis?.saveVersion === ver ? lib.basis : null);
   if (!basis) throw Object.assign(new Error(`Für Spielversion ${ver} gibt es keine Blaupause als Vorlage. Bitte mindestens eine Blaupause aus dieser Spielversion im Blaupausen-Ordner haben.`), { status: 422 });
-  const x0 = Math.min(bereich.x0, bereich.x1), x1 = Math.max(bereich.x0, bereich.x1), y0 = Math.min(bereich.y0, bereich.y1), y1 = Math.max(bereich.y0, bereich.y1);
+  let x0 = Math.min(bereich.x0, bereich.x1), x1 = Math.max(bereich.x0, bereich.x1), y0 = Math.min(bereich.y0, bereich.y1), y1 = Math.max(bereich.y0, bereich.y1);
   const zMin = Number.isFinite(bereich.z0) ? bereich.z0 : -Infinity, zMax = Number.isFinite(bereich.z1) ? bereich.z1 : Infinity;
   // Freihand-Bereich (Stift): Punkt-in-Polygon zusaetzlich zum umgebenden Rechteck
   const poly = Array.isArray(bereich.poly) && bereich.poly.length >= 3 ? bereich.poly : null;
@@ -78,7 +80,7 @@ export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(
   for (const o of objects) {
     if (o.kind !== 1 || o.dBody === undefined) continue;
     const cls = kurz(o.typePath);
-    if (!cls.startsWith('Build_') || RX_OHNE.test(cls) || ohne.has(cls) || !drin(o.pos)) continue;
+    if (!cls.startsWith('Build_') || RX_OHNE.test(cls) || ohne.has(cls) || !(auswahl ? auswahl.a.has(o.pathName) : drin(o.pos))) continue;
     if (o.ver !== ver) { falscheVersion++; continue; }
     gewaehlt.push(o); namen.add(o.pathName);
   }
@@ -100,19 +102,24 @@ export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(
   // 2. Leichtbau-Teile im Bereich
   const leicht = [];
   const lw = objects.find((o) => /LightweightBuildableSubsystem$/.test(o.typePath));
+  const lwNr = {};
   if (lw) readLightweight(body, lw, (tp, rot, pos, swatch, proxy, typed) => {
-    const cls = kurz(tp);
-    if (ohne.has(cls) || !drin(pos)) return;
+    const cls = kurz(tp), nr = lwNr[tp] = (lwNr[tp] ?? -1) + 1;
+    if (ohne.has(cls) || !(auswahl ? auswahl.l.get(tp)?.has(nr) : drin(pos))) return;
     leicht.push({ cls, rot, pos, len: /Beam/.test(cls) ? traegerLaenge(typed) : null });
   });
   const n = alle.length + leicht.length;
   if (!n) throw Object.assign(new Error('Im gewählten Bereich ist nichts (sichtbar), das in eine Blaupause passt.'), { status: 400 });
+  if (auswahl) { // Grenzen aus der Auswahl selbst
+    x0 = y0 = Infinity; x1 = y1 = -Infinity;
+    for (const o of [...alle, ...leicht]) { x0 = Math.min(x0, o.pos[0]); x1 = Math.max(x1, o.pos[0]); y0 = Math.min(y0, o.pos[1]); y1 = Math.max(y1, o.pos[1]); }
+  }
 
   // 3. Verschiebung: Mitte auf 8-m-Raster, Unterkante auf 0
   let zLow = Infinity;
   for (const o of alle) zLow = Math.min(zLow, o.pos[2]);
   for (const o of leicht) zLow = Math.min(zLow, o.pos[2]);
-  const cx = Math.round((x0 + x1) / 2 / 800) * 800, cy = Math.round((y0 + y1) / 2 / 800) * 800, cz = Math.round(zLow / 100) * 100;
+  const cx = weltkoordinaten ? 0 : Math.round((x0 + x1) / 2 / 800) * 800, cy = weltkoordinaten ? 0 : Math.round((y0 + y1) / 2 / 800) * 800, cz = weltkoordinaten ? 0 : Math.round(zLow / 100) * 100;
   const verschiebe = (p) => [p[0] - cx, p[1] - cy, p[2] - cz];
 
   const heads = [], datas = [], zaehl = {};
@@ -122,8 +129,18 @@ export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(
     ...(o.scale || [1, 1, 1]).map((v) => { const b = Buffer.alloc(4); b.writeFloatLE(v); return b; }), i32(o.placed || 0)]);
   const kopfTeil = (o) => Buffer.concat([i32(0), fstr(o.typePath), fstr('Persistent_Level'), fstr(o.pathName), basis.hasFlags ? i32(o.flags) : Buffer.alloc(0), fstr(o.parent)]);
 
+  // Drohnenstationen: Verweise auf ihr Info-Objekt (Kopplung mit der Partner-Station) und ihre Drohne zeigen auf Objekte, die
+  // nicht mitkommen – im Ziel würden sie ins Leere bzw. auf fremde Stationen zeigen (gemessen 25.10.2026: Absturz in
+  // AFGBuildableDroneStation::Factory_TickProducing). Ohne diese Eigenschaften startet die Station wie frisch gebaut.
+  const DROHNE_WEG = new Set(['mInfo', 'mStationDrone', 'mDockedDrone']);
+  const ohneDrohnenVerweise = (c) => {
+    try { const z = zerlege(c, true), weg = z.props.filter((p) => DROHNE_WEG.has(p.name)); if (!weg.length) return c;
+      const teile = []; let p = 0; for (const x of weg) { teile.push(c.subarray(p, x.start)); p = x.end; } teile.push(c.subarray(p)); return Buffer.concat(teile);
+    } catch { return c; }
+  };
   for (const o of alle) {
     let content = body.subarray(o.dBody, o.dEnd);
+    if (/Build_DroneStation_C$/.test(o.typePath)) content = ohneDrohnenVerweise(content);
     if (/Build_PowerLine_C$/.test(o.typePath)) {
       // Endpunkte sind Weltkoordinaten -> mitverschieben
       content = Buffer.from(content);
@@ -143,6 +160,7 @@ export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(
   // Leichtbau aus Vorlagen
   const taken = new Set(namen), fehlend = {};
   for (const t of leicht) {
+    if (!leichtbauAlsAkteure) continue; // Save-Transfer übernimmt die nativen Einträge separat.
     const v = templateFor(lib, kat, ver, t.cls);
     if (!v) { fehlend[t.cls] = (fehlend[t.cls] || 0) + 1; continue; }
     let content = Buffer.from(v.data, 'base64');
@@ -174,7 +192,7 @@ export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(
     info: {
       objekte: pruef.objects.length, gebaeude: alle.length, leitungen: leitungen.length, bestandteile: teile.length,
       leichtbau: leicht.length - Object.values(fehlend).reduce((a, b) => a + b, 0), fehlend, falscheVersion,
-      groesse: [Math.round((x1 - x0) / 100), Math.round((y1 - y0) / 100)], version: ver,
+      groesse: [Math.round((x1 - x0) / 100), Math.round((y1 - y0) / 100)], version: ver, verschiebung: [cx, cy, cz],
     },
   };
 }

@@ -1,4 +1,6 @@
 {
   "repo": "odinnuss-hash/blueprint-studio",
-  "hinweis": "GitHub-Quelle fuer Updates (Besitzer/Repository)."
+  "hinweis": "GitHub-Quelle fuer Updates (Besitzer/Repository).",
+  "spenden": "",
+  "spendenHinweis": "Spenden-Link (https://…), leer = kein Spenden-Knopf. Erscheint oben rechts und in der Hilfe unter „Zur App“."
 }

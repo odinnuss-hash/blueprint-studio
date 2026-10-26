@@ -1,0 +1,47 @@
+/* Alle drei Oberflächen verwenden gemeinsame semantische Farben. Spiel-/Ressourcenfarben bleiben fachlich definiert. */
+:root[data-design=werkhalle]{color-scheme:dark;--bg:#141618;--bg2:#1c1f21;--panel:#222629;--panel2:#292d30;--field:#131618;--btn:#2c3033;--line:#383e42;--line2:#566068;--text:#f5f1e9;--text2:#ddd8cf;--muted:#b5b6b4;--label:#bbc0c2;--accent:#ff932e;--accent-ink:#201205;--accent-bg:#3b2b1c;--accent-soft:#3b2b1c;--accent-text:#ffb66e;--ok:#94d8aa;--err:#ff9292;--design-radius:8px;--design-shadow:0 8px 22px #0003;--design-top:linear-gradient(110deg,#242627,#191c1e);--canvas:#101215;--canvas-grid:#24292f}
+:root[data-design=atlas]{color-scheme:light;--bg:#eeece5;--bg2:#f8f6f0;--panel:#fffdf8;--panel2:#f3f1e9;--field:#fffefa;--btn:#eeece3;--line:#d1d5ca;--line2:#9aa99e;--text:#18392e;--text2:#354d42;--muted:#53675d;--label:#435d50;--accent:#286047;--accent-ink:#fff;--accent-bg:#dfece0;--accent-soft:#dfece0;--accent-text:#204f39;--ok:#23693c;--err:#a72828;--design-radius:14px;--design-shadow:0 8px 24px #18392e12;--design-top:linear-gradient(110deg,#fffdf8,#edece2);--canvas:#e7e9df;--canvas-grid:#c7cfc3;--font-title:Georgia,'Times New Roman',serif}
+:root[data-design=kommandobruecke]{color-scheme:dark;--bg:#09121e;--bg2:#101d2c;--panel:#122235;--panel2:#192d43;--field:#0b1725;--btn:#1d3248;--line:#2e4359;--line2:#54728b;--text:#eff4fa;--text2:#cedce9;--muted:#a5bbd0;--label:#b8ccdf;--accent:#ffb344;--accent-ink:#191204;--accent-bg:#3b3020;--accent-soft:#3b3020;--accent-text:#ffd08a;--ok:#8bdac1;--err:#ff9b9b;--design-radius:8px;--design-shadow:0 8px 24px #0004;--design-top:linear-gradient(110deg,#172a40,#101b2b);--canvas:#0b1725;--canvas-grid:#23384f}
+html[data-design] body{background:var(--bg);color:var(--text)}
+html[data-design] .topbar{background:var(--design-top);box-shadow:var(--design-shadow);border-color:var(--line)}
+html[data-design] :is(.side,.panel,.toolbar,.statusbar,.ablage,dialog,.dlg,.pl-seite){background-color:var(--panel);color:var(--text);border-color:var(--line)}
+html[data-design] :is(dialog,.tile,.set-gruppe,.pathbox,.help,.w-gmenue,.w-punkte-menue){border-radius:var(--design-radius)}
+html[data-design] dialog{box-shadow:var(--design-shadow);border:1px solid var(--line2)}
+html[data-design] dialog::backdrop{background:#06101bb3;backdrop-filter:blur(5px)}
+html[data-design] :is(.btn,.tool,.seg,.seg-b,.w-wz,.pl-wz){color:var(--text);border-color:var(--line);background:var(--btn)}
+html[data-design] :is(.btn,.tool,.seg,.seg-b,.w-wz,.pl-wz):hover{border-color:var(--accent);background:var(--accent-bg);color:var(--accent-text)}
+html[data-design] :is(.btn.primary,.seg.on,.tool.on,.w-wz[aria-pressed=true],.pl-wz[aria-pressed=true],.seg-b[aria-pressed=true]){background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+html[data-design] :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),select,textarea){background:var(--field);color:var(--text);border-color:var(--line2)}
+html[data-design] :is(input[type=checkbox],input[type=radio],input[type=range]){accent-color:var(--accent)}
+html[data-design] :is(button,input,select,textarea,a):focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+html[data-design] :is(.help,.w-werkzeuge,.w-punkte-menue,.w-punkt-tipp){background:var(--panel);color:var(--text);box-shadow:var(--design-shadow)}
+html[data-design] :is(.item,.tile,.ab-file,.pl-rz-chip){background-color:var(--panel2);color:var(--text);border-color:var(--line)}
+html[data-design] :is(.item,.tile,.ab-file):hover{border-color:var(--accent);background-color:var(--accent-bg)}
+html[data-design] :is(.item.on,.item.mark,.ab-file.on){background:var(--accent-bg);border-color:var(--accent);color:var(--accent-text)}
+html[data-design] :is(.canvaswrap,#canvaswrap,.ab-bild){background:var(--canvas)}
+html[data-design] :is(.hint,.muted){color:var(--muted)}
+html[data-design=atlas] :is(h1,h2,.empty-title){font-family:var(--font-title);letter-spacing:-.02em}
+html[data-design=atlas] .brand-name{font-family:'Segoe UI',sans-serif;letter-spacing:.03em}
+html[data-design=atlas] :is(.btn,.tool){border-radius:8px}
+html[data-design=atlas] :is(.pl-grundlage,.pl-knoten.gebaut rect){background:#e0efdf;fill:#e0efdf;color:#235b35}
+html[data-design=atlas] .pl-knoten text{fill:var(--text)}
+/* Hilfe im eigenen Dokument übernimmt dieselben Tokens. */
+html[data-design] body>nav{background:var(--panel);border-color:var(--line)}
+html[data-design] :is(pre,code){color:var(--text2)}
+#dlg-settings{width:min(960px,94vw)}
+#dlg-settings [hidden]{display:none!important}
+.settings-kacheln{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;padding:12px 0 22px}
+.settings-kachel{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:12px;min-height:165px;padding:24px;border:1px solid var(--line);border-radius:var(--design-radius,12px);background:var(--panel2);color:var(--text);cursor:pointer}
+.settings-kachel>span{font-size:32px;color:var(--accent)}
+.settings-kachel strong{font-size:16px}.settings-kachel small{color:var(--muted);line-height:1.5}
+.settings-kachel:hover,.settings-kachel:focus-visible{border-color:var(--accent);background:var(--accent-bg);outline:2px solid var(--accent);outline-offset:2px}
+.settings-zurueck{align-self:flex-start}.settings-detail{display:flex;flex-direction:column;gap:12px;padding-bottom:18px}
+.settings-designs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.settings-design{padding:6px 6px 12px;border:2px solid var(--line);border-radius:10px;background:var(--panel2);color:var(--text);cursor:pointer}
+.settings-design img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:5px;margin-bottom:10px}
+.settings-design[aria-pressed=true]{border-color:var(--accent);background:var(--accent-bg)}
+.settings-design:focus-visible,.settings-design:hover{outline:2px solid var(--accent);outline-offset:2px}
+.settings-preview{margin:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel2)}
+.settings-preview>img{display:block;width:100%;max-height:330px;object-fit:contain;background:var(--bg)}
+.settings-preview figcaption{padding:16px}.settings-preview p{margin:8px 0;line-height:1.5}.settings-preview small{color:var(--muted)}
+@media(max-width:650px){.settings-kacheln{grid-template-columns:repeat(2,minmax(0,1fr))}.settings-kachel{padding:16px;min-height:145px}.settings-designs{grid-template-columns:1fr}.settings-design{display:flex;align-items:center;gap:12px;padding:8px}.settings-design img{width:110px;margin:0}}

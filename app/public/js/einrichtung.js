@@ -20,10 +20,21 @@ export class EinrichtungUI {
     } catch { /* egal */ }
   }
   async zeigen() { $('dlg-einrichtung').showModal(); await this.laden(); }
-  async laden() {
-    $('ein-liste').innerHTML = '<div class="muted">Prüfe …</div>';
-    try { this.render(await (await fetch('/api/einrichtung', { cache: 'no-store' })).json()); }
-    catch (e) { $('ein-liste').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
+  async laden(still = false) {
+    clearTimeout(this.timer);
+    if (!still) $('ein-liste').innerHTML = '<div class="muted">Prüfe …</div>';
+    try {
+      const j = await (await fetch('/api/einrichtung', { cache: 'no-store' })).json();
+      this.render(j);
+      // läuft ein Job (z. B. Gelände erzeugen), Liste nachladen, bis er fertig ist; dann Ergebnis melden
+      const laeuft = j.liste.some((x) => /^wird erzeugt/.test(x.text));
+      if (laeuft && $('dlg-einrichtung').open) { this.jobLief = true; this.timer = setTimeout(() => this.laden(true), 2000); }
+      else if (this.jobLief) {
+        this.jobLief = false;
+        const s = await (await fetch('/api/einrichtung/job', { cache: 'no-store' })).json();
+        if (s && !s.laeuft) this.app.toast(s.ok ? s.text : (s.fehler || s.text || 'Fehlgeschlagen.'), s.ok ? 'ok' : 'err');
+      }
+    } catch (e) { $('ein-liste').innerHTML = `<div class="err">${esc(e.message)}</div>`; }
   }
   render(j) {
     $('ein-liste').innerHTML = j.liste.map((x) => `<div class="ein-row ${x.status}">

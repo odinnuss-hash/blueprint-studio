@@ -48,7 +48,8 @@ export class View2D {
     const [w, h] = this.size();
     if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = '#101215'; ctx.fillRect(0, 0, w, h);
+    this.design = getComputedStyle(document.documentElement);
+    ctx.fillStyle = this.design.getPropertyValue('--canvas').trim() || '#101215'; ctx.fillRect(0, 0, w, h);
     this.drawGrid(w, h);
     const scene = this.app.scene;
     if (!scene) return;
@@ -125,9 +126,9 @@ export class View2D {
       for (let y = Math.floor(wy0 / step) * step; y <= wy1; y += step) { const sy = Math.round(this.toScreen(0, y)[1]) + .5; ctx.moveTo(0, sy); ctx.lineTo(w, sy); }
       ctx.stroke();
     };
-    lines(100, '#1b1e23');
-    lines(800, '#262a31');
-    lines(6400, '#323741');
+    lines(100, this.design?.getPropertyValue('--canvas-grid').trim() || '#1b1e23');
+    lines(800, this.design?.getPropertyValue('--line').trim() || '#262a31');
+    lines(6400, this.design?.getPropertyValue('--line2').trim() || '#323741');
   }
 
   drawScale(w, h) {
@@ -135,9 +136,9 @@ export class View2D {
     const opts = [100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600];
     const len = opts.find((v) => v * s >= 80) || opts[opts.length - 1];
     const px = len * s, x = 16, y = h - 18;
-    ctx.strokeStyle = '#c9ccd1'; ctx.lineWidth = 2; ctx.beginPath();
+    ctx.strokeStyle = this.design?.getPropertyValue('--text2').trim() || '#c9ccd1'; ctx.lineWidth = 2; ctx.beginPath();
     ctx.moveTo(x, y - 5); ctx.lineTo(x, y); ctx.lineTo(x + px, y); ctx.lineTo(x + px, y - 5); ctx.stroke();
-    ctx.fillStyle = '#c9ccd1'; ctx.font = '12px Cascadia Mono, Consolas, monospace'; ctx.textBaseline = 'bottom';
+    ctx.fillStyle = this.design?.getPropertyValue('--text2').trim() || '#c9ccd1'; ctx.font = '12px Cascadia Mono, Consolas, monospace'; ctx.textBaseline = 'bottom';
     ctx.fillText(`${len / 100} m`, x + px + 6, y + 2);
   }
 

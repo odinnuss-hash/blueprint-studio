@@ -69,6 +69,7 @@ precision highp float;
 in vec2 vUv;
 uniform sampler2D tCol, tId, tDep;
 uniform float uNear, uFar;
+uniform vec3 uDesignBg;
 out vec4 o;
 float lin(float d) { float z = d * 2.0 - 1.0; return 2.0 * uNear * uFar / (uFar + uNear - z * (uFar - uNear)); }
 void main() {
@@ -76,7 +77,7 @@ void main() {
   ivec2 S = textureSize(tCol, 0) - 1;
   float d = texelFetch(tDep, p, 0).r;
   vec4 id = texelFetch(tId, p, 0);
-  vec3 bg = mix(vec3(0.051, 0.059, 0.071), vec3(0.090, 0.102, 0.122), vUv.y);
+  vec3 bg = mix(uDesignBg * 0.9, uDesignBg, vUv.y);
   if (d >= 1.0) { o = vec4(bg, 1.0); return; }
   vec3 c = texelFetch(tCol, p, 0).rgb;
   ivec2 q[4] = ivec2[4](ivec2(1, 0), ivec2(-1, 0), ivec2(0, 1), ivec2(0, -1));
@@ -455,6 +456,8 @@ export class View3DGL {
     gl.viewport(0, 0, W, H);
     gl.disable(gl.DEPTH_TEST);
     gl.useProgram(this.pPost.p);
+    const designHex = getComputedStyle(document.documentElement).getPropertyValue('--canvas').trim() || '#101215';
+    gl.uniform3fv(this.pPost.u.uDesignBg, [1, 3, 5].map(i => parseInt(designHex.slice(i, i + 2), 16) / 255));
     const [tc, ti, td] = this.fboTex;
     [[tc, 'tCol'], [ti, 'tId'], [td, 'tDep']].forEach(([t, n], k) => { gl.activeTexture(gl.TEXTURE0 + k); gl.bindTexture(gl.TEXTURE_2D, t); gl.uniform1i(this.pPost.u[n], k); });
     gl.uniform1f(this.pPost.u.uNear, near); gl.uniform1f(this.pPost.u.uFar, far);
@@ -560,6 +563,7 @@ export class View3DGL {
       return;
     }
     this.drag = { btn: e.button, sx, sy, lx: sx, ly: sy, moved: false, shift: e.shiftKey || e.ctrlKey };
+    if (this.mausDreh && e.button === 0 && this.app.mausDrehStart()) this.drag.dreh = true;
     this.cv.style.cursor = 'grabbing';
   }
   onMove(e) {
@@ -573,7 +577,11 @@ export class View3DGL {
     const dx = sx - d.lx, dy = sy - d.ly; d.lx = sx; d.ly = sy;
     if (!d.moved && Math.hypot(sx - d.sx, sy - d.sy) < 4) return;
     d.moved = true;
-    if ((d.btn === 0 || (this.stift && d.btn === 2)) && !e.shiftKey) {
+    if (d.dreh) { // Mit der Maus drehen: waagerecht um Z, senkrecht kippen um die Weltachse quer zur Blickrichtung
+      const r = this.camera().r, ax = Math.abs(r[0]) >= Math.abs(r[1]) ? 'x' : 'y', vz = Math.sign(ax === 'x' ? r[0] : r[1]) || 1;
+      this.app.mausDrehen(dx, dy, e.ctrlKey, ax, vz); return;
+    }
+    if ((d.btn === 0 || ((this.stift || this.mausDreh) && d.btn === 2)) && !e.shiftKey) {
       this.yaw -= dx * 0.4; this.pitch = Math.max(-85, Math.min(89, this.pitch + dy * 0.3));
     } else {
       const cam = this.camera(), k = this.dist / cam.focal;
@@ -585,6 +593,7 @@ export class View3DGL {
     if (this.lasso) { const l = this.lasso; this.lasso = null; this.lassoZeichnen(); this.lassoAnwenden(l); return; }
     const d = this.drag; this.drag = null; this.cv.style.cursor = this.stift ? 'crosshair' : 'grab';
     if (!d) return;
+    if (d.dreh) { this.app.mausDrehEnde(); if (d.moved) return; }
     if (!d.moved && d.btn === 0) {
       const o = this.pick(d.sx, d.sy);
       if (o) { if (d.shift) this.app.toggleSel(o.i); else this.app.setSel([o.i]); }

@@ -25,17 +25,11 @@
       <button type="button" role="tab" id="mode-planer" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M208 80c0-26.5 21.5-48 48-48l64 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-8 0 0 40 152 0c30.9 0 56 25.1 56 56l0 32 8 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-64 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l8 0 0-32c0-4.4-3.6-8-8-8l-152 0 0 40 8 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-64 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l8 0 0-40-152 0c-4.4 0-8 3.6-8 8l0 32 8 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-64 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l8 0 0-32c0-30.9 25.1-56 56-56l152 0 0-40-8 0c-26.5 0-48-21.5-48-48l0-64z"/></svg> Planer</button>
       <button type="button" role="tab" id="mode-hilfe" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM169.8 165.3c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"/></svg> Hilfe</button>
     </nav>
-    <div class="pathbox" id="pathbox" title="Blaupausen-Ordner">
-      <svg class="fa" width="15" height="15" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M88.7 223.8L0 375.8 0 96C0 60.7 28.7 32 64 32l117.5 0c17 0 33.3 6.7 45.3 18.7l26.5 26.5c12 12 28.3 18.7 45.3 18.7L416 96c35.3 0 64 28.7 64 64l0 32-336 0c-22.8 0-43.8 12.1-55.3 31.8zm27.6 16.1C122.1 230 132.6 224 144 224l400 0c11.5 0 22 6.1 27.7 16.1s5.7 22.2-.1 32.1l-112 192C453.9 474 443.4 480 432 480L32 480c-11.5 0-22-6.1-27.7-16.1s-5.7-22.2 .1-32.1l112-192z"/></svg>
-      <span id="pathtext">–</span>
-    </div>
     <div class="actions">
-      <button type="button" class="btn" id="btn-folder" title="Blaupausen-Ordner im Explorer öffnen"><svg class="fa" width="14" height="14" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M88.7 223.8L0 375.8 0 96C0 60.7 28.7 32 64 32l117.5 0c17 0 33.3 6.7 45.3 18.7l26.5 26.5c12 12 28.3 18.7 45.3 18.7L416 96c35.3 0 64 28.7 64 64l0 32-336 0c-22.8 0-43.8 12.1-55.3 31.8zm27.6 16.1C122.1 230 132.6 224 144 224l400 0c11.5 0 22 6.1 27.7 16.1s5.7 22.2-.1 32.1l-112 192C453.9 474 443.4 480 432 480L32 480c-11.5 0-22-6.1-27.7-16.1s-5.7-22.2 .1-32.1l112-192z"/></svg> Ordner</button>
-      <button type="button" class="btn" id="btn-ablage" aria-pressed="true" title="Ablage (Ordnerleiste) ausblenden"><svg class="fa" width="14" height="14" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M0 96C0 60.7 28.7 32 64 32l384 0c35.3 0 64 28.7 64 64l0 320c0 35.3-28.7 64-64 64L64 480c-35.3 0-64-28.7-64-64L0 96zm64 0l0 320 128 0 0-320L64 96zm384 0L256 96l0 320 192 0 0-320z"/></svg> <span id="btn-ablage-t">Ablage ausblenden</span></button>
-      <button type="button" class="btn" id="btn-ablage-gross" hidden title="Ablage in einem großen Fenster öffnen" aria-label="Ablage in einem großen Fenster öffnen"><svg class="fa" width="14" height="14" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V352z"/></svg> Großes Fenster</button>
       <button type="button" class="btn primary" id="btn-update" hidden title="Neue Version verfügbar">⬆ Update</button>
+      <button type="button" class="btn" id="btn-tour" title="Einführung: die Funktionen dieses Bereichs Schritt für Schritt erklärt"><svg class="fa" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span class="btn-text"> Einführung</span></button>
       <button type="button" class="btn" id="btn-settings" title="Einstellungen"><svg class="fa" width="14" height="14" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/></svg> Einstellungen</button>
-      <button type="button" class="btn primary" id="btn-save" disabled><svg class="fa" width="14" height="14" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path d="M64 32C28.7 32 0 60.7 0 96L0 416c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-242.7c0-17-6.7-33.3-18.7-45.3L352 50.7C340 38.7 323.7 32 306.7 32L64 32zm0 96c0-17.7 14.3-32 32-32l192 0c17.7 0 32 14.3 32 32l0 64c0 17.7-14.3 32-32 32L96 224c-17.7 0-32-14.3-32-32l0-64zM224 288a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg> Speichern …</button>
+      <a class="btn spenden" id="btn-spenden" href="#" target="_blank" rel="noopener" hidden title="Blueprint Studio ist kostenlos. Wer mag, kann die Weiterentwicklung mit einer freiwilligen Spende unterstützen."><svg class="fa" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.5 1.1 4.2 2.3.7-1.2 2.1-2.3 4.2-2.3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> Unterstützen</a>
     </div>
   </header>
 
@@ -69,6 +63,7 @@
         <div id="gen-params" class="genparams"></div>
         <div class="geninfo" id="gen-info">–</div>
         <button type="button" class="btn primary" id="gen-new">Als neue Blaupause öffnen</button>
+        <button type="button" class="btn" id="gen-symbole" title="Schilder mit Sonderzeichen (Pfeile, Rahmen, Blöcke …) aus einer Zeichenliste zusammenstellen und als Blaupause speichern">Sonderzeichen-Schilder …</button>
         <button type="button" class="btn" id="gen-insert" disabled>In geöffnete Blaupause einfügen</button>
         <button type="button" class="btn primary" id="gen-raum-save" hidden>Als Blaupause speichern</button>
         <div class="hint" id="gen-hint">Teile, die in deinen Blaupausen vorkommen, werden exakt übernommen; andere Materialvarianten werden daraus abgeleitet.</div>
@@ -78,12 +73,18 @@
 
     <main class="stage">
       <div class="toolbar">
+        <span class="ed-ablage" role="group" aria-label="Ablage und Ordner">
+          <button type="button" class="btn" id="btn-folder" title="Blaupausen-Ordner im Explorer öffnen"><svg class="fa" width="14" height="14" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M88.7 223.8L0 375.8 0 96C0 60.7 28.7 32 64 32l117.5 0c17 0 33.3 6.7 45.3 18.7l26.5 26.5c12 12 28.3 18.7 45.3 18.7L416 96c35.3 0 64 28.7 64 64l0 32-336 0c-22.8 0-43.8 12.1-55.3 31.8zm27.6 16.1C122.1 230 132.6 224 144 224l400 0c11.5 0 22 6.1 27.7 16.1s5.7 22.2-.1 32.1l-112 192C453.9 474 443.4 480 432 480L32 480c-11.5 0-22-6.1-27.7-16.1s-5.7-22.2 .1-32.1l112-192z"/></svg> Ordner</button>
+          <button type="button" class="btn" id="btn-ablage" aria-pressed="true" title="Ablage (Ordnerleiste) ausblenden"><svg class="fa" width="14" height="14" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M0 96C0 60.7 28.7 32 64 32l384 0c35.3 0 64 28.7 64 64l0 320c0 35.3-28.7 64-64 64L64 480c-35.3 0-64-28.7-64-64L0 96zm64 0l0 320 128 0 0-320L64 96zm384 0L256 96l0 320 192 0 0-320z"/></svg> <span id="btn-ablage-t">Ablage ausblenden</span></button>
+          <button type="button" class="btn" id="btn-ablage-gross" hidden title="Ablage in einem großen Fenster öffnen" aria-label="Ablage in einem großen Fenster öffnen"><svg class="fa" width="14" height="14" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s14.3 32 32 32h96c17.7 0 32-14.3 32-32V352z"/></svg> Großes Fenster</button>
+        </span>
         <div class="seggroup" role="group" aria-label="Ansicht">
           <button type="button" class="seg on" id="v2d" aria-pressed="true">2D Draufsicht</button>
           <button type="button" class="seg" id="v3d" aria-pressed="false">3D Ansicht</button>
         </div>
         <button type="button" class="seg toggle" id="t-models" aria-pressed="true" hidden title="Echte Spielmodelle statt Kästen anzeigen">Modelle</button>
         <button type="button" class="seg toggle" id="t-stift" aria-pressed="false" hidden title="Stift: Bereich frei umranden und alle Objekte darin auswählen (P)"><svg class="fa" width="15" height="15" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"/></svg> Stift</button>
+        <button type="button" class="seg toggle" id="t-mausdreh" aria-pressed="false" title="Mit der Maus drehen/kippen: links ziehen – waagerecht drehen, senkrecht kippen (15°-Schritte, Strg = 1°). Ohne Auswahl die ganze Blaupause. Rechte Maustaste = umsehen."><svg class="fa" width="13" height="13" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M463.5 224l8.5 0c13.3 0 24-10.7 24-24l0-128c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1c-87.5 87.5-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8l119.5 0z"/></svg> Maus-Drehen</button>
         <div class="seggroup" role="group" aria-label="Ebene" id="levels"></div>
         <span class="sep"></span>
         <button type="button" class="tool" id="t-rotl" title="Auswahl 90° nach links drehen (Q)" aria-label="Nach links drehen"><svg class="fa" width="17" height="17" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M48.5 224L40 224c-13.3 0-24-10.7-24-24L16 72c0-9.7 5.8-18.5 14.8-22.2s19.3-1.7 26.2 5.2L98.6 96.6c87.6-86.5 228.7-86.2 315.8 1c87.5 87.5 87.5 229.3 0 316.8s-229.3 87.5-316.8 0c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0c62.5 62.5 163.8 62.5 226.3 0s62.5-163.8 0-226.3c-62.2-62.2-162.7-62.5-225.3-1L185 183c6.9 6.9 8.9 17.2 5.2 26.2s-12.5 14.8-22.2 14.8L48.5 224z"/></svg></button>
@@ -103,6 +104,7 @@
           </select>
         </label>
         <button type="button" class="tool" id="t-help" title="Tastenkürzel" aria-label="Hilfe"><svg class="fa" width="17" height="17" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM169.8 165.3c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"/></svg></button>
+        <button type="button" class="btn primary" id="btn-save" disabled><svg class="fa" width="14" height="14" viewBox="0 0 448 512" fill="currentColor" aria-hidden="true"><path d="M64 32C28.7 32 0 60.7 0 96L0 416c0 35.3 28.7 64 64 64l320 0c35.3 0 64-28.7 64-64l0-242.7c0-17-6.7-33.3-18.7-45.3L352 50.7C340 38.7 323.7 32 306.7 32L64 32zm0 96c0-17.7 14.3-32 32-32l192 0c17.7 0 32 14.3 32 32l0 64c0 17.7-14.3 32-32 32L96 224c-17.7 0-32-14.3-32-32l0-64zM224 288a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg> Speichern …</button>
       </div>
       <div class="canvaswrap" id="canvaswrap">
         <canvas id="cv"></canvas>
@@ -133,6 +135,10 @@
       <div class="statusbar">
         <a href="#" id="st-version" title="Zur App: Urheber, Copyright, Nutzung">–</a>
         <span id="st-count">–</span>
+        <span class="pathbox st-pfad" id="pathbox" title="Blaupausen-Ordner">
+      <svg class="fa" width="15" height="15" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M88.7 223.8L0 375.8 0 96C0 60.7 28.7 32 64 32l117.5 0c17 0 33.3 6.7 45.3 18.7l26.5 26.5c12 12 28.3 18.7 45.3 18.7L416 96c35.3 0 64 28.7 64 64l0 32-336 0c-22.8 0-43.8 12.1-55.3 31.8zm27.6 16.1C122.1 230 132.6 224 144 224l400 0c11.5 0 22 6.1 27.7 16.1s5.7 22.2-.1 32.1l-112 192C453.9 474 443.4 480 432 480L32 480c-11.5 0-22-6.1-27.7-16.1s-5.7-22.2 .1-32.1l112-192z"/></svg>
+      <span id="pathtext">–</span>
+    </span>
         <span id="st-view">–</span>
         <span id="st-cursor"></span>
         <span class="right" id="st-changes">Keine Änderungen</span>
@@ -167,6 +173,7 @@
         <div class="label">Baukosten der Blaupause</div>
         <div id="costs"></div>
         <div class="hint" id="costs-hint">Aus dem Blaupausen-Kopf gelesen.</div>
+        <button type="button" class="btn small" id="costs-check" title="Baukosten mit den Vorräten in einem Spielstand vergleichen" disabled>Material prüfen</button>
       </div>
     </aside>
    </div>
@@ -223,6 +230,7 @@
       <div class="label">Namensschema</div>
       <div class="hint"><b>Hauptgruppe_Untergruppe_Thema_Detail</b> – höchstens 32 Zeichen (Grenze im Spiel). Beispiel: <code>2_1_Kabel_12xKonstruktor</code>. Mehr unter <a href="#" id="o-help">Hilfe → Namensschema</a>.</div>
       <div id="o-legend" class="legend"></div>
+      <button type="button" class="btn small o-struktur" id="o-struktur" title="Gruppen und Untergruppen der Ablage (Ordnerstruktur) bearbeiten – dieselbe Einstellung wie unter Einstellungen → Blaupausen-Ablage">Ordnerstruktur bearbeiten …</button>
       <div class="side-foot" id="o-orte">–</div>
     </aside>
     <main class="stage">
@@ -235,12 +243,23 @@
           <option value="inhalt">Name aus Inhalt (prüfen!)</option><option value="fehler">Ungültige Namen</option><option value="gleich">Passen schon</option><option value="alle">Alle</option>
         </select>
         <span class="sep"></span>
-        <button type="button" class="btn" id="o-load">Neu einlesen</button>
-        <button type="button" class="btn" id="o-protokoll">Protokoll / Rückgängig</button>
-        <button type="button" class="btn" id="o-papierkorb">Duplikate &amp; Papierkorb</button>
-        <button type="button" class="btn primary" id="o-apply" disabled>Ausgewählte anwenden</button>
+        <button type="button" class="btn" id="o-load" title="Alle Blaupausen neu einlesen und die Vorschläge neu berechnen">Neu einlesen</button>
+        <button type="button" class="btn" id="o-protokoll" title="Bisherige Durchgänge ansehen und zurücknehmen">Protokoll / Rückgängig</button>
+        <button type="button" class="btn" id="o-papierkorb" title="Gleiche Blaupausen unter verschiedenen Namen finden; Papierkorb der App ansehen, wiederherstellen oder leeren">Duplikate &amp; Papierkorb</button>
+        <button type="button" class="btn primary" id="o-apply" disabled title="Nur die angehakten Zeilen ausführen (Gelöschtes kommt in den Papierkorb)">Ausgewählte anwenden</button>
         <button type="button" class="btn" id="o-uebernehmen" disabled title="Vorsortierte Blaupausen aus der Bibliothek (z. B. _sortieren / 1 Bauen / …) in die Ablage im Spielordner verschieben">In Ablage übernehmen</button>
       </div>
+      <details class="o-hilfe" id="o-hilfe-box">
+        <summary>So funktioniert Ordnen</summary>
+        <ol>
+          <li><b>Einlesen:</b> Die App liest alle Blaupausen aus den Spiel-Ordnern und deiner Bibliothek und vergleicht Namen und Inhalt.</li>
+          <li><b>Vorschläge prüfen:</b> Jede Zeile zeigt, was passieren würde – umbenennen nach dem Namensschema, in den passenden Ablage-Ordner einsortieren, als Duplikat beiseitelegen oder löschen. Den neuen Namen kannst du direkt im Feld ändern.</li>
+          <li><b>Auswählen:</b> Häkchen setzen (oben links alle sichtbaren auf einmal). Mit dem Filter „Anzeigen“ arbeitest du am besten eine Aktion nach der anderen ab.</li>
+          <li><b>Anwenden:</b> „Ausgewählte anwenden“ führt nur die angehakten Zeilen aus. Gelöschtes kommt in den Papierkorb, jeder Durchgang lässt sich unter „Protokoll / Rückgängig“ zurücknehmen.</li>
+        </ol>
+        <p class="hint">Das Namensschema (links) bestimmt den Ordner: Die Nummern vorne im Namen sind Haupt- und Untergruppe, z. B. <code>2_1_…</code> → Ordner der Gruppe 2, Untergruppe 1.</p>
+      </details>
+      <div class="o-filter-text hint" id="o-art-text"></div>
       <div class="o-wrap">
         <table class="otab">
           <thead><tr><th><input type="checkbox" id="o-all" aria-label="Alle sichtbaren auswählen"></th><th>Ort / Ordner</th><th>Alter Name</th><th>Neuer Name</th><th>Aktion</th><th>Vorschau</th><th>Grund · Inhalt</th><th></th></tr></thead>
@@ -257,8 +276,6 @@
       <div class="label">Spielstände <button type="button" class="linkbtn" id="k-neu" title="Liste neu einlesen">neu einlesen</button></div>
       <input id="k-filter" type="search" placeholder="Spielstand suchen …" aria-label="Spielstand suchen">
       <div id="k-liste" class="list k-liste"></div>
-      <div class="label">Ebenen <button type="button" class="linkbtn" id="k-alle">alle zeigen</button></div>
-      <div id="k-ebenen" class="k-ebenen"></div>
       <div class="side-foot" id="k-ordner">–</div>
     </aside>
     <main class="stage">
@@ -274,6 +291,9 @@
         <label class="k-hoehe" title="Nur Bauteile in diesem Höhenbereich zeigen (Meter)">Höhe
           <input id="k-hmin" type="number" step="10" placeholder="von" aria-label="Höhe von (m)"> – <input id="k-hmax" type="number" step="10" placeholder="bis" aria-label="Höhe bis (m)"> m</label>
         <label class="check" title="Spielwelt als Hintergrund"><input type="checkbox" id="k-bild" checked> Karte</label>
+        <span class="k-eb-gruppe"><button type="button" class="btn" id="k-eb-knopf" aria-pressed="false" title="Ebenen: Fundamente, Bänder, Rohre usw. ein- und ausblenden"><svg class="fa" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/><circle cx="8" cy="7" r="1.6" fill="currentColor"/><circle cx="15" cy="12" r="1.6" fill="currentColor"/><circle cx="10" cy="17" r="1.6" fill="currentColor"/></svg> <span id="k-eb-text">Ebenen</span> ▾</button></span>
+        <span class="k-punkte-gruppe"><button type="button" class="btn toggle" id="k-punkte" aria-pressed="false" title="Kartenpunkte: Rohstoff-Knoten, Gasquellen, Geysire, Absturzstellen, Power-Slugs, Somersloops, Mercer-Kugeln – mit Zustand aus dem geladenen Spielstand"><svg class="fa" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.7-6-11a6 6 0 0 1 12 0c0 5.3-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg> Punkte</button><button type="button" class="btn" id="k-punkte-wahl" title="Welche Kartenpunkte?" aria-label="Kartenpunkte auswählen">▾</button></span>
+        <span class="k-mp-gruppe"><button type="button" class="btn" id="k-mp" title="Megaprints (Exporte von satisfactory-calculator.com) suchen und auf der Karte anzeigen"><svg class="fa" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5"/></svg> Megaprints</button><button type="button" class="btn" id="k-mp-weg" hidden title="Megaprint ausblenden" aria-label="Megaprint ausblenden">✕</button></span>
         <span class="grow"></span>
         <span class="k-werkzeug" role="group" aria-label="Bereich für Blaupause wählen">
           <button type="button" class="btn toggle" id="k-bereich" aria-pressed="false" title="Rechteck aufziehen (oder Umschalt + Ziehen)"><svg class="fa" width="14" height="14" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M128 32c0-17.7-14.3-32-32-32S64 14.3 64 32l0 32L32 64C14.3 64 0 78.3 0 96s14.3 32 32 32l32 0 0 256c0 35.3 28.7 64 64 64l224 0 0-64-224 0 0-352zM384 480c0 17.7 14.3 32 32 32s32-14.3 32-32l0-32 32 0c17.7 0 32-14.3 32-32s-14.3-32-32-32l-32 0 0-256c0-35.3-28.7-64-64-64L160 64l0 64 224 0 0 352z"/></svg> Rechteck</button><button type="button" class="btn toggle" id="k-stift" aria-pressed="false" title="Bereich frei mit dem Stift umranden"><svg class="fa" width="14" height="14" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M362.7 19.3L314.3 67.7 444.3 197.7l48.4-48.4c25-25 25-65.5 0-90.5L453.3 19.3c-25-25-65.5-25-90.5 0zm-71 71L58.6 323.5c-10.4 10.4-18 23.3-22.2 37.4L1 481.2C-1.5 489.7 .8 498.8 7 505s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L421.7 220.3 291.7 90.3z"/></svg> Stift</button>
@@ -283,6 +303,10 @@
       </div>
       <div class="k-stage">
         <canvas id="k-canvas" aria-label="Karte des Spielstands"></canvas>
+        <div class="w-punkte-menue k-eb-menue" id="k-eb-menue" hidden>
+          <div class="label">Ebenen <button type="button" class="linkbtn" id="k-alle">alle zeigen</button></div>
+          <div id="k-ebenen" class="k-ebenen"></div>
+        </div>
         <div class="k-scale"><div id="k-massstab"></div><span id="k-massstab-t">–</span></div>
         <div class="loading" id="k-loading" hidden><span id="k-loading-text">Lade …</span></div>
       </div>
@@ -296,21 +320,16 @@
     <aside class="side left">
       <div class="label">Spielstand</div>
       <select id="w-spielstand" aria-label="Spielstand"><option value="">– nur Gelände –</option></select>
-      <button type="button" class="btn" id="w-laden">Laden</button>
-      <label class="check"><input type="checkbox" id="w-bild" checked> Kartenbild auf dem Gelände</label>
+      <div class="w-laden-zeile"><button type="button" class="btn" id="w-laden">Laden</button><button type="button" class="btn" id="w-reset" title="Spielstand entladen, gesetzte Blaupausen und Änderungen verwerfen – nur das Gelände bleibt">Zurücksetzen</button></div>
       <label class="check"><input type="checkbox" id="w-maus"> Maus links/rechts umkehren</label>
       <div class="label">Steuerung</div>
       <div class="hint">Erst in die Ansicht klicken. <b>W A S D</b> fliegen · <b>Leertaste / C</b> (oder <b>E / Q</b>) hoch / runter · <b>Umschalt</b> schneller · Maus ziehen = umsehen · Mausrad = vor / zurück. Das Tempo passt sich der Flughöhe an.</div>
       <div class="label">Blaupausen setzen</div>
-      <button type="button" class="btn primary" id="w-bp-ablage" title="Großes Ablage-Fenster mit 3D-Vorschau öffnen – Klick auf eine Kachel wählt die Blaupause">Aus der Ablage wählen …</button>
-      <button type="button" class="btn" id="w-bp-fenster" title="Ablage-Kacheln als eigenes Fenster neben der Welt öffnen (z. B. auf dem zweiten Bildschirm) – bleibt offen, Klick auf eine Kachel wählt die Blaupause hier">Ablage als eigenes Fenster</button>
-      <input id="w-bp" type="search" list="w-bp-liste" placeholder="Blaupause suchen (Ablage oder Spiel) …" aria-label="Blaupause" autocomplete="off">
-      <datalist id="w-bp-liste"></datalist>
-      <button type="button" class="btn" id="w-bp-setzen" disabled>Setzen</button>
-      <div class="hint" id="w-bp-hilfe">Blaupause wählen, <b>Setzen</b>, dann in der Ansicht: Maus = Vorschau verschieben · <b>Klick</b> = absetzen (mehrmals möglich) · <b>R</b> = 90° drehen (<b>Umschalt+R</b> = 15°) · <b>Bild↑ / Bild↓</b> = Höhe ±1 m (mit Umschalt ±4 m) · <b>Esc</b> oder <b>Rechtsklick</b> = fertig.</div>
+      <div class="hint">Oben links: <b>Ablage</b>, <b>Ablage als eigenes Fenster</b> oder <b>Suche</b> – Blaupause wählen, dann <b>Setzen</b>.</div>
+      <div class="hint" id="w-bp-hilfe">In der Ansicht: Maus = Vorschau verschieben · <b>Klick</b> = absetzen (mehrmals möglich) · <b>R</b> = 90° drehen (<b>Umschalt+R</b> = 15°) · <b>Bild↑ / Bild↓</b> = Höhe ±1 m (mit Umschalt ±4 m) · <b>Esc</b> oder <b>Rechtsklick</b> = fertig.</div>
       <div id="w-gesetzt" class="w-gesetzt"></div>
       <div class="label">Bestehendes ändern</div>
-      <div class="hint">Nach dem Laden eines Spielstands: <b>Klick</b> auf ein Bauteil wählt es aus (<b>Strg+Klick</b> = dazu/weg) · <b>Pfeiltasten</b> = 1 m verschieben (<b>Umschalt</b> = 8 m) · <b>Bild↑ / Bild↓</b> = Höhe · <b>R</b> = 90° drehen (<b>Umschalt+R</b> = 15°) · <b>Entf</b> = löschen · <b>Esc</b>, <b>Rechtsklick</b> oder Klick ins Gelände = Auswahl fertig.</div>
+      <div class="hint">Nach dem Laden eines Spielstands: <b>Klick</b> auf ein Bauteil wählt es aus (<b>Strg+Klick</b> = dazu/weg) · <b>Pfeiltasten</b> = 1 m verschieben (<b>Umschalt</b> = 8 m) · <b>Bild↑ / Bild↓</b> = Höhe · <b>R</b> = 90° drehen (<b>Umschalt+R</b> = 15°) · <b>Entf</b> = löschen · <b>Esc</b>, <b>Rechtsklick</b> oder Klick ins Gelände = Auswahl fertig. Mit dem <b>Stift</b> (oben links) einen Bereich umranden: gewählt wird alles darin, auch verdeckte Teile, bis zur eingestellten <b>Tiefe</b> hinter dem vordersten Teil (Umschalt = dazu, Strg = weg).</div>
       <div id="w-aendern" class="w-gesetzt"></div>
       <div class="w-speichern" id="w-speichern-feld" hidden>
         <label for="w-neu-name" class="label">Neuer Spielstand</label>
@@ -323,35 +342,67 @@
     </aside>
     <main class="stage">
       <canvas id="w-canvas" class="w-canvas"></canvas>
+      <div class="w-werkzeuge" role="toolbar" aria-label="Werkzeuge">
+        <button type="button" class="w-wz" id="w-stift" aria-pressed="false" title="Stift: mit gedrückter Maustaste einen Bereich umranden – gewählt wird alles darin, auch verdeckte Teile. Umschalt = dazu, Strg = weg." aria-label="Stift"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/><path d="M3 12c0-5 4-9 9-9" stroke-dasharray="2 3"/></svg></button>
+        <label class="w-wz w-tiefe" title="Tiefe: wie weit hinter dem vordersten umrandeten Teil noch mitgewählt wird (so kommt das Innere eines Gebäudes mit, Gebäude weit dahinter nicht). 0 = alles."><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v14"/><path d="M7 12l5 5 5-5"/><path d="M5 21h14"/></svg><input type="number" id="w-tiefe" min="0" max="5000" step="10" value="600" aria-label="Tiefe in Metern"><span>m</span></label>
+        <button type="button" class="w-wz" id="w-ego" aria-pressed="false" title="Ego-Modus: Startpunkt anklicken, dann auf Augenhöhe durch die Fabriken schweben (W A S D, Leertaste / C, Esc = zurück)" aria-label="Ego-Modus"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="2.5"/><path d="M12 8v7M8 11h8M12 15l-3 6M12 15l3 6"/></svg></button>
+        <span class="w-wz-trenner"></span>
+        <button type="button" class="w-wz" id="w-bp-ablage" title="Ablage: großes Fenster mit 3D-Vorschau – Klick auf eine Kachel wählt die Blaupause" aria-label="Ablage"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+        <button type="button" class="w-wz" id="w-bp-fenster" title="Ablage als eigenes Fenster neben der Welt (z. B. auf dem zweiten Bildschirm) – bleibt offen, Klick auf eine Kachel wählt die Blaupause hier" aria-label="Ablage als eigenes Fenster"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="14" height="14" rx="2"/><path d="M14 3h7v7"/><path d="M21 3l-9 9"/></svg></button>
+        <span class="w-wz-suche" title="Blaupause suchen (Ablage oder Spiel)"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="w-bp" type="search" list="w-bp-liste" placeholder="Blaupause suchen …" aria-label="Blaupause suchen" autocomplete="off"><datalist id="w-bp-liste"></datalist></span>
+        <button type="button" class="w-wz" id="w-bp-setzen" disabled title="Gewählte Blaupause setzen" aria-label="Setzen"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg></button>
+        <span class="w-wz-trenner"></span>
+        <label class="w-wz" title="Leistungsmodus: zeichnet nur, was im Bild ist; bis 300 m volle Qualität, bis 1,2 km vereinfachte Modelle, weiter weg einfache Quader. Schaltet sich bei sehr großen Spielständen selbst ein."><input type="checkbox" id="w-leistung" hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></label>
+        <button type="button" class="w-wz" id="w-punkte" aria-pressed="false" title="Kartenpunkte: Rohstoff-Knoten, Gasquellen, Geysire, Absturzstellen, Power-Slugs, Somersloops, Mercer-Kugeln – mit Zustand aus dem geladenen Spielstand" aria-label="Kartenpunkte"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.7-6-11a6 6 0 0 1 12 0c0 5.3-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg></button>
+        <button type="button" class="w-wz w-wz-klein" id="w-punkte-menue-knopf" title="Welche Kartenpunkte?" aria-label="Kartenpunkte auswählen">▾</button>
+        <label class="w-wz" title="Kartenbild auf dem Gelände"><input type="checkbox" id="w-bild" checked hidden><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14"/><path d="M15 6v14"/></svg></label>
+      </div>
       <div class="hint w-fehler" id="w-fehler" hidden></div>
     </main>
   </div>
   <div class="layout" id="view-planer" hidden>
     <aside class="side left pl-links">
+      <div class="label">Fabrik</div>
+      <div class="pl-fabrik"><select id="pl-fabrik" aria-label="Fabrik" data-no-i18n></select><button type="button" class="btn small" id="pl-fabrik-neu" title="Neue Fabrik im Welt-Plan">+</button><button type="button" class="btn small" id="pl-fabrik-name" title="Fabrik umbenennen" aria-label="Umbenennen">✎</button><button type="button" class="btn small" id="pl-fabrik-weg" title="Fabrik löschen" aria-label="Löschen">✕</button></div>
       <div class="label">Ziel (Output)</div>
       <div id="pl-ziele" class="pl-eingaben"></div>
       <div class="pl-knoepfe"><button type="button" class="btn small" id="pl-ziel-neu">+ Ziel</button><button type="button" class="btn small" id="pl-mc" title="Fertige Lehrbuch-Fabriken (Master Class) nach Stufe auswählen">Master Class …</button></div>
       <div class="label">Vorhanden / angeliefert (Input)</div>
       <div id="pl-vorhanden" class="pl-eingaben"></div>
-      <button type="button" class="btn small" id="pl-vorh-neu">+ Zulieferung</button>
+      <div class="pl-knoepfe"><button type="button" class="btn small" id="pl-vorh-neu">+ Zulieferung</button><button type="button" class="btn small" id="pl-aus-spielstand" title="Was deine Fabriken im Spielstand schon herstellen (pro Minute) – öffnet links das Feld „Produktion“">Aus Spielstand …</button></div>
       <p class="hint">Vorhandene Mengen (z. B. 120 Eisenbarren/min vom Band nebenan) werden zuerst genutzt; der Rest wird hergestellt bzw. als Rohstoff-Zulieferung ausgewiesen. Menge jeweils pro Minute.</p>
       <datalist id="pl-items"></datalist>
+      <div class="label">Rechenweg</div>
+      <select id="pl-modus" aria-label="Rechenweg"><option value="einfach">Einfach (ein Rezept je Item)</option><option value="optimal">Optimal (wenig Rohstoffe)</option><option value="maximum">Maximum aus „Vorhanden“</option></select>
+      <p class="hint" id="pl-modus-hilfe"></p>
+      <label class="pl-takt-wahl">Übertakten <select id="pl-takt" aria-label="Übertakten"><option value="100">100 % (keine Shards)</option><option value="150">bis 150 % (1 Shard)</option><option value="200">bis 200 % (2 Shards)</option><option value="250">bis 250 % (3 Shards)</option></select></label>
+      <button type="button" class="btn small" id="pl-alt" hidden>Alternativrezepte …</button>
       <div class="side-foot"><button type="button" class="linkbtn" id="pl-zuruecksetzen" title="Alle gewählten Rezepte zurück auf die Standardrezepte">Rezepte auf Standard</button></div>
     </aside>
     <main class="stage">
       <div class="toolbar">
+        <span class="pl-werkzeuge" role="toolbar" aria-label="Infos aus dem Spielstand">
+          <button type="button" class="pl-wz" data-seite="welt" aria-pressed="false" title="Welt-Plan: alle Fabriken, Rohstoffbedarf gegen die Knoten der Karte, Strom" aria-label="Welt-Plan"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg></button>
+          <button type="button" class="pl-wz" data-seite="bau" aria-pressed="false" title="Bauliste der aktiven Fabrik: Schritte abhaken, Maschinen, Shards, Baukosten gegen deine Vorräte" aria-label="Bauliste"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8.5 10l1.5 1.5 3-3M8.5 16l1.5 1.5 3-3"/></svg></button>
+          <button type="button" class="pl-wz" data-seite="produktion" aria-pressed="false" title="Produktion im Spielstand: hergestellt, verbraucht, Überschuss pro Minute – anhaken als Zulieferung" aria-label="Produktion"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V10l6 4V10l6 4V6l6 3v12z"/><path d="M7 17h2M12 17h2M17 17h2"/></svg></button>
+          <button type="button" class="pl-wz" data-seite="strom" aria-pressed="false" title="Strom & Kraftwerke im Spielstand" aria-label="Strom"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></button>
+          <button type="button" class="pl-wz" data-seite="vorraete" aria-pressed="false" title="Vorräte: Inventar, Dimensionslager, Kisten" aria-label="Vorräte"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4"/><path d="M12 11v10"/></svg></button>
+          <button type="button" class="pl-wz" data-seite="knoten" aria-pressed="false" title="Rohstoff-Knoten: frei/belegt und mögliche Menge – anhaken als Zulieferung" aria-label="Rohstoff-Knoten"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6-5.7-6-11a6 6 0 0 1 12 0c0 5.3-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg></button>
+        </span>
         <span class="seg-group" role="radiogroup" aria-label="Ansicht">
           <label class="radio"><input type="radio" name="pl-ansicht" value="graph" checked> Graph</label>
           <label class="radio"><input type="radio" name="pl-ansicht" value="liste"> Liste</label>
         </span>
         <button type="button" class="btn" id="pl-fit" title="Graph einpassen">Einpassen</button>
         <button type="button" class="btn" id="pl-auto" title="Eigene Anordnung verwerfen und Kästen wieder automatisch anordnen">Neu anordnen</button>
+        <button type="button" class="btn" id="pl-tafel" title="Ablaufplan dieser Fabrik als Schild-Wand (Blaupause) zum Aufstellen an der Baustelle: Rohstoffe, Stufen, Maschinen, Ein- und Ausgänge">Plan-Tafel …</button>
         <button type="button" class="btn primary" id="pl-bp" title="Eine Fertigungsstufe als Blaupause bauen">Blaupause erstellen …</button>
         <span class="grow"></span>
         <span class="muted pl-tipp">Kästen ziehen = verschieben · Klick = Rezept wählen · ▣ = Blaupause dieser Stufe · Hintergrund ziehen / Mausrad = Ansicht</span>
       </div>
       <div id="pl-grundlage" class="pl-grundlage" hidden></div>
       <div class="pl-stage">
+        <div id="pl-seite" class="pl-seite" hidden></div>
         <svg id="pl-svg" aria-label="Produktionsgraph"><g id="pl-g"></g></svg>
         <div id="pl-tabelle" class="pl-tabelle" hidden></div>
       </div>
@@ -392,6 +443,18 @@
 </dialog>
 
 <!-- Ordnen: Protokoll -->
+<dialog id="dlg-material" class="dlg-gross" aria-labelledby="mat-h">
+  <form method="dialog" class="dlg">
+    <h2 id="mat-h">Material-Check</h2>
+    <p class="muted"><span id="mat-titel" data-no-i18n></span></p>
+    <label class="mat-wahl">Spielstand <select id="mat-stand" data-no-i18n></select></label>
+    <p id="mat-ergebnis" class="mat-ergebnis"></p>
+    <div id="mat-tabelle" class="mat-tabelle"></div>
+    <p class="hint">Beim Bauen nimmt das Spiel aus deinem Inventar und dem Dimensionslager. Was nur in Kisten liegt, musst du erst holen.</p>
+    <p class="hint" id="mat-hinweis"></p>
+    <div class="dlg-actions"><button type="button" class="btn" id="mat-kopieren" hidden>Fehlendes kopieren</button><button class="btn primary" value="cancel">Schließen</button></div>
+  </form>
+</dialog>
 <dialog id="dlg-protokoll">
   <form method="dialog" class="dlg">
     <h2>Protokoll der Umbenennungen</h2>
