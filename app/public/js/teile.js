@@ -15,6 +15,20 @@ export function teileDynamisch(index, cls, p) {
     if (L.halb && ende - z > 20) teile.push([L.halb, [0, 0, z], E, S1]);
     return teile;
   }
+  const D = index.durchfuehrungen?.[cls];
+  if (D) {
+    // Boden-Durchführung: p = Fundamentdicke (mSnappedBuildingThickness), Ursprung in der Mitte des Fundaments
+    const t = p > 1 ? p : 200, [vx, vy] = D.versatz || [0, 0], q = D.drehDeckel, [x, y, z, w] = q;
+    const unten = [w, -z, y, -x]; // um 180° um X gekippt (Deckel zeigt nach unten)
+    const teile = [[D.deckel, [vx, vy, t / 2], q, S1], [D.deckel, [vx, vy, -t / 2], unten, S1]];
+    if (D.mitte) {
+      // Längsachse des Mittelteils = die Achse, die nach der Drehung senkrecht steht
+      const m = D.drehMitte, achse = [[1, 0, 0], [0, 1, 0], [0, 0, 1]].findIndex((a) => Math.abs(drehe(m, a)[2]) > 0.9);
+      const s = [1, 1, 1]; if (achse >= 0) s[achse] = t / (D.laenge || 100);
+      teile.push([D.mitte, [0, 0, -t / 2], m, s]);
+    }
+    return teile;
+  }
   const T = index.stuetzen?.[cls];
   if (T) {
     const nr = p >= 100000 ? Math.floor(p / 100000) - 1 : -1, hoehe = (p % 100000) || T.stangen[0][1];
@@ -25,4 +39,10 @@ export function teileDynamisch(index, cls, p) {
     return teile;
   }
   return null;
+}
+
+function drehe(q, v) {
+  const [x, y, z, w] = q, [vx, vy, vz] = v;
+  const tx = 2 * (y * vz - z * vy), ty = 2 * (z * vx - x * vz), tz = 2 * (x * vy - y * vx);
+  return [vx + w * tx + (y * tz - z * ty), vy + w * ty + (z * tx - x * tz), vz + w * tz + (x * ty - y * tx)];
 }

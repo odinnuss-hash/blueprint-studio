@@ -21,10 +21,40 @@ const KRAFT_ARTEN = {
 };
 const KRAFT_ABFALL = { Desc_NuclearFuelRod_C: ['Desc_NuclearWaste_C', 50], Desc_PlutoniumFuelRod_C: ['Desc_PlutoniumWaste_C', 10] };
 const LEER = () => ({ ziele: [], vorhanden: [], wahl: {}, band: 5, stockwerke: 1 });
+// ------------------------------------------------------------ Stil-Wahl mit kleinem Bild (Plan-Tafel, Blaupause)
+// Bilder: vorerst Skizzen – sobald Spiel-Bilder da sind, liegen sie unter public/bilder/ (STIL_BILD auf <img> umstellen)
+const skizze = (inhalt) => `<svg viewBox="0 0 120 70" class="stil-bild" aria-hidden="true"><rect width="120" height="70" rx="4" fill="#1b1f26"/>${inhalt}</svg>`;
+const STIL_BILD = {
+  tafelEinfach: skizze([0, 1, 2].map((c) => `<rect x="${8 + c * 37}" y="8" width="31" height="5" fill="#f5a623"/>` + [0, 1, 2, 3, 4, 5, 6].map((r) => `<rect x="${8 + c * 37}" y="${17 + r * 6.5}" width="31" height="4.5" fill="${['#5a3a12', '#1d2b4a', '#1d2b4a', '#16422a'][r % 4]}"/>`).join('')).join('')),
+  tafelOptimiert: skizze([0, 1].map((c) => { const x = 10 + c * 54; return `<rect x="${x}" y="8" width="46" height="6" fill="#5a3a12"/><rect x="${x}" y="17" width="22" height="32" fill="#16422a"/><circle cx="${x + 11}" cy="29" r="7" fill="#9fd3a8"/>`
+    + [0, 1, 2].map((i) => `<rect x="${x + 24}" y="${17 + i * 11}" width="22" height="5" fill="#1d2b4a"/>` + [0, 1, 2, 3].map((k) => `<rect x="${x + 24 + k * 5.6}" y="${23 + i * 11}" width="4.6" height="4" fill="#ddd"/>`).join('')).join('')
+    + [0, 1, 2, 3].map((k) => `<rect x="${x + k * 5.6}" y="52" width="4.6" height="5" fill="#ddd"/>`).join(''); }).join('')),
+  bpEinfach: skizze([0, 1, 2].map((r) => `<rect x="10" y="${10 + r * 19}" width="74" height="4" fill="#4a5568"/>` + [0, 1, 2, 3, 4].map((k) => `<rect x="${12 + k * 14}" y="${15 + r * 19}" width="10" height="9" fill="#f5a623"/>`).join('')).join('') + '<rect x="92" y="8" width="5" height="56" fill="#6b9bd2"/><rect x="100" y="8" width="5" height="56" fill="#6b9bd2"/>'),
+  bpEtagen: skizze([0, 1, 2].map((r) => `<rect x="14" y="${58 - r * 22}" width="70" height="3" fill="#8a94a6"/>` + [0, 1, 2, 3].map((k) => `<rect x="${18 + k * 16}" y="${47 - r * 22}" width="11" height="10" fill="${['#f5a623', '#e07b39', '#c9b458'][r]}"/>`).join('')).join('') + '<rect x="94" y="10" width="4" height="50" fill="#6b9bd2"/><rect x="101" y="18" width="4" height="42" fill="#6b9bd2"/>'),
+  bpOptimiert: skizze('<rect x="8" y="40" width="104" height="22" fill="#3a4250"/><rect x="8" y="12" width="104" height="22" fill="#3a4250"/>' + [0, 1, 2, 3, 4, 5].map((k) => `<rect x="${12 + k * 16}" y="${44}" width="12" height="12" fill="#f5a623"/><rect x="${12 + k * 16}" y="16" width="12" height="12" fill="#e07b39"/>`).join('') + '<rect x="56" y="34" width="8" height="6" fill="#6b9bd2"/><text x="60" y="8" font-size="6" fill="#9fd3a8" text-anchor="middle">MASTER CLASS</text>'),
+};
+function stilWahl(id, optionen, aktuell) {
+  return `<div class="stil-wahl" id="${id}" role="radiogroup">${optionen.map((o) => `<button type="button" role="radio" class="stil-karte${o.wert === aktuell ? ' on' : ''}" data-wert="${o.wert}" aria-checked="${o.wert === aktuell}">${o.bild}<b>${o.titel}</b><small>${o.text}</small></button>`).join('')}</div>`;
+}
+function stilWahlBinden(root, id, aenderung) {
+  const g = root.querySelector('#' + id);
+  g.querySelectorAll('.stil-karte').forEach((b) => b.addEventListener('click', () => {
+    if (b.disabled) return;
+    g.querySelectorAll('.stil-karte').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', String(x === b)); });
+    aenderung?.(b.dataset.wert);
+  }));
+}
+const stilWert = (root, id) => root.querySelector(`#${id} .stil-karte.on`)?.dataset.wert;
+function stilSperren(root, id, wert, grund, statt) {
+  const b = root.querySelector(`#${id} [data-wert="${wert}"]`); if (!b) return;
+  b.disabled = true; b.title = grund; b.querySelector('small').textContent = grund;
+  if (b.classList.contains('on')) root.querySelector(`#${id} [data-wert="${statt}"]`)?.click();
+}
+
 // Gebäude mit Reihen-Bauplan: Anschlüsse [Band ein, Rohr ein, Band aus, Rohr aus] (wie lib/fabrik.mjs GEO)
 const ANSCHLUSS = {
   Build_SmelterMk1_C: [1, 0, 1, 0], Build_ConstructorMk1_C: [1, 0, 1, 0], Build_AssemblerMk1_C: [2, 0, 1, 0], Build_FoundryMk1_C: [2, 0, 1, 0],
-  Build_ManufacturerMk1_C: [4, 0, 1, 0], Build_OilRefinery_C: [1, 1, 1, 1], Build_Blender_C: [2, 2, 1, 1], Build_Packager_C: [1, 1, 1, 1], Build_Converter_C: [2, 0, 1, 1],
+  Build_ManufacturerMk1_C: [4, 0, 1, 0], Build_OilRefinery_C: [1, 1, 1, 1], Build_Blender_C: [2, 2, 1, 1], Build_Packager_C: [1, 1, 1, 1], Build_Converter_C: [2, 0, 1, 1], Build_HadronCollider_C: [2, 1, 1, 0], Build_QuantumEncoder_C: [3, 1, 1, 1],
 };
 const kurzGeb = (g) => g.replace(/^Build_/, '').replace(/Mk1_C$|_C$/, '');
 
@@ -124,6 +154,13 @@ export class PlanerUI {
     $('pl-bp').addEventListener('click', () => this.stufeWaehlen());
     $('pl-tafel').addEventListener('click', () => this.plantafelDialog());
     $('pl-mc').addEventListener('click', () => this.masterclassWahl());
+    // Master Class ist privat (eigene Sammlung): Knopf nur zeigen, wenn Vorlagen vorhanden sind
+    $('pl-mc').hidden = true;
+    fetch('/api/masterclass').then((x) => x.json()).then((j) => {
+      this.mcListe = j.eintraege || []; $('pl-mc').hidden = !this.mcListe.length;
+      if (this.mcRezeptKarte().size) { $('pl-mcrz-zeile').hidden = false; $('pl-mcrz').checked = this.plan.mcRezepte !== false; if (this.plan.mcRezepte !== false) this.rechnen(); }
+    }).catch(() => {});
+    $('pl-mcrz').addEventListener('change', (e) => { this.plan.mcRezepte = e.target.checked; this.speichern(); this.rechnen(); });
     $('pl-aus-spielstand').addEventListener('click', () => this.seite('produktion'));
     $('pl-fabrik').addEventListener('change', (e) => this.fabrikWechseln(+e.target.value));
     $('pl-fabrik-neu').addEventListener('click', () => this.fabrikNeu());
@@ -283,11 +320,36 @@ export class PlanerUI {
     d.showModal();
   }
 
+  /** Item → { rezept, mc } aus den eigenen Master-Class-Fabriken (Hauptprodukt des Rezepts). Bei mehreren: Fabrik, die ein Ziel herstellt, dann die mit mehr Maschinen. */
+  mcRezeptKarte() {
+    const karte = new Map(); if (!this.kat || !this.mcListe?.length) return karte;
+    const ziele = new Set((this.plan.ziele || []).map((z) => z.item));
+    for (const e of this.mcListe) {
+      if (e.art !== 'Fabrik') continue;
+      const zielFabrik = (e.end || []).some((it) => ziele.has(it)) ? 1000 : 0;
+      for (const [id, n] of Object.entries(e.rezepte || {})) {
+        const r = this.kat.rezepte[id]; if (!r) continue;
+        const it = r.produkte[0].item, wert = zielFabrik + n, alt = karte.get(it);
+        if (!alt || wert > alt.wert) karte.set(it, { rezept: id, mc: e.name, wert });
+      }
+    }
+    return karte;
+  }
+  /** Plan für die Rechnung: Master-Class-Rezepte als Vorgabe (eigene Wahl geht vor), im Optimierer als erlaubte Alternativen */
+  planMitMc() {
+    if (this.plan.mcRezepte === false) return this.plan;
+    const karte = this.mcRezeptKarte(); if (!karte.size) return this.plan;
+    const wahl = {}; for (const [it, x] of karte) wahl[it] = x.rezept;
+    const altMc = [...karte.values()].map((x) => x.rezept).filter((id) => this.kat.rezepte[id]?.alternativ);
+    const alternativen = this.plan.alternativen === 'alle' ? 'alle' : [...new Set([...(this.plan.alternativen || []), ...altMc])];
+    return { ...this.plan, wahl: { ...wahl, ...this.plan.wahl }, alternativen };
+  }
   rechnen() {
     if (!this.kat) return;
     const ziele = this.plan.ziele.filter((z) => z.item && z.menge > 0);
     if (!ziele.length) { this.ergebnis = null; this.zeichneErgebnis(); return; }
-    this.ergebnis = (this.plan.modus || 'einfach') === 'einfach' ? rechne(this.kat, this.plan) : rechneOptimal(this.kat, this.plan);
+    const plan = this.planMitMc();
+    this.ergebnis = (this.plan.modus || 'einfach') === 'einfach' ? rechne(this.kat, plan) : rechneOptimal(this.kat, plan);
     if (this.seiteArt === 'welt') { const d = this.spDaten?.['welt|' + this.spielstandId]; if (d) this.seiteWelt(d); }
     if (this.seiteArt === 'bau') { const d = this.spDaten?.['bau|' + this.spielstandId]; if (d) this.seiteBau(d); }
     this.zeichneErgebnis();
@@ -326,8 +388,8 @@ export class PlanerUI {
   }
   rezeptSelect(s) {
     const haupt = this.kat.rezepte[s.rezept].produkte[0].item;
-    const opt = rezeptOptionen(this.kat, haupt);
-    return `<select data-item="${haupt}" data-no-i18n>${opt.map((o) => `<option value="${o.id}"${o.id === s.rezept ? ' selected' : ''}>${esc(o.name)}${o.alternativ ? ' (alt.)' : ''}</option>`).join('')}</select>`;
+    const opt = rezeptOptionen(this.kat, haupt), mc = this.mcRezeptKarte().get(haupt)?.rezept;
+    return `<select data-item="${haupt}" data-no-i18n>${opt.map((o) => `<option value="${o.id}"${o.id === s.rezept ? ' selected' : ''}>${esc(o.name)}${o.alternativ ? ' (alt.)' : ''}${o.id === mc ? ' · Master Class' : ''}</option>`).join('')}</select>`;
   }
 
   /** Graph: Spalten = Ebenen (Zulieferung, Fertigungsschritte, Ergebnis), Kanten = Materialfluss */
@@ -405,12 +467,12 @@ export class PlanerUI {
   schrittWaehlen(i) {
     const s = this.ergebnis.schritte[i];
     const haupt = this.kat.rezepte[s.rezept].produkte[0].item;
-    const opt = rezeptOptionen(this.kat, haupt);
+    const opt = rezeptOptionen(this.kat, haupt), mcK = this.mcRezeptKarte();
     let d = $('dlg-pl-rezept');
     if (!d) { d = document.createElement('dialog'); d.id = 'dlg-pl-rezept'; d.className = 'dlg-gross'; document.body.appendChild(d); }
     const zeile = (o) => `<label class="pl-rz${o.id === s.rezept ? ' on' : ''}"><input type="radio" name="pl-rz" value="${o.id}"${o.id === s.rezept ? ' checked' : ''}>
       ${itemBild(this.kat, o.produkte[0].item, 'mittel')}
-      <span><b data-no-i18n>${esc(o.name)}</b>${o.alternativ ? ' <span class="pl-alt">Alternativ</span>' : ''}<small data-no-i18n>${esc(this.kat.gebaeude[o.gebaeude.find((g) => /^Build_/.test(g))]?.name || '')}</small>
+      <span><b data-no-i18n>${esc(o.name)}</b>${o.alternativ ? ' <span class="pl-alt">Alternativ</span>' : ''}${mcK.get(haupt)?.rezept === o.id ? ` <span class="pl-alt pl-mc-marke" title="So gebaut in deiner Master-Class-Fabrik „${esc(mcK.get(haupt).mc)}“">Master Class</span>` : ''}<small data-no-i18n>${esc(this.kat.gebaeude[o.gebaeude.find((g) => /^Build_/.test(g))]?.name || '')}</small>
       <span class="pl-rz-fluss">${o.zutaten.map((z) => this.chip(z)).join('<i>+</i>')}<i>→</i>${o.produkte.map((p) => this.chip(p)).join('<i>+</i>')}</span></span></label>`;
     d.innerHTML = `<form method="dialog" class="dlg"><h2>Rezept für <span data-no-i18n>${esc(this.itemName(haupt))}</span></h2>
       <p class="hint">Werte je Maschine bei 100 % Takt. Alternativrezepte müssen im Spiel freigeschaltet sein (Festplatten aus Absturzstellen).</p>
@@ -464,9 +526,7 @@ export class PlanerUI {
     d.innerHTML = `<div class="bw">
       <div class="bw-kopf"><h2>Was soll als Blaupause gebaut werden?</h2><button type="button" class="bw-zu" aria-label="Schließen">✕</button></div>
       <div class="bw-liste pl-wahl">
-        ${mcPasst.length || mcTeil.length ? `<h3 class="bw-g">Master Class – fertige Lehrbuch-Fabriken</h3>
-        <p class="hint">Vollständige, sauber aufgebaute Fabriken aus deiner Master-Class-Sammlung, die ${mcPasst.length ? 'dein Ergebnis' : 'Zwischenprodukte deines Plans'} herstellen. Werden 1:1 übernommen.</p>
-        <div class="bw-grid">${[...mcPasst, ...mcTeil].map((e) => `<button type="button" class="bw-karte" data-mc="${e.id}" title="${esc(e.beschreibung || e.name)}">${itemBild(this.kat, haupt(e)[0])}<span class="bw-name" data-no-i18n>${esc(e.name)}</span><span class="bw-info">${esc(haupt(e).slice(0, 2).map((it) => `${fmt(e.aus[it], 1)} ${this.itemName(it)}`).join(', '))}</span>${e.mc ? '<span class="bw-marke">MC</span>' : ''}</button>`).join('')}</div>` : ''}
+        <p class="hint pl-hinweis-funktional"><b>Funktionale Blaupausen:</b> Der Planer baut alles verbunden und lauffähig – Bänder, Verteiler, Strom –, aber schlicht auf einer Ebene, nicht als schönes oder platzsparendes Aufbau-Design.${mcPasst.length || mcTeil.length ? ' Für passende Fabriken gibt es im nächsten Schritt den Stil „Optimiert“ (fertige Master-Class-Vorlage).' : ''}</p>
         <h3 class="bw-g">1 · Ganze Fabrik – wie im Graph</h3>
         <button type="button" class="pl-wahl-gross" data-art="kette"${baubar ? '' : ' disabled'}>
           ${itemBild(this.kat, r.ziele[0].item, 'mittel')}
@@ -483,7 +543,6 @@ export class PlanerUI {
     d.querySelector('.bw-zu').addEventListener('click', () => d.close());
     d.querySelector('.bw-abbr').addEventListener('click', () => d.close());
     d.onclick = (e) => { if (e.target === d) d.close(); };
-    d.querySelectorAll('[data-mc]').forEach((el) => el.addEventListener('click', () => { d.close(); this.masterclassDialog(el.dataset.mc); }));
     d.querySelectorAll('[data-art]').forEach((el) => el.addEventListener('click', () => {
       d.close();
       const art = el.dataset.art;
@@ -500,6 +559,11 @@ export class PlanerUI {
     return '';
   }
   blaupauseDialog(i, art = 'einzeln') {
+    if (!this.mcListe) { // Master-Class-Vorlagen einmal laden (für den Stil „Optimiert“)
+      this.mcListe = [];
+      fetch('/api/masterclass').then((x) => x.json()).then((j) => { this.mcListe = j.eintraege || []; }).catch(() => {}).finally(() => this.blaupauseDialog(i, art));
+      return;
+    }
     const r = this.ergebnis;
     const bis = art === 'bis' ? r.schritte[i] : null;
     const kette = i === 'kette' || !!bis;
@@ -536,34 +600,63 @@ export class PlanerUI {
       vorschlag = `Planer_${this.itemName(s.produkte[0].item)}_${fmt(s.produkte[0].proMin, 0)}`;
     }
     vorschlag = vorschlag.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_').slice(0, 80);
+    // Stil „Optimiert“: fertige Master-Class-Vorlage, die das Ergebnis herstellt (nur wenn eigene Master-Class-Vorlagen da sind)
+    const hauptMc = (e) => (e.end?.length ? e.end : Object.keys(e.aus || {}));
+    const mcItems = new Set(kette ? (bis ? [bis.produkte[0].item] : r.ziele.map((z) => z.item)) : []);
+    const mcPassend = (this.mcListe || []).filter((e) => e.art === 'Fabrik' && hauptMc(e).some((it) => mcItems.has(it)));
+    const mcInfo = (e) => hauptMc(e).filter((it) => mcItems.has(it)).map((it) => `${fmt(e.aus[it], 1)} ${this.einheit(it)} ${this.itemName(it)}`).join(', ');
     const wasser = (kette ? baubare : [s]).some((x) => x.zutaten.some((z) => z.item === 'Desc_Water_C'));
     const wasserZeile = wasser ? `<label for="pl-bp-wasser">Wasser</label><label class="pl-bp-check"><input type="checkbox" id="pl-bp-wasser"${this.plan.wasser ? ' checked' : ''}> Wasserextraktoren mitbauen (je 120 m³/min, mit Strom – stehen dann auf dem Fundament, das geht im Spiel nur über Blaupausen)</label>` : '';
     d.innerHTML = `<form method="dialog" class="dlg"><h2>Blaupause: <span data-no-i18n>${esc(titel)}</span></h2>
       <p>${beschreibung}</p>
-      ${grund ? `<p class="err">${esc(grund)}</p>` : `
-      <p class="hint">${esc(aufbau)} Alle Maschinen laufen mit 100 % – die Zulieferung begrenzt die Menge.</p>
+      ${grund && !mcPassend.length ? `<p class="err">${esc(grund)}</p>` : `
+      ${kette ? `<div class="pl-bp-grid"><span class="label">Stil</span>${stilWahl('pl-bp-stil', [
+        { wert: 'einfach', titel: 'Einfach', text: grund || 'Funktional auf einer Ebene – Reihen nebeneinander', bild: STIL_BILD.bpEinfach },
+        { wert: 'etagen', titel: 'Etagen', text: grund || 'Je Fertigungsebene ein Boden übereinander, Förderlifte dazwischen – kompakte Grundfläche', bild: STIL_BILD.bpEtagen },
+        ...(mcPassend.length ? [{ wert: 'optimiert', titel: 'Optimiert', text: 'Fertige Master-Class-Fabrik, unverändert übernommen (eigene Mengen)', bild: STIL_BILD.bpOptimiert }] : [])], grund ? 'optimiert' : (this.plan.bpStil === 'etagen' ? 'etagen' : 'einfach'))}
+        ${mcPassend.length ? `<label for="pl-bp-mc" class="pl-bp-mcz">Vorlage</label><select id="pl-bp-mc" class="pl-bp-mcz" data-no-i18n>${mcPassend.map((e) => `<option value="${e.id}">${esc(e.name)} – ${esc(mcInfo(e))}</option>`).join('')}</select>` : ''}</div>` : ''}
+      <p class="hint pl-bp-einfach">${esc(aufbau)} Alle Maschinen laufen mit 100 % – die Zulieferung begrenzt die Menge.</p>
+      <p class="hint pl-hinweis-funktional pl-bp-einfach"><b>Funktionale Blaupause:</b> verbunden und lauffähig, aber schlicht gebaut – kein schönes Aufbau-Design. Mit „Etagen“ liegen die Fertigungsebenen übereinander (je Boden 4 m über der höchsten Maschine); Förderlifte gehen im Spiel bis 48 m.</p>
+      <p class="hint pl-bp-optimiert" hidden>Die Master-Class-Vorlage wird 1:1 kopiert – mit ihren eigenen Mengen (siehe Auswahl), nicht mit denen deines Plans.</p>
       <div class="pl-bp-grid">
-        <label for="pl-bp-band">Förderband höchstens</label><select id="pl-bp-band">${[1, 2, 3, 4, 5, 6].map((m) => `<option value="${m}"${m === (this.plan.band || 6) ? ' selected' : ''}>Mk.${m} (${[0, 60, 120, 270, 480, 780, 1200][m]}/min)</option>`).join('')}</select>
+        <label for="pl-bp-band" class="pl-bp-einfach">Förderband höchstens</label><select id="pl-bp-band" class="pl-bp-einfach">${[1, 2, 3, 4, 5, 6].map((m) => `<option value="${m}"${m === (this.plan.band || 6) ? ' selected' : ''}>Mk.${m} (${[0, 60, 120, 270, 480, 780, 1200][m]}/min)</option>`).join('')}</select>
         ${wasserZeile}
         <label for="pl-bp-name">Name</label><input id="pl-bp-name" type="text" value="${esc((kette ? this.bpNameKette : this.bpName) || vorschlag)}" spellcheck="false">
         <label for="pl-bp-ziel">Speichern in</label><select id="pl-bp-ziel">${sessions.map((x) => `<option${x === ziel ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>
       </div>
       <p class="muted" id="pl-bp-info"></p>`}
-      <div class="dlg-actions"><button type="button" class="btn" value="nein">Schließen</button>${grund ? '' : '<button type="button" class="btn" id="pl-bp-3d">In 3D ansehen</button><button type="button" class="btn primary" id="pl-bp-ok">Als Blaupause speichern</button>'}</div></form>`;
+      <div class="dlg-actions"><button type="button" class="btn" value="nein">Schließen</button>${grund && !mcPassend.length ? '' : '<button type="button" class="btn" id="pl-bp-3d">In 3D ansehen</button><button type="button" class="btn primary" id="pl-bp-ok">Als Blaupause speichern</button>'}</div></form>`;
     d.querySelector('[value=nein]').addEventListener('click', () => d.close());
     const planDaten = () => ({ ziele: this.plan.ziele, vorhanden: this.plan.vorhanden, wahl: this.ergebnis.wahl, layout: this.plan.layout || {}, modus: this.plan.modus, alternativen: this.plan.alternativen, takt: this.plan.takt });
-    const daten = () => ({ ...(kette ? { kette: true, bis: bis ? bis.rezept : undefined, plan: planDaten() } : { schritt: { rezept: s.rezept, maschinen: s.maschinen } }), bandMax: +$('pl-bp-band').value, wasser: !!$('pl-bp-wasser')?.checked });
+    const daten = () => ({ ...(kette ? { kette: true, bis: bis ? bis.rezept : undefined, plan: planDaten(), etagen: stilWert(d, 'pl-bp-stil') === 'etagen' } : { schritt: { rezept: s.rezept, maschinen: s.maschinen } }), bandMax: +$('pl-bp-band').value, wasser: !!$('pl-bp-wasser')?.checked });
     const post = async (url, body) => {
       const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify(body) });
       const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status); return j;
     };
     const infoText = (i2) => (i2.reihen ? `${i2.objekte} Objekte · ${i2.reihen} Reihen · ${i2.maschinen} Maschinen · ${i2.verbindungen} Verbindungen (${i2.lifte} Förderlifte) · ${i2.eingaenge} Zulieferungen · ${i2.masten} Strommasten · ${i2.fundamente} Fundamente · ca. ${i2.groesse[0]} × ${i2.groesse[1]} m` : '') || `${i2.objekte} Objekte · ${i2.maschinen} Maschinen im Abstand ${i2.abstand / 100} m · ${i2.leitungen > 1 ? i2.leitungen + ' Verteilerleitungen · ' : ''}${i2.masten ? i2.masten + ' Strommasten · ' : ''} Bänder Mk.${i2.bandEin} (Eingang) / Mk.${i2.bandAus} (Ausgang) · ${i2.fundamente} Fundamente · ca. ${i2.groesse[0]} × ${i2.groesse[1]} m`;
-    if (grund) { d.showModal(); return; }
+    if (grund && !mcPassend.length) { d.showModal(); return; }
+    const optimiert = () => mcPassend.length && stilWert(d, 'pl-bp-stil') === 'optimiert';
+    const mcGewaehlt = () => mcPassend.find((e) => e.id === $('pl-bp-mc')?.value) || mcPassend[0];
+    let nameAngepasst = false;
+    const stilZeigen = () => {
+      const o = optimiert();
+      d.querySelectorAll('.pl-bp-einfach').forEach((el) => { el.hidden = o; });
+      d.querySelectorAll('.pl-bp-optimiert, .pl-bp-mcz').forEach((el) => { el.hidden = !o; });
+      if (!nameAngepasst) $('pl-bp-name').value = o ? ('MC_' + mcGewaehlt().name).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_').slice(0, 80) : ((kette ? this.bpNameKette : this.bpName) || vorschlag);
+    };
+    if (kette) {
+      stilWahlBinden(d, 'pl-bp-stil', (w) => { if (w !== 'optimiert') { this.plan.bpStil = w; this.speichern(); } stilZeigen(); });
+      if (grund) { stilSperren(d, 'pl-bp-stil', 'einfach', grund, 'optimiert'); stilSperren(d, 'pl-bp-stil', 'etagen', grund, 'optimiert'); }
+      $('pl-bp-mc')?.addEventListener('change', stilZeigen);
+      $('pl-bp-name').addEventListener('input', () => { nameAngepasst = true; });
+      stilZeigen();
+    }
     $('pl-bp-band').addEventListener('change', (e) => { this.plan.band = +e.target.value; this.speichern(); });
     $('pl-bp-wasser')?.addEventListener('change', (e) => { this.plan.wasser = e.target.checked; this.speichern(); });
     $('pl-bp-name').addEventListener('input', (e) => { if (kette) this.bpNameKette = e.target.value; else this.bpName = e.target.value; });
     $('pl-bp-ziel').addEventListener('change', (e) => { this.bpZiel = e.target.value; });
     $('pl-bp-3d').addEventListener('click', async (e) => {
+      if (optimiert()) { d.close(); this.mcListe ||= mcPassend; this.masterclassVorschau(mcGewaehlt()); return; }
       const b = e.currentTarget; b.disabled = true;
       try {
         const j = await post('/api/planer/vorschau', daten());
@@ -579,6 +672,14 @@ export class PlanerUI {
       const name = $('pl-bp-name').value.trim(), session = $('pl-bp-ziel').value;
       if (!name || /[\\/:*?"<>|]/.test(name)) { this.app.toast('Bitte einen gültigen Namen angeben (ohne \\ / : * ? " < > |).', 'err'); return; }
       const b = e.currentTarget; b.disabled = true; b.textContent = 'Wird erstellt …';
+      if (optimiert()) {
+        try {
+          await post('/api/masterclass/kopieren', { id: mcGewaehlt().id, session, name });
+          $('pl-bp-info').innerHTML = `Master-Class-Vorlage „${esc(mcGewaehlt().name)}“ als „${esc(name)}“ nach „${esc(session)}“ kopiert.`;
+          this.app.toast(`Blaupause „${name}“ gespeichert.`, 'ok'); if ($('session').value === session) this.app.loadList();
+        } catch (err) { this.app.toast(err.message, 'err'); } finally { b.disabled = false; b.textContent = 'Als Blaupause speichern'; }
+        return;
+      }
       try {
         const j = await post('/api/planer/blaupause', { ...daten(), session, name, plan: planDaten() });
         $('pl-bp-info').innerHTML = `Gespeichert: ${esc(infoText(j.info))} · <a href="#" id="pl-bp-open">in „Blaupause“ öffnen</a>${(j.info.warnungen || []).map((w) => `<br><span class="err">${esc(w)}</span>`).join('')}`;
@@ -617,6 +718,13 @@ export class PlanerUI {
   }
 
   // ------------------------------------------------------------ Master Class: Vorlage ansehen / ins Spiel kopieren
+  async masterclassVorschau(e) {
+    try {
+      const r = await fetch(`/api/masterclass/vorschau?id=${e.id}`); const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status);
+      this.app.bp = j; this.app.setMode('editor'); this.app.openScene(); if (this.app.mode !== '3d') $('v3d').click();
+      $('pathtext').textContent = `Master Class · ${e.name} (nur ansehen – kopieren im Planer)`;
+    } catch (err) { this.app.toast(err.message, 'err'); }
+  }
   masterclassDialog(id) {
     const e = (this.mcListe || []).find((x) => x.id === id);
     if (!e) return;
@@ -871,19 +979,25 @@ export class PlanerUI {
     const fabrik = this.welt?.fabriken?.[this.welt.aktiv]?.name || 'Fabrik';
     const vorschlag = ('Plan_' + fabrik).replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_').slice(0, 32);
     d.innerHTML = `<form method="dialog" class="dlg"><h2>Plan-Tafel</h2>
-      <p class="hint">Baut den Ablaufplan dieser Fabrik als Wand aus 4-m-Schildern: Rohstoffe, je Stufe die Maschinen mit Rezept, Ein- und Ausgängen pro Minute (mit Bildern), Ergebnis und Strom. Im Spiel als Blaupause an der Baustelle aufstellen.</p>
+      <p class="hint">Baut den Ablaufplan dieser Fabrik als Schilder-Wand: Rohstoffe, je Stufe die Maschinen mit Rezept, Ein- und Ausgängen pro Minute (mit Bildern), Ergebnis und Strom. Im Spiel als Blaupause an der Baustelle aufstellen.</p>
       <div class="pl-bp-grid"><label for="pl-tafel-titel">Überschrift</label><input id="pl-tafel-titel" type="text" maxlength="60" value="${esc(fabrik)}" data-no-i18n>
       <label for="pl-tafel-name">Name der Blaupause</label><input id="pl-tafel-name" type="text" maxlength="32" value="${esc(vorschlag)}" spellcheck="false" data-no-i18n>
-      <label for="pl-tafel-stil">Stil</label><select id="pl-tafel-stil"><option value="vorlage">Karten wie „Alternate Prod Sign“ (aus deiner Ablage)</option><option value="einfach">Einfache Zeilen-Tafel</option></select>
+      <span class="label">Stil</span>${stilWahl('pl-tafel-stil', [
+        { wert: 'einfach', titel: 'Einfach', text: 'Zeilen aus 4-m-Schildern – schlicht, schnell zu lesen', bild: STIL_BILD.tafelEinfach },
+        { wert: 'optimiert', titel: 'Optimiert', text: 'Karten mit großen Bildern und Ziffern-Anzeigen', bild: STIL_BILD.tafelOptimiert }], this.plan.tafelStil || 'optimiert')}
       <label for="pl-tafel-ziel">Sitzung</label><select id="pl-tafel-ziel" data-no-i18n>${sessions.map((x) => `<option${x === ziel ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select></div>
       <div class="dlg-actions"><button type="button" class="btn" value="nein">Abbrechen</button><button type="button" class="btn primary" id="pl-tafel-ok">Tafel erstellen</button></div></form>`;
     d.querySelector('[value=nein]').addEventListener('click', () => d.close());
-    try { const st = await (await fetch('/api/planer/plantafel/stile')).json(); if (!st.vorlage) { $('pl-tafel-stil').value = 'einfach'; $('pl-tafel-stil').options[0].disabled = true; $('pl-tafel-stil').title = 'Vorlage „Alternate Prod Sign (3/6 inputs)“ nicht in deinen Blaupausen gefunden'; } } catch { /* einfach bleibt wählbar */ }
+    stilWahlBinden(d, 'pl-tafel-stil', (w) => { this.plan.tafelStil = w; this.speichern(); });
+    try {
+      const st = await (await fetch('/api/planer/plantafel/stile')).json();
+      if (st.optimiertFehlt?.length) stilSperren(d, 'pl-tafel-stil', 'optimiert', `Es fehlen Schild-Vorlagen: ${st.optimiertFehlt.join(', ')} – im Spiel je ein solches Schild in einer Blaupause speichern.`, 'einfach');
+    } catch { /* beide bleiben wählbar */ }
     $('pl-tafel-ok').addEventListener('click', async () => {
       const name = $('pl-tafel-name').value.trim(), session = $('pl-tafel-ziel').value, titel = $('pl-tafel-titel').value.trim();
       const schritte = r.schritte.map((st) => ({ rezept: st.rezept, gebaeude: st.gebaeude, anzahl: st.anzahl, takt: Math.round(st.takt * 10) / 10 }));
       try {
-        const res = await fetch('/api/planer/plantafel', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ session, name, titel, schritte, stil: $('pl-tafel-stil').value }) });
+        const res = await fetch('/api/planer/plantafel', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ session, name, titel, schritte, stil: stilWert(d, 'pl-tafel-stil') }) });
         const j = await res.json(); if (!res.ok) throw new Error(j.fehler || res.status);
         const t = this.plan.tafeln ||= []; t.unshift({ session, name, datum: j.datum }); t.splice(8); this.speichern();
         this.app.toast(`Plan-Tafel „${name}“ in „${session}“ gespeichert: ${j.info.schilder} Schilder, ${j.info.breite} × ${j.info.hoehe} m.`, 'ok');

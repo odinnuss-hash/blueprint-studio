@@ -22,12 +22,14 @@ export class AssistentUI {
     return s;
   }
 
-  async zeigen() {
+  /** start = 'fmodel': gleich beim Schritt „Spielmodelle“ öffnen (Einstellungen → „Modelle aus dem Spiel holen“) */
+  async zeigen(start) {
     const c = this.app.cfg || await get('config');
     this.wahl = { sprache: c.sprache || 'de', saveDir: c.saveDir, gameDir: c.gameDir, bibliothek: (c.bibliotheken || [])[0] || '', megaprints: (c.megaprints || [])[0] || '',
       spielSitzung: c.spielSitzung || '', modelle3d: c.modelle3d || (c.modelleVorhanden ? 'modelle' : 'kaesten') };
     this.schritt = 0;
     try { if (sessionStorage.getItem('bs.sprachwechsel')) { sessionStorage.removeItem('bs.sprachwechsel'); this.schritt = 1; } } catch { /* egal */ }
+    if (start === 'fmodel') { this.wahl.modelle3d = 'modelle'; this.schritt = Math.max(0, this.schritte.indexOf('fmodel')); }
     let d = $('dlg-assistent');
     if (!d) {
       d = document.createElement('dialog'); d.id = 'dlg-assistent';

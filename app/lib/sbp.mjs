@@ -230,6 +230,9 @@ export function readProps(body, o) {
   if (mh >= 0 && txt.startsWith('FloatProperty\x00', mh + 12)) { const at = s + mh + 12 + 14 + 9; if (at + 4 <= e) { const v = body.readFloatLE(at); if (v >= 0 && v < 1e5) o.hoehe = v; } }
   const pv = txt.indexOf('mSelectedPoleVersion\x00');
   if (pv >= 0 && txt.startsWith('IntProperty\x00', pv + 25)) { const at = s + pv + 25 + 12 + 9; if (at + 4 <= e) { const v = body.readInt32LE(at); if (v >= 0 && v < 20) o.stangeNr = v; } }
+  // Boden-Durchführung: Fundamentdicke (Name 26 Zeichen + Null, dann Typname mit Länge, 9 Byte bis zum Wert)
+  const sd = txt.indexOf('mSnappedBuildingThickness\x00');
+  if (sd >= 0 && txt.startsWith('FloatProperty\x00', sd + 30)) { const at = s + sd + 30 + 14 + 9; if (at + 4 <= e) { const v = body.readFloatLE(at); if (v > 0 && v < 1e4) o.dicke = v; } }
   // Foerderlift: obere Position
   const tt = txt.indexOf('mTopTransform\x00');
   if (tt >= 0) {

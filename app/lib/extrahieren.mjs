@@ -13,6 +13,7 @@ import { readSave, readLightweight } from './sav.mjs';
 import { zerlege } from './eigenschaften.mjs';
 import { createBlueprint, readBlueprint } from './sbp.mjs';
 import { templateFor, makeHead, newInstance } from './vorlagen.mjs';
+import { kopplungsKontext, kopplungenBereinigen, kopplungsBericht } from './kopplungen.mjs';
 
 const kurz = (p) => { const m = /\.([A-Za-z0-9_]+)$/.exec(p || ''); return m ? m[1] : (p || ''); };
 const i32 = (v) => { const b = Buffer.alloc(4); b.writeInt32LE(v); return b; };
@@ -61,7 +62,7 @@ function setzeLaenge(content, len) {
  * auswahl: statt Bereich genau diese Teile { a: Set(Akteur-Pfade), l: Map(Leichtbau-Klasse → Set(Nr.)) } (Stift in der Welt, auch verdeckte)
  * Liefert { datei: Buffer, cfg?, info }
  */
-export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(), log = () => {}, weltkoordinaten = false, leichtbauAlsAkteure = true, auswahl = null }) {
+export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(), log = () => {}, weltkoordinaten = false, leichtbauAlsAkteure = true, auswahl = null, kopplungZiel = null }) {
   const save = readSave(savBuf, { props: false });
   const { header, body, objects } = save;
   const ver = header.saveVersion;
@@ -132,15 +133,21 @@ export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(
   // Drohnenstationen: Verweise auf ihr Info-Objekt (Kopplung mit der Partner-Station) und ihre Drohne zeigen auf Objekte, die
   // nicht mitkommen – im Ziel würden sie ins Leere bzw. auf fremde Stationen zeigen (gemessen 25.10.2026: Absturz in
   // AFGBuildableDroneStation::Factory_TickProducing). Ohne diese Eigenschaften startet die Station wie frisch gebaut.
-  const DROHNE_WEG = new Set(['mInfo', 'mStationDrone', 'mDockedDrone']);
+  // mItemTransferringStage: Lade-/Entlade-Zustand gibt es im Spiel nur mit angedockter Drohne (gemessen 27.10.2026)
+  const DROHNE_WEG = new Set(['mInfo', 'mStationDrone', 'mDockedDrone', 'mItemTransferringStage']);
   const ohneDrohnenVerweise = (c) => {
     try { const z = zerlege(c, true), weg = z.props.filter((p) => DROHNE_WEG.has(p.name)); if (!weg.length) return c;
       const teile = []; let p = 0; for (const x of weg) { teile.push(c.subarray(p, x.start)); p = x.end; } teile.push(c.subarray(p)); return Buffer.concat(teile);
     } catch { return c; }
   };
+  // Übertragung in einen anderen Spielstand: alle Verweise aus dem Bereich hinaus prüfen (lib/kopplungen.mjs) – Kopplungen ohne
+  // Gegenstück aufheben, Subsysteme auf die des Ziels umlenken; Bericht in info.kopplungen
+  const kk = kopplungZiel ? kopplungsKontext(save, kopplungZiel, namen) : null;
+  const bereinigt = (o, c) => (kk ? kopplungenBereinigen(kk, o, c) : c);
   for (const o of alle) {
     let content = body.subarray(o.dBody, o.dEnd);
-    if (/Build_DroneStation_C$/.test(o.typePath)) content = ohneDrohnenVerweise(content);
+    if (kk) content = bereinigt(o, content);
+    else if (/Build_DroneStation_C$/.test(o.typePath)) content = ohneDrohnenVerweise(content);
     if (/Build_PowerLine_C$/.test(o.typePath)) {
       // Endpunkte sind Weltkoordinaten -> mitverschieben
       content = Buffer.from(content);
@@ -153,7 +160,7 @@ export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(
     zaehle(kurz(o.typePath));
   }
   for (const o of teile) {
-    const content = body.subarray(o.dBody, o.dEnd);
+    const content = bereinigt(o, body.subarray(o.dBody, o.dEnd));
     heads.push(kopfTeil(o));
     datas.push(Buffer.concat([i32(content.length), content]));
   }
@@ -193,6 +200,8 @@ export function bereichAlsBlaupause(savBuf, bereich, { lib, kat, ohne = new Set(
       objekte: pruef.objects.length, gebaeude: alle.length, leitungen: leitungen.length, bestandteile: teile.length,
       leichtbau: leicht.length - Object.values(fehlend).reduce((a, b) => a + b, 0), fehlend, falscheVersion,
       groesse: [Math.round((x1 - x0) / 100), Math.round((y1 - y0) / 100)], version: ver, verschiebung: [cx, cy, cz],
+      ...(kk ? { kopplungen: kopplungsBericht(kk) } : {}),
     },
+    namen, quellNamen: kk ? new Set(save.objects.map((o) => o.pathName)) : null,
   };
 }

@@ -7,7 +7,7 @@ const ICON = {
 };
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-function fenster({ titel, text, liste, hinweis, ok = 'OK', abbrechen = 'Abbrechen', art = 'frage', eingabe = null, optionen = null, merken = null }) {
+function fenster({ titel, text, liste, listeUmbruch = false, hinweis, ok = 'OK', abbrechen = 'Abbrechen', art = 'frage', eingabe = null, optionen = null, merken = null }) {
   return new Promise((fertig) => {
     const d = document.createElement('dialog');
     d.className = `bs-frage art-${art}`;
@@ -16,7 +16,7 @@ function fenster({ titel, text, liste, hinweis, ok = 'OK', abbrechen = 'Abbreche
       <div class="bf-icon">${ICON[art] || ICON.frage}</div>
       <h2 class="bf-titel">${esc(titel)}</h2>
       ${text ? `<p class="bf-text">${esc(text)}</p>` : ''}
-      ${liste?.length ? `<ul class="bf-liste">${liste.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      ${liste?.length ? `<ul class="bf-liste${listeUmbruch ? ' umbruch' : ''}">${liste.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
       ${optionen ? `<div class="bf-optionen" role="radiogroup">${optionen.map((o, i) => `<label class="bf-option"><input type="radio" name="bf-opt" value="${esc(o.wert)}" ${o.wert === optionen.vorwahl || (!optionen.vorwahl && i === 0) ? 'checked' : ''}><span class="bf-o-text"><b>${esc(o.text)}</b>${o.info ? `<small>${esc(o.info)}</small>` : ''}</span></label>`).join('')}</div>` : ''}
       ${merken ? `<label class="check bf-merken"><input type="checkbox" class="bf-merken-cb"> ${esc(merken)}</label>` : ''}
       ${eingabe ? `<input class="bf-eingabe" type="text" spellcheck="false" autocomplete="off" value="${esc(eingabe.wert || '')}" placeholder="${esc(eingabe.platzhalter || '')}">` : ''}

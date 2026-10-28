@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">About the app</h2>
 <table>
   <tr><th style="width:200px">Program</th><td><b>Blueprint Studio</b> – blueprint tool for Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version" data-version>1.5.0</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.6.0</td></tr>
   <tr><th>Author</th><td><b>ODINnuss</b> – idea, concept and design</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. All rights reserved.</td></tr>
   <tr><th>Implementation</th><td>Programmed on behalf of the author with AI assistance (Claude, Anthropic).</td></tr>
@@ -243,6 +243,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Re-sorting:</b> Drag a blueprint from the archive onto another folder. If you drag it onto the list on the left, it is activated.</li>
   <li><b>Custom folders:</b> “+ Custom folder” or “+ Subfolder”. Empty custom folders can be removed again.</li>
   <li><b>Viewing:</b> Double-click or “view”. Archived blueprints are only displayed; to edit them, first move them into the game.</li>
+  <li><b>Many blueprints at once</b> (a whole folder or group) brought into the game or filed: a progress bar shows the progress – also when writing the categories into the saves.</li>
 </ul>
 <p>Nothing is ever deleted, only moved (<code>.sbp</code> and <code>.sbpcfg</code> together). The app remembers which blueprint is actively sorted into which folder in <code>userdata\ablage.json</code>. If the game is running, it only sees changes after the save is reloaded.</p>
 <h3>Deleting blueprints</h3>
@@ -286,6 +287,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Pipes & fluids:</b> pipe routes with corners are one pipe with bends (as the game builds them). If two rows are next to each other the pipe goes straight across, otherwise through the pipe column on the right. If a pipe rises higher than 9 m, the planner adds a <b>pump</b> (with power; Mk.2 if it goes very high). Fluid <b>by-products</b> run into a <b>fluid buffer</b>, solid ones into an AWESOME Sink.</li>
   <li><b>Water & several sources:</b> if an item comes from several rows, all of them are connected (belts via one merger each, pipes via one junction each from above). Whatever the factory produces itself (e.g. water from the aluminium chain) is used first; only the <b>remainder</b> comes from outside – for pipes via a junction with one connector pointing <b>up</b> (sign “ZULAUF VON OBEN”). With <b>Build water extractors too</b> in the dialog, the planner places extractors with power for the missing water (120 m³/min each; the game only allows this via blueprints).</li>
   <li><b>Limits:</b> some buildings have no row plan yet (greyed out, hover to see why) – free inputs/outputs with signs are created there. Blueprints made by the planner are never used as part templates; if a template has items in its inventory, save a blueprint with the empty building in the game.</li>
+  <li><b>Blueprint style:</b> <b>Simple</b> – functional on one level, rows side by side; <b>Floors</b> – one floor per production level, stacked, with conveyor lifts in between (compact footprint; conveyor lifts reach up to 48 m in game). Planner blueprints are functional: connected and working, but not a pretty build design.</li>
+  <li><b>Plan board:</b> the flow plan as a wall of signs in the <b>Simple</b> style (rows of 4 m signs) or <b>Optimized</b> (cards with large images and digit displays). For “Optimized” the app needs one matching sign from one of your own blueprints in the current game format.</li>
 </ul>
 <h3 id="planer-rechenweg">Calculation and alternate recipes</h3>
 <p>On the left under <b>Calculation</b>: <b>Simple</b> (one recipe per item, as before), <b>Optimal</b> (calculates the whole factory at once with as few raw resources as possible – scarce ores count more; loops such as recycled plastic and byproducts balance out) or <b>Maximum from “Available”</b> (as much of the goals as possible from the supplies). For Optimal and Maximum, <b>“Alternate recipes …”</b> sets which alternates the planner may use – ideally the ones you have unlocked in the game.</p>
@@ -322,6 +325,9 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>Drag = pan, mouse wheel = zoom, click = show part (name, position, height, count in the save). “Fit” shows your builds, “Whole world” the whole map (grid = 500 m).</li>
   <li>Switch <b>levels</b> on/off with the button in the tool bar (▾), e.g. foundations off to see machines. The button shows how many are off; resource nodes are off initially. The left side lists only saves – megaprints are under the <b>Megaprints</b> tool.</li>
   <li><b>Highlight a part:</b> type a name into the search field (e.g. “Constructor”) – matching parts stay colored, floors are dimmed. On the right, “Most common parts” is clickable.</li>
+  <li><b>Saves by map:</b> on the left, saves are grouped by map (session) – expand and collapse the groups. The bin on a row deletes one save, the bin on a group the whole map; the files go to the Windows recycle bin and can be restored from there.</li>
+  <li><b>Check</b> (shield icon): examines the loaded save for errors that can appear after transfers or through mods – references to missing objects, drones without a port or home port, drone ports in loading state without a drone. Critical errors (⚠) can crash the game when loading. <b>Create repaired copy</b> writes a new file; the original stays unchanged.</li>
+  <li><b>Transfer to another save:</b> beforehand the app checks which parts in the area are linked to objects outside it (partner drone ports, cables, belt and track connections, station names, vehicles …). These links are removed during the transfer so that nothing in the target points to nothing; the list is shown for confirmation first. Afterwards the app checks the new file once more.</li>
 </ul>
 <ul>
   <li><b>Map</b> (checkbox at the top): game world as background. The four tiles are located in <code>userdata\kartenbild</code> (<code>Map_0-0 … Map_1-1</code>, each 3.75 × 3.75 km).</li>
@@ -378,6 +384,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Pen:</b> switch it on, then outline an area with the left mouse button held. Everything inside is selected – including hidden parts inside a building – but only up to the set <b>depth</b> behind the front part (default 600 m, 0 = everything). Shift = add, Ctrl = remove, right mouse button = look around. A small box then appears above the area: <b>“Save as blueprint …”</b> (choose the game session and a name – what is saved is what the loaded save contains), <b>Delete</b> (takes effect when saving to the new file) or <b>Cancel</b>.</li>
   <li><b>Map points:</b> resource nodes (colour and short name per resource; dashed ring = impure, single = normal, double = pure), resource wells, geysers, crash sites, power slugs, somersloops and Mercer spheres. The ▾ menu shows or hides kinds and single resources. With a loaded save, occupied nodes and collected objects appear faded (or hidden) and opened crash sites hollow; the tooltip names kind, purity, state and position. The setup reads the data once from your game (“Terrain &amp; rocks”).</li>
   <li><b>First-person mode</b> (figure): switch it on and click into the world – you start there at eye level (like a pin in a maps app). <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> to walk (<kbd>Shift</kbd> = faster), <kbd>Space</kbd>/<kbd>C</kbd> float higher/lower, mouse = look around, <kbd>Esc</kbd> takes you back to where you were. Over open terrain the height follows the ground; on foundations it stays the same. For large factories best combined with performance mode.</li>
+  <li><b>Compass</b> (top right): north stays at the top, the blue arrow shows your viewing direction; below it the direction and degrees and the <b>biome</b> you are currently above. “Fetch models from the game” reads the area map from your installation.</li>
+  <li><b>Game look</b> (button in the editor and the world): machines and parts with paint colours, metal, decals and shading as in the game, conveyor belts with frame and belt surface. Needs “Fetch models from the game” once (Settings → Setup &amp; diagnostics).</li>
 </ul>
 <h2 class="sec" id="megaprints">Megaprints (.cbp)</h2>
 <p>Megaprints are exports from <i>satisfactory-calculator.com</i> (file extension <code>.cbp</code>, compressed JSON with all objects including position and properties). The map lists them below the saves (folder in Settings, e.g. <code data-pfad="megaprints">…\Megaprints</code>, without <code>_Archiv</code>) and shows them at their original position on the world map – with levels, highlighting and “Buildings by type”. Even very large Megaprints (400 MB JSON, 300,000 parts) are read in about 2 seconds. Belts and pipelines appear as dots instead of lines for now.</p>
@@ -406,6 +414,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Map image</b> – the four tiles from the satisfactory-3d-map project (version 0.6; replace via FModel for the current version).</li>
   <li><b>Object limit</b> (huge factories) – by default Satisfactory loads at most 2,162,688 objects; huge factories can crash with “Maximum number of UObjects … exceeded”. <b>Raise</b> writes the value from the <a href="https://satisfactory.fandom.com/wiki/Tutorial:Unreal_Engine_Entity_Limit" target="_blank" rel="noopener">Satisfactory wiki</a> (100,000,000) into the game's <code>Engine.ini</code>, <b>Reset</b> restores the default; the old file is backed up to <code>userdata\engine-ini-sicherung</code> each time. Close the game first. The wiki advises raising it only for this crash.</li>
   <li><b>Desktop shortcut</b> – on the desktop and in the Start menu, with icon.</li>
+  <li><b>Fetch models from the game</b> (Settings → Setup &amp; diagnostics): reads part data, 3D models, icons, game-look textures and the area map again from your Satisfactory installation – e.g. after a game or app update. None of this is distributed with the app.</li>
 </ul>
 <p><code>start.bat</code> installs Node.js itself on first start (winget). <b>3D models and icons</b> are game content by Coffee Stain Studios: they must not be published along with the app and are fetched once by each user from their own game installation – automatically in the wizard or manually with FModel (<a href="#fmodel">FModel guide</a>).</p>
 <h3 id="updates">Updates</h3>
@@ -643,7 +652,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Models are rotated/offset in the app</td><td>The FModel mesh format must be <code>glTF 2.0 (binary)</code>; run the tool again.</td></tr>
   <tr><td>Gray boxes instead of models</td><td>A model is missing for this part (see the tool's message) – or it is a belt/pipeline/railway/lift (intentionally without a model).</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.5.0</span> · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.6.0</span> · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

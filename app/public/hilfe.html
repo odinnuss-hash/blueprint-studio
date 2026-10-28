@@ -91,7 +91,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">Zur App</h2>
 <table>
   <tr><th style="width:200px">Programm</th><td><b>Blueprint Studio</b> – Blaupausen-Werkzeug für Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version" data-version>1.5.0</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.6.0</td></tr>
   <tr><th>Urheber</th><td><b>ODINnuss</b> – Idee, Konzept und Gestaltung</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Alle Rechte vorbehalten.</td></tr>
   <tr><th>Umsetzung</th><td>Programmiert im Auftrag des Urhebers mit KI-Unterstützung (Claude, Anthropic).</td></tr>
@@ -243,6 +243,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Umsortieren:</b> Blaupause aus der Ablage auf einen anderen Ordner ziehen. Zieht man sie auf die Liste links, wird sie aktiviert.</li>
   <li><b>Eigene Ordner:</b> „+ Eigener Ordner“ bzw. „+ Unterordner“. Leere eigene Ordner lassen sich wieder entfernen.</li>
   <li><b>Ansehen:</b> Doppelklick oder „ansehen“. Abgelegte Blaupausen werden nur angezeigt; zum Bearbeiten erst ins Spiel holen.</li>
+  <li><b>Viele Blaupausen auf einmal</b> (ganzer Ordner oder ganze Gruppe) ins Spiel holen oder ablegen: Ein Ladebalken zeigt den Fortschritt – ebenso beim Schreiben der Kategorien in die Spielstände.</li>
 </ul>
 <p>Es wird nie etwas gelöscht, nur verschoben (<code>.sbp</code> und <code>.sbpcfg</code> zusammen). Welche Blaupause aktiv in welchem Ordner einsortiert ist, merkt sich die App in <code>userdata\ablage.json</code>. Läuft das Spiel, sieht es Änderungen erst nach dem Neuladen des Spielstands.</p>
 <h3>Blaupausen löschen</h3>
@@ -286,6 +287,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Rohre & Flüssigkeiten:</b> Rohrwege mit Ecken sind ein Rohr mit Bögen (wie im Spiel gebaut). Liegen zwei Reihen nebeneinander, geht das Rohr direkt hinüber, sonst über die Rohr-Spalte rechts. Steigt ein Rohr höher als 9 m, setzt der Planer eine <b>Pumpe</b> (mit Strom; Mk.2, wenn es sehr hoch geht). Flüssige <b>Nebenprodukte</b> laufen in einen <b>Flüssigkeitsspeicher</b>, feste in einen AWESOME-Schredder.</li>
   <li><b>Wasser & mehrere Quellen:</b> Kommt ein Stoff aus mehreren Reihen, werden alle angeschlossen (Bänder über je einen Merger, Rohre über je eine Kreuzung von oben). Was in der Fabrik selbst entsteht (z. B. Wasser aus der Aluminium-Kette), wird zuerst verwendet; nur der <b>Rest</b> kommt von außen – bei Rohren über eine Kreuzung mit einem Anschluss <b>nach oben</b> (Schild „ZULAUF VON OBEN“). Mit <b>Wasserextraktoren mitbauen</b> im Dialog stellt der Planer für fehlendes Wasser Extraktoren samt Strom daneben (je 120 m³/min; im Spiel geht das nur über Blaupausen).</li>
   <li><b>Grenzen:</b> Für manche Gebäude gibt es noch keinen Reihen-Bauplan (ausgegraut, die Maus zeigt den Grund) – dort entstehen freie Ein-/Ausgänge mit Schild. Blaupausen, die der Planer erzeugt hat, dienen nie als Bauteil-Vorlagen; hat eine Vorlage Gegenstände im Lager, speichere im Spiel eine Blaupause mit dem leeren Gebäude.</li>
+  <li><b>Stil der Blaupause:</b> <b>Einfach</b> – funktional auf einer Ebene, Reihen nebeneinander; <b>Etagen</b> – je Fertigungsebene ein Boden übereinander, Förderlifte dazwischen (kompakte Grundfläche; Förderlifte gehen im Spiel bis 48 m). Planer-Blaupausen sind funktional: verbunden und lauffähig, aber kein schönes Aufbau-Design.</li>
+  <li><b>Plan-Tafel:</b> der Ablaufplan als Schilder-Wand im Stil <b>Einfach</b> (Zeilen aus 4-m-Schildern) oder <b>Optimiert</b> (Karten mit großen Bildern und Ziffern-Anzeigen). Für „Optimiert“ braucht die App je ein passendes Schild aus einer eigenen Blaupause im aktuellen Spielformat.</li>
 </ul>
 <h3 id="planer-rechenweg">Rechenweg und Alternativrezepte</h3>
 <p>Links unter <b>Rechenweg</b>: <b>Einfach</b> (ein Rezept je Item, wie bisher), <b>Optimal</b> (rechnet die ganze Fabrik auf einmal mit möglichst wenig Rohstoffen – knappe Erze zählen mehr; Kreisläufe wie recycelter Kunststoff und Nebenprodukte gehen auf) oder <b>Maximum aus „Vorhanden“</b> (so viel wie möglich von den Zielen aus den Zulieferungen). Bei Optimal und Maximum legt <b>„Alternativrezepte …“</b> fest, welche Alternativen der Planer nutzen darf – am besten die, die du im Spiel freigeschaltet hast.</p>
@@ -322,6 +325,9 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>Ziehen = verschieben, Mausrad = Zoom, Klick = Bauteil anzeigen (Name, Position, Höhe, Anzahl im Spielstand). „Einpassen“ zeigt deine Bauten, „Ganze Welt“ die ganze Karte (Raster = 500 m).</li>
   <li><b>Ebenen</b> (Knopf in der Werkzeugleiste, ▾) ein-/ausschalten, z. B. Fundamente aus, um Maschinen zu sehen. Der Knopf zeigt, wie viele aus sind; Ressourcen-Knoten sind anfangs aus. Links stehen nur die Spielstände – Megaprints findest du über das Werkzeug <b>Megaprints</b>.</li>
   <li><b>Bauteil hervorheben:</b> Name ins Suchfeld (z. B. „Konstruktor“) – passende Teile bleiben farbig, Böden werden abgedunkelt. Rechts „Häufigste Bauteile“ ist anklickbar.</li>
+  <li><b>Spielstände nach Karte:</b> Links sind die Spielstände nach Karte (Sitzung) gruppiert – Gruppen auf- und zuklappen. Der Papierkorb an einer Zeile löscht einen Spielstand, der an der Gruppe die ganze Karte; die Dateien kommen in den Windows-Papierkorb und lassen sich dort wiederherstellen.</li>
+  <li><b>Prüfen</b> (Schild-Symbol): untersucht den geladenen Spielstand auf Fehler, wie sie nach Übertragungen oder durch Mods entstehen können – Verweise auf fehlende Objekte, Drohnen ohne Station oder Heimatstation, Drohnenstationen im Ladezustand ohne Drohne. Kritische Fehler (⚠) können das Spiel beim Laden abstürzen lassen. <b>Reparierte Kopie anlegen</b> schreibt eine neue Datei; das Original bleibt unverändert.</li>
+  <li><b>In anderen Spielstand übertragen:</b> Vorher prüft die App, welche Teile im Bereich an Objekten außerhalb hängen (Partner-Drohnenstationen, Kabel, Band- und Gleisanschlüsse, Stationsnamen, Fahrzeuge …). Diese Kopplungen werden beim Übertragen aufgehoben, damit im Ziel nichts ins Leere zeigt; die Liste erscheint vorher zur Bestätigung. Danach prüft die App die neue Datei noch einmal.</li>
 </ul>
 <ul>
   <li><b>Karte</b> (Haken oben): Spielwelt als Hintergrund. Die vier Kacheln liegen in <code>userdata\kartenbild</code> (<code>Map_0-0 … Map_1-1</code>, je 3,75 × 3,75 km).</li>
@@ -378,6 +384,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Stift:</b> einschalten, dann mit gedrückter linker Maustaste einen Bereich umranden. Gewählt wird alles darin – auch verdeckte Teile im Inneren eines Gebäudes –, aber nur bis zur eingestellten <b>Tiefe</b> hinter dem vordersten Teil (Standard 600 m, 0 = alles). Umschalt = dazu, Strg = weg, rechte Maustaste = umsehen. Über dem Bereich erscheint dann ein kleines Feld: <b>„Als Blaupause speichern …“</b> (Spiel-Sitzung und Namen wählen – gespeichert wird, was im geladenen Spielstand steht), <b>Löschen</b> (wirksam erst beim Speichern in die neue Datei) oder <b>Abbrechen</b>.</li>
   <li><b>Kartenpunkte:</b> Rohstoff-Knoten (Farbe und Kürzel je Rohstoff; Ring gestrichelt = unrein, einfach = normal, doppelt = rein), Gasquellen, Geysire, Absturzstellen, Power-Slugs, Somersloops und Mercer-Kugeln. Im Menü ▾ lassen sich Arten und einzelne Rohstoffe ein- und ausblenden. Mit geladenem Spielstand erscheinen belegte Knoten und eingesammelte Objekte blass (oder ausgeblendet), geöffnete Absturzstellen hohl; der Tooltip nennt Art, Reinheit, Zustand und Lage. Die Daten liest die Einrichtung einmalig aus deinem Spiel („Gelände &amp; Felsen“).</li>
   <li><b>Ego-Modus</b> (Figur): einschalten und in die Welt klicken – dort beginnst du auf Augenhöhe (wie ein Pin in einer Karten-App). <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> gehen (<kbd>Umschalt</kbd> = schneller), <kbd>Leertaste</kbd>/<kbd>C</kbd> höher/tiefer schweben, Maus = umsehen, <kbd>Esc</kbd> bringt dich zurück an die alte Stelle. Über freiem Gelände folgt die Höhe dem Boden, auf Fundamenten bleibt sie gleich. Für große Fabriken am besten mit Leistungsmodus.</li>
+  <li><b>Kompass</b> (oben rechts): Norden bleibt oben, der blaue Pfeil zeigt deine Blickrichtung; darunter Richtung und Grad sowie das <b>Biom</b>, über dem du gerade bist. Die Gebietskarte liest „Modelle aus dem Spiel holen“ aus deiner Installation.</li>
+  <li><b>Spieloptik</b> (Knopf im Editor und in der Welt): Maschinen und Bauteile mit Lackfarben, Metall, Aufklebern und Schatten wie im Spiel, Förderbänder mit Rahmen und Laufband. Braucht einmal „Modelle aus dem Spiel holen“ (Einstellungen → Einrichtung &amp; Diagnose).</li>
 </ul>
 <h2 class="sec" id="megaprints">Megaprints (.cbp)</h2>
 <p>Megaprints sind Exporte von <i>satisfactory-calculator.com</i> (Dateiendung <code>.cbp</code>, gepacktes JSON mit allen Objekten samt Lage und Eigenschaften). Die Karte listet sie unter den Spielständen (Ordner in den Einstellungen, z. B. <code data-pfad="megaprints">…\Megaprints</code>, ohne <code>_Archiv</code>) und zeigt sie an ihrer Original-Position auf der Weltkarte – mit Ebenen, Hervorheben und „Gebäude nach Art“. Auch sehr große Megaprints (400 MB JSON, 300.000 Teile) sind in rund 2 Sekunden gelesen. Bänder und Rohre erscheinen dabei vorerst als Punkte statt als Linien.</p>
@@ -406,6 +414,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Kartenbild</b> – die vier Kacheln aus dem satisfactory-3d-map-Projekt (Stand 0.6; für den aktuellen Stand per FModel ersetzen).</li>
   <li><b>Teile-Limit</b> (große Fabriken) – Satisfactory lädt standardmäßig höchstens 2.162.688 Objekte; riesige Fabriken können mit „Maximum number of UObjects … exceeded“ abstürzen. <b>Anheben</b> trägt den Wert aus dem <a href="https://satisfactory.fandom.com/wiki/Tutorial:Unreal_Engine_Entity_Limit" target="_blank" rel="noopener">Satisfactory-Wiki</a> (100.000.000) in <code>Engine.ini</code> des Spiels ein, <b>Zurücksetzen</b> stellt den Standard wieder her; die alte Datei wird jeweils nach <code>userdata\engine-ini-sicherung</code> gesichert. Vorher das Spiel beenden. Das Wiki rät, nur bei diesem Absturz zu erhöhen.</li>
   <li><b>Desktop-Verknüpfung</b> – auf Desktop und im Startmenü, mit Symbol.</li>
+  <li><b>Modelle aus dem Spiel holen</b> (Einstellungen → Einrichtung &amp; Diagnose): liest Bauteil-Daten, 3D-Modelle, Icons, Spieloptik-Texturen und die Gebietskarte neu aus deiner Satisfactory-Installation – z. B. nach einem Spiel- oder App-Update. Nichts davon wird mit der App verteilt.</li>
 </ul>
 <p>Node.js installiert <code>start.bat</code> beim ersten Start selbst (winget). <b>3D-Modelle und Icons</b> sind Spielinhalte von Coffee Stain Studios: Sie dürfen nicht mit veröffentlicht werden und werden von jedem Nutzer einmal aus der eigenen Spielinstallation geholt – automatisch im Assistenten oder von Hand mit FModel (<a href="#fmodel">FModel-Anleitung</a>).</p>
 <h3 id="updates">Updates</h3>
@@ -643,7 +652,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Modelle liegen in der App verdreht/versetzt</td><td>FModel-Mesh-Format muss <code>glTF 2.0 (binary)</code> sein; Werkzeug erneut laufen lassen.</td></tr>
   <tr><td>Graue Kästen statt Modellen</td><td>Für dieses Bauteil fehlt ein Modell (siehe Meldung des Werkzeugs) – oder es ist ein Band/Rohr/Schiene/Lift (bewusst ohne Modell).</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.5.0</span> · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.6.0</span> · © 2026 ODINnuss · <a href="#zur-app">Nutzungsbedingungen</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

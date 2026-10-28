@@ -392,6 +392,7 @@ export class AblageUI {
   }
   async schalten(ordner, namen, aktiv) {
     if (!namen.length) return;
+    if (namen.length > 15) { this.mehrereSchalten([[ordner, namen]], aktiv); return; } // viele: mit Ladebalken
     const session = aktiv ? await this.app.zielSitzung() : null;
     if (aktiv && !session) { this.render(); return; }
     try {
@@ -402,29 +403,63 @@ export class AblageUI {
       if (aktiv && r.ok) this.spielKategorien(session);
     } catch (e) { this.app.toast(e.message, 'err'); }
   }
+  /** Ladebalken unten rechts: { setze(anteil 0–1, text), fertig() } */
+  ladebalken(titel) {
+    let el = document.getElementById('ab-ladebalken');
+    if (!el) { el = document.createElement('div'); el.id = 'ab-ladebalken'; el.className = 'ab-ladebalken'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite'); document.body.appendChild(el); }
+    el.innerHTML = `<b>${esc(titel)}</b><div class="ab-lb-balken"><i></i></div><small></small>`;
+    el.hidden = false;
+    const i = el.querySelector('i'), t = el.querySelector('small');
+    return {
+      setze: (a, text) => { i.style.width = `${Math.round(Math.max(0, Math.min(1, a)) * 100)}%`; i.classList.toggle('unbestimmt', a == null); if (text != null) t.textContent = text; },
+      titel: (x) => { el.querySelector('b').textContent = x; },
+      fertig: () => { el.hidden = true; },
+    };
+  }
+  /** Viele Blaupausen/Ordner nacheinander schalten – mit Fortschritt (Dateien, danach Kategorien in allen Spielständen) */
+  async mehrereSchalten(liste, aktiv) {
+    const session = aktiv ? await this.app.zielSitzung() : null;
+    if (aktiv && !session) { this.render(); return; }
+    const pakete = []; for (const [rel, n] of liste) for (let k = 0; k < n.length; k += 20) pakete.push([rel, n.slice(k, k + 20)]);
+    const gesamt = pakete.reduce((a, [, n]) => a + n.length, 0);
+    const lb = this.ladebalken(aktiv ? `Ins Spiel holen (${session})` : 'Ablegen');
+    let ok = 0, fertig = 0; const fehler = [];
+    try {
+      for (const [rel, n] of pakete) {
+        lb.setze(fertig / gesamt, `${fertig} von ${gesamt} Blaupausen · ${rel.split('/').pop()}`);
+        try { const r = await post('ablage/schalten', { ordner: rel, namen: n, aktiv, session }); ok += r.ok; fehler.push(...(r.fehler || [])); } catch (e) { fehler.push({ name: rel, fehler: e.message }); }
+        fertig += n.length;
+      }
+      lb.setze(1, `${gesamt} von ${gesamt} Blaupausen`);
+      await this.nachher(null);
+      this.app.toast([aktiv ? `${ok} ins Spiel geholt (Spielstand ${session}).` : `${ok} abgelegt.`, ...(fehler.length ? [`${fehler.length} nicht möglich (z. B. ${fehler[0].name}: ${fehler[0].fehler}).`] : [])].join(' · '), fehler.length ? 'err' : 'ok');
+      if (aktiv && ok) await this.spielKategorien(session, lb);
+    } finally { lb.fertig(); }
+  }
   /** Kategorien im Bauplan-Menü des Spiels setzen (neuester Spielstand der Sitzung) */
-  async spielKategorien(session) {
+  async spielKategorien(session, lb) {
+    // Kategorien in alle Spielstände schreiben kann dauern – Fortschritt je Spielstand abfragen
+    const eigen = !lb; lb ||= this.ladebalken('Kategorien im Spiel setzen');
+    lb.titel?.(`Kategorien in die Spielstände von „${session}“ schreiben`); lb.setze(null, 'Spielstände werden gelesen …');
+    let aus = false;
+    const runde = async () => {
+      if (aus) return;
+      try { const s = await (await fetch('/api/spielkategorien/stand', { cache: 'no-store' })).json(); if (s.n) lb.setze(s.i / s.n, `Spielstand ${Math.min(s.i + 1, s.n)} von ${s.n}: ${s.name}`); } catch { /* weiter */ }
+      if (!aus) setTimeout(runde, 400);
+    };
+    runde();
     try {
       const r = await post('spielkategorien', { session });
       if (r.laeuft) return; // läuft schon – wird danach noch einmal gemacht
       this.app.toast(`Kategorien im Spiel gesetzt – in allen ${r.anzahl} Spielständen der Sitzung${r.uebersprungen ? ` (${r.uebersprungen} übersprungen)` : ''}, ${r.zugeordnet} Blaupausen.${r.spielLaeuft ? ' Im Spiel den Spielstand neu laden, damit sie erscheinen.' : ''}`, 'ok');
     } catch (e) { this.app.toast('Kategorien im Spiel: ' + e.message, 'err'); }
+    finally { aus = true; if (eigen) lb.fertig(); }
   }
   ordnerSchalten(k, aktiv) {
     const namen = [];
     const sammeln = (kn) => { if (this.daten.ordner[kn.rel]?.length) namen.push([kn.rel, this.daten.ordner[kn.rel].map((x) => x.name)]); kn.kinder.forEach(sammeln); };
     sammeln(k);
-    (async () => {
-      let ok = 0; const fehler = [];
-      const session = aktiv ? await this.app.zielSitzung() : null;
-      if (aktiv && !session) { this.render(); return; }
-      for (const [rel, n] of namen) {
-        try { const r = await post('ablage/schalten', { ordner: rel, namen: n, aktiv, session }); ok += r.ok; fehler.push(...(r.fehler || [])); } catch (e) { fehler.push({ name: rel, fehler: e.message }); }
-      }
-      await this.nachher(null);
-      this.app.toast(`${ok} ${aktiv ? `ins Spiel geholt (Spielstand ${session})` : 'abgelegt'}.${fehler.length ? ` ${fehler.length} nicht möglich (z. B. ${fehler[0].name}: ${fehler[0].fehler}).` : ''}`, fehler.length ? 'err' : 'ok');
-      if (aktiv && ok) this.spielKategorien(session);
-    })();
+    if (namen.length) this.mehrereSchalten(namen, aktiv);
   }
   /** Mehrere Blaupausen aus der Liste links auf einen Ablage-Ordner (Spiel und Bibliothek: verschieben) */
   async ablegenMehrere(session, namen, nach) {

@@ -18,9 +18,12 @@ import { PlanerUI } from './planer.js';
 import { Tour } from './tour.js';
 import { SymbolUI } from './symbole.js';
 import { selectMitBildern, bauteilBild } from './bildwahl.js';
-import { i18nStart, SPRACHEN, t } from './i18n.js';
+import { i18nStart, SPRACHEN, t, aktuelleSprache } from './i18n.js';
+// Kompass: 8 Richtungen je Sprache (N, NO, O, SO, S, SW, W, NW)
+const RICHTUNGEN = { de: ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW'], en: ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'], fr: ['N', 'NE', 'E', 'SE', 'S', 'SO', 'O', 'NO'], ja: ['北', '北東', '東', '南東', '南', '南西', '西', '北西'] };
 import { Katalog, tileHtml, dims, powerText, extraText, fmt, ICONS } from './katalog.js';
 import { frage, ungespeichert, auswahl, eingabe } from './dialog.js';
+import { gebietAn } from './gebiete.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -39,7 +42,7 @@ const FAHR = { KeyW: [1, 0], KeyS: [-1, 0], KeyA: [0, -1], KeyD: [0, 1] };
 // Abgelöstes Ablage-Fenster (Welt): gleiche Seite mit ?fenster=ablage – zeigt nur die Ablage-Kacheln und meldet die Wahl über diesen Kanal
 const NUR_ABLAGE = new URLSearchParams(location.search).get('fenster') === 'ablage';
 const ABLAGE_KANAL = 'bs-ablage-wahl';
-const APP_VERSION = '1.5.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
+const APP_VERSION = '1.6.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
 
 class App {
   constructor() {
@@ -793,6 +796,17 @@ class App {
     if (state === 'laedt') b.textContent = 'Modelle …';
     else if (state === 'bereit') { b.textContent = 'Modelle'; b.title = `Echte Spielmodelle (${n} Bauteil-Typen) statt Kästen anzeigen`; }
     else if (state === 'fehlt') { b.textContent = 'Modelle'; b.disabled = true; b.title = 'Keine aufbereiteten Modelle gefunden (siehe LIESMICH: Modelle).'; }
+    this.spielKnopf();
+  }
+  /** Knopf „Spieloptik“: nur mit Modellen, die Material-Daten haben (Extraktor ab 1.6) */
+  spielKnopf() {
+    const b = $('t-spiel'); if (!b || !this.gl3d) return;
+    const v = this.view3d, moeglich = !!v.spielTex, an = moeglich && v.useModels && v.spielOptik;
+    b.hidden = !(this.mode === '3d' && this.gl3d);
+    b.disabled = !moeglich || !v.useModels;
+    b.setAttribute('aria-pressed', String(an));
+    b.title = moeglich ? 'Spieloptik: Lackfarben, Metall, Aufkleber und Schatten wie im Spiel (aus = Kategoriefarben)'
+      : 'Spieloptik braucht neu geholte Modelle: Einstellungen → Einrichtung & Diagnose → „Modelle aus dem Spiel holen“';
   }
   setCursor(x, y) { $('st-cursor').textContent = `X ${m1(x)} · Y ${m1(y)} m`; }
   setDragInfo(dx, dy) { $('st-cursor').textContent = dx == null ? '' : `Verschieben: ${m1(dx)} / ${m1(dy)} m`; }
@@ -819,6 +833,7 @@ class App {
     $('cv').hidden = v === '3d' && !!this.gl3d;
     this.view.attach();
     $('t-models').hidden = !(v === '3d' && this.gl3d);
+    this.spielKnopf();
     $('t-stift').hidden = !(v === '3d' && this.gl3d);
     this.stiftSetzen(v === '3d' && this.gl3d && this.stiftAn);
     $('v2d').classList.toggle('on', v === '2d'); $('v3d').classList.toggle('on', v === '3d');
@@ -1085,7 +1100,31 @@ class App {
     $('w-leistung').checked = !!w.leistung;
     if (w.leistungAuto) { w.leistungAuto = false; this.toast(`Großer Spielstand (${Math.round(w.saetze.spielstand.dreiecke / 1e6)} Mio. Dreiecke): Leistungsmodus eingeschaltet. Ausschalten oben links mit dem Blitz.`, 'ok'); }
   }
+  /** Kompass unten rechts: Rose dreht sich mit der Blickrichtung, darunter Richtung und Biom an der Kameraposition */
+  weltKompass(w) {
+    const pfeil = $('w-k-pfeil'); if (!pfeil) return;
+    const rose = pfeil.ownerSVGElement;
+    if (!rose.dataset.fertig) {
+      // Himmelsrichtungen in der eingestellten Sprache (N, O/E, S, W/O)
+      const rn = RICHTUNGEN[aktuelleSprache()] || RICHTUNGEN.de; rose.querySelectorAll('text').forEach((tx, i) => { tx.textContent = rn[i * 2]; tx.setAttribute('data-no-i18n', ''); });
+      const g = rose.querySelector('.w-k-striche'); let h = '';
+      for (let a = 0; a < 360; a += 10) { if (a % 90 === 0) continue; const r = (a * Math.PI) / 180, gross = a % 30 === 0, i = gross ? 37 : 40; h += `<line class="${gross ? 'gross' : ''}" x1="${(Math.sin(r) * i).toFixed(1)}" y1="${(-Math.cos(r) * i).toFixed(1)}" x2="${(Math.sin(r) * 44).toFixed(1)}" y2="${(-Math.cos(r) * 44).toFixed(1)}"/>`; }
+      g.innerHTML = h; rose.dataset.fertig = '1';
+    }
+    // Spielwelt: +X = Osten, +Y = Süden; Blickrichtung (cos yaw, sin yaw) → Kurs 0° = Norden, im Uhrzeigersinn. Norden bleibt oben, der Pfeil dreht.
+    const kurs = ((w.yaw + 90) % 360 + 360) % 360, rk = Math.round(kurs) % 360;
+    if (this._kursAlt !== rk) {
+      this._kursAlt = rk;
+      pfeil.setAttribute('transform', `rotate(${kurs.toFixed(1)})`);
+      const namen = RICHTUNGEN[aktuelleSprache()] || RICHTUNGEN.de;
+      $('w-k-grad').textContent = `${namen[Math.round(kurs / 45) % 8]} ${rk}°`;
+    }
+    const b = $('w-k-biom'), name = gebietAn(w.eye[0], w.eye[1]);
+    if (b.textContent !== (name || '')) b.textContent = name || '';
+    b.hidden = !name;
+  }
   weltStatus(w) {
+    this.weltKompass(w);
     const el = $('w-status'); if (!el) return;
     const z = Math.round(w.eye[2] / 100), b = Math.round(w.boden() / 100);
     el.innerHTML = `<span>Position</span><b>${Math.round(w.eye[0] / 100)} / ${Math.round(w.eye[1] / 100)} m</b><span>Höhe</span><b>${z} m (${z - b} m über Grund)</b>`
@@ -1414,11 +1453,13 @@ class App {
     $('suche').addEventListener('input', () => this.renderList());
     $('parts-suche').addEventListener('input', () => this.renderParts());
     const tab = (name) => {
-      for (const t of ['bp', 'parts', 'gen']) { $('tab-' + t).classList.toggle('on', t === name); $('tab-' + t).setAttribute('aria-selected', t === name); $('pane-' + t).hidden = t !== name; }
+      for (const t of ['bp', 'parts', 'gen', 'library']) { $('tab-' + t).classList.toggle('on', t === name); $('tab-' + t).setAttribute('aria-selected', t === name); $('pane-' + t).hidden = t !== name; }
     };
     $('tab-bp').addEventListener('click', () => tab('bp'));
     $('tab-parts').addEventListener('click', () => { tab('parts'); this.renderParts(); });
     $('tab-gen').addEventListener('click', () => { tab('gen'); this.initGenerator(); });
+    $('tab-library').addEventListener('click', () => tab('library'));
+    window.addEventListener('bs-design', e => { if (!['industrial', 'immersive'].includes(e.detail) && !$('pane-library').hidden) tab('bp'); });
     $('gen-form').addEventListener('change', () => this.renderGenParams());
     $('gen-new').addEventListener('click', () => this.genNew());
     $('gen-insert').addEventListener('click', () => this.genInsert());
@@ -1444,7 +1485,9 @@ class App {
       const on = !this.view3d.useModels;
       $('t-models').setAttribute('aria-pressed', String(on));
       this.view3d.setModels(on);
+      this.spielKnopf();
     });
+    $('t-spiel').addEventListener('click', () => { this.view3d.setSpielOptik(!this.view3d.spielOptik); this.spielKnopf(); });
     $('snap').addEventListener('change', () => { this.snap = +$('snap').value; });
     $('t-rotl').addEventListener('click', () => this.rotateSel(-90));
     $('t-rotr').addEventListener('click', () => this.rotateSel(90));

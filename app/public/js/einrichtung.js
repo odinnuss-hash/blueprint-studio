@@ -11,6 +11,7 @@ export class EinrichtungUI {
     $('dlg-einrichtung').addEventListener('cancel', () => this.gesehen());
     $('set-pruefen').addEventListener('click', () => { $('dlg-settings').close(); this.zeigen(); });
     $('set-assistent').addEventListener('click', () => { $('dlg-settings').close(); this.app.assistent.zeigen(); });
+    $('set-modelle')?.addEventListener('click', () => { $('dlg-settings').close(); this.app.assistent.zeigen('fmodel'); });
   }
   async beimStart() {
     try {

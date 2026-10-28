@@ -15,7 +15,7 @@ export function einstellungenGestalten(select) {
     ['ablage','▦','Blaupausen-Ablage','Ordnerstruktur, Namen und Anordnung'],
     ['editor','◇','Editor','Verhalten beim Bearbeiten'],
     ['updates','↻','Updates','Aktualisierung und Update-Quelle'],
-    ['einrichtung','⚙','Einrichtung & Diagnose','Assistent und Voraussetzungen'],
+    ['einrichtung','⚙','Einrichtung & Diagnose','Assistent, Voraussetzungen, Modelle aus dem Spiel holen'],
   ];
   const panels = new Map(); let active;
   const overview = () => { grid.hidden = false; back.hidden = title.hidden = true; panels.forEach(p => p.hidden = true); };
@@ -37,18 +37,20 @@ export function einstellungenGestalten(select) {
   ranges.forEach(([a,b,id]) => original.slice(a,b).forEach(n => panels.get(id).append(n)));
   for (const [selector,id] of [['#set-einsortieren','ablage'],['#set-rutschen','editor']]) panels.get(id).append(form.querySelector(selector).closest('label'));
   for (const fieldset of original.filter(n => n.tagName === 'FIELDSET')) panels.get(fieldset.querySelector('#set-update-auto') ? 'updates' : 'ablage').append(fieldset);
-  for (const id of ['set-assistent','set-pruefen']) panels.get('einrichtung').append(document.getElementById(id));
+  for (const id of ['set-assistent','set-pruefen','set-modelle']) { const el = document.getElementById(id); if (el) panels.get('einrichtung').append(el); }
   original.filter(n => n.classList.contains('hint') && n.parentElement === form).forEach(n => panels.get('dateien').append(n));
 
   const descriptions = {
+    immersive: ['Immersive Command','Dunkelblauer Arbeitsplatz mit Cyan-Akzenten und Kartenwerkzeugen als Kacheln am unteren Rand.'],
+    industrial: ['Industrial Precision','Dunkler Industrie-Arbeitsplatz mit Gebäudebibliothek, großer Arbeitsfläche und gruppierten Kartenwerkzeugen.'],
     werkhalle: ['Werkhalle','Dunkle Werkstatt mit warmen Orangetönen. Kräftige Kontraste und eine industrielle Atmosphäre.'],
     atlas: ['Atlas','Helle Flächen, ruhige Grüntöne und elegante Überschriften. Für einen freundlichen, übersichtlichen Arbeitsplatz.'],
     kommandobruecke: ['Kommandobrücke','Tiefes Marineblau mit bernsteinfarbenen Akzenten. Die Standardansicht für deine Fabrikzentrale.'],
   };
   const cards = document.createElement('div'); cards.className = 'settings-designs'; cards.setAttribute('role','group'); cards.setAttribute('aria-label','App-Design auswählen');
   const preview = document.createElement('figure'); preview.className = 'settings-preview'; preview.id = 'settings-design-preview';
-  preview.innerHTML = '<img alt=""><figcaption><strong></strong><p></p><small>Vorschau der Startseite · Farben und Stil gelten für die gesamte App.</small></figcaption>';
-  const show = id => { const [name,description] = descriptions[id]; preview.querySelector('img').src = `/startseite/${id}.png`; preview.querySelector('img').alt = `Designvorschau ${name}`; preview.querySelector('strong').textContent = name; preview.querySelector('p').textContent = description; };
+  preview.innerHTML = '<img alt=""><figcaption><strong></strong><p></p><small>Designvorschau · Farben und Stil gelten für die gesamte App.</small></figcaption>';
+  const show = id => { const [name,description] = descriptions[id]; preview.querySelector('img').src = `/startseite/${id}.png`; preview.querySelector('img').alt = `Designvorschau ${name}`; preview.querySelector('strong').textContent = name; preview.querySelector('p').textContent = description; preview.querySelector('small').textContent = (id === 'industrial' || id === 'immersive') ? 'Konzeptbild zur Orientierung; die tatsächliche Oberfläche verwendet die vorhandenen Werkzeuge.' : 'Vorschau der Startseite · Farben und Stil gelten für die gesamte App.'; };
   const sync = () => { cards.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.designChoice === select.value))); show(select.value); };
   for (const [id,[name]] of Object.entries(descriptions)) {
     const button = document.createElement('button'); button.type = 'button'; button.className = 'settings-design'; button.dataset.designChoice = id; button.setAttribute('aria-describedby',preview.id);

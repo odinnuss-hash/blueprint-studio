@@ -26,6 +26,10 @@ const ROH = {
   Build_Blender_C: { strom: ['PowerConnection', -881, -690, 1094], box: [-1000, 1000, -800, 800], ein: [['Input0', 200, -700, 100, 'b'], ['Input1', 600, -700, 100, 'b'], ['PipeInputFactory', -200, -700, 175, 'r'], ['PipeInputFactory1', -600, -700, 175, 'r']], aus: [['Output1', -200, 700, 100, 'b'], ['PipeOutputFactory', -600, 740, 175, 'r']] },
   Build_Packager_C: { strom: ['PowerConnection', -219, 48, 1074], box: [-400, 400, -400, 400], ein: [['Input0', 0, -300, 100, 'b'], ['PipeInputFactory', 0, -380, 375, 'r']], aus: [['Output1', 0, 300, 100, 'b'], ['PipeOutputFactory', 0, 350, 375, 'r']] },
   Build_Converter_C: { strom: ['PowerInput', 525, -767, 508], box: [-800, 800, -800, 800], ein: [['Input0', -200, -680, 100, 'b'], ['Input1', 200, -680, 100, 'b']], aus: [['Output0', 200, 660, 100, 'b'], ['FGPipeConnectionFactory', -200, 700, 175, 'r']] },
+  // Teilchenbeschleuniger (Anschlüsse aus dem Spiel, Abstand in Master-Class-Fabriken 37 m): Eingänge auf +Y → gedreht
+  Build_HadronCollider_C: { yaw: 180, strom: ['PowerInput', -833, 675, 617], box: [-3850, 1500, -1100, 1650], ein: [['Input0', -600, 900, 100, 'b'], ['Input1', -200, 900, 100, 'b'], ['FGPipeConnectionFactory', 200, 990, 175, 'r']], aus: [['Output0', -400, -1310, 100, 'b']] },
+  // Quantenkodierer (Abstand in Master-Class-Fabriken 24 m)
+  Build_QuantumEncoder_C: { strom: ['PowerInput', 858, -2030, 479], box: [-1200, 1200, -2250, 2250], ein: [['Input1', 200, -2460, 100, 'b'], ['Input2', -200, -2460, 100, 'b'], ['Input3', -600, -2100, 100, 'b'], ['PipeInput1', 600, -2090, 175, 'r']], aus: [['Output0', -200, 2100, 100, 'b'], ['PipeOutput1', 200, 2160, 175, 'r']] },
 };
 const dreh = (x, y, yaw) => (yaw === 180 ? [-x, -y] : [x, y]);
 export const GEO = Object.fromEntries(Object.entries(ROH).map(([c, g]) => {
@@ -266,16 +270,19 @@ function vorlagenPruefen(ctx, klassen, mitRohr) {
 // Maße wie in den eigenen Blaupausen gemessen (19.10.2026, 182 Blaupausen): Maschinen direkt nebeneinander (Mitte–Mitte),
 // Splitter/Merger/Kreuzung 3 m vor dem Anschluss (2 m Zuleitung), weitere Leitungen 4 m weiter außen und 2 m höher
 // (Zuführband ≤ ~33°, Bänder in Blaupausen nie steiler als 40°), Strommast je Maschine 3 m außerhalb der äußersten Eingangsleitung.
-const ABSTAND = { Build_SmelterMk1_C: 500, Build_ConstructorMk1_C: 800, Build_AssemblerMk1_C: 1000, Build_FoundryMk1_C: 1000, Build_ManufacturerMk1_C: 1800, Build_OilRefinery_C: 1000, Build_Blender_C: 1800, Build_Packager_C: 800 };
+const ABSTAND = { Build_SmelterMk1_C: 500, Build_ConstructorMk1_C: 800, Build_AssemblerMk1_C: 1000, Build_FoundryMk1_C: 1000, Build_ManufacturerMk1_C: 1800, Build_OilRefinery_C: 1000, Build_Blender_C: 1800, Build_Packager_C: 800, Build_HadronCollider_C: 5400, Build_QuantumEncoder_C: 2400 };
+// Höhe der Maschinen (Oberkante der Spielmodelle, gemessen) – für Etagen: nächster Boden 4 m darüber
+const HOEHE = { Build_SmelterMk1_C: 860, Build_ConstructorMk1_C: 730, Build_AssemblerMk1_C: 830, Build_FoundryMk1_C: 880, Build_ManufacturerMk1_C: 1220, Build_OilRefinery_C: 3020, Build_Blender_C: 1430, Build_Packager_C: 1170, Build_Converter_C: 1750, Build_HadronCollider_C: 3230, Build_QuantumEncoder_C: 730 };
 const ZULEITUNG = 300, LEIT_DY = 400, LEIT_DZ = 200, MAST_AUSSEN = 300;
 const REIHEN_LUECKE = 400; // freier Raum zwischen den äußersten Teilen benachbarter Reihen (gemessen meist 2–8 m)
 
 /** Lage der Leitungen einer Reihe (relativ zur Mitte) */
 function reiheLage(schritt, kat) {
   const g = GEO[schritt.gebaeude], z = zuordnen(kat, schritt);
-  const inY = Math.min(...z.ein.map((e) => e.port.y)), outY = Math.max(...z.aus.map((a) => a.port.y));
+  // Rezepte ohne Zutaten (z. B. Angeregte photonische Materie im Konverter): Lage nach den Anschlüssen des Gebäudes
+  const inY = Math.min(...(z.ein.length ? z.ein.map((e) => e.port.y) : g.ein.map((p) => p.y))), outY = Math.max(...(z.aus.length ? z.aus.map((a) => a.port.y) : g.aus.map((p) => p.y)));
   const y0 = inY - ZULEITUNG, yA = outY + ZULEITUNG;
-  const yMast = y0 - (z.ein.length - 1) * LEIT_DY - MAST_AUSSEN;
+  const yMast = y0 - Math.max(0, z.ein.length - 1) * LEIT_DY - MAST_AUSSEN;
   return { g, z, inY, outY, y0, yA, yMast, yMin: Math.min(g.box[2], yMast) - 100, yMax: Math.max(g.box[3], yA + (z.aus.length - 1) * LEIT_DY) + 100 };
 }
 /** Maße einer Reihe relativ zu ihrer Mitte (für das Stapeln mehrerer Reihen) */
@@ -388,7 +395,7 @@ function reihe(ctx, schritt, { oy = 0, ausgangLinks = false, rohrSeite = null } 
 }
 
 /** Fundamente (8-m-Raster unter allem), Objekte erzeugen, Kopf (Baukosten, Rezepte, Größe) */
-function abschliessen(ctx, { fundament, hasFlags, extraXs = [], extraYs = [] }) {
+function abschliessen(ctx, { fundament, hasFlags, extraXs = [], extraYs = [], boeden = null }) {
   const { kat, lib, ver, teile, neu, warnungen } = ctx;
   const fCls = [fundament, ...FUNDAMENTE].find((c) => c && templateFor(lib, kat, ver, c));
   const xs = [...extraXs], ys = [...extraYs];
@@ -396,7 +403,9 @@ function abschliessen(ctx, { fundament, hasFlags, extraXs = [], extraYs = [] }) 
   const fx0 = Math.floor((Math.min(...xs) - 100) / 800), fx1 = Math.ceil((Math.max(...xs) + 100) / 800);
   const fy0 = Math.floor((Math.min(...ys) - 100) / 800), fy1 = Math.ceil((Math.max(...ys) + 100) / 800);
   let fundamente = 0;
-  if (fCls) for (let ix = fx0; ix < fx1; ix++) for (let iy = fy0; iy < fy1; iy++) { neu({ cls: fCls, pos: [ix * 800 + 400, iy * 800 + 400, Z_BODEN - 50], yaw: 0, einfach: true }); fundamente++; }
+  if (fCls && boeden) { // Etagen: je Boden eine eigene Fläche (Spalten für Lifte und Rohre bleiben frei)
+    for (const b of boeden) for (let ix = 0; ix < b.nx; ix++) for (let iy = 0; iy < b.ny; iy++) { neu({ cls: fCls, pos: [b.x0 + ix * 800 + 400, b.y0 + iy * 800 + 400, b.z], yaw: 0, einfach: true }); fundamente++; }
+  } else if (fCls) for (let ix = fx0; ix < fx1; ix++) for (let iy = fy0; iy < fy1; iy++) { neu({ cls: fCls, pos: [ix * 800 + 400, iy * 800 + 400, Z_BODEN - 50], yaw: 0, einfach: true }); fundamente++; }
   else warnungen.push('Keine Fundament-Vorlage gefunden – Blaupause ohne Fundamente.');
   const objs = baueObjekte({ kat, lib, ver, hasFlags, teile });
   for (const c of new Set(teile.map((t) => t.cls))) if (ctx.bg[c]?.inhalt && GEO[c]) warnungen.push(`Die Vorlage für ${kat.gebaeude[c]?.name || c} stammt aus „${ctx.bg[c].quelle}“ und hat Gegenstände im Lager – die kommen mit. Besser eine im Spiel gespeicherte Blaupause mit diesem Gebäude anlegen.`);
@@ -412,7 +421,7 @@ function abschliessen(ctx, { fundament, hasFlags, extraXs = [], extraYs = [] }) 
   const kopf = {
     costs: Object.entries(kosten).filter(([it]) => kat.pfade.items[it]).map(([item, amount]) => ({ item, path: kat.pfade.items[item], amount })),
     recipes: [...rezepte],
-    dimensions: [Math.max(1, fx1 - fx0), Math.max(1, fy1 - fy0), 4],
+    dimensions: [Math.max(1, fx1 - fx0), Math.max(1, fy1 - fy0), boeden ? Math.max(4, Math.ceil((Math.max(...boeden.map((b) => b.z)) + 2000) / 800)) : 4],
   };
   return { objs, kopf, fundamente, groesse: [(fx1 - fx0) * 8, (fy1 - fy0) * 8] };
 }
@@ -471,7 +480,7 @@ export function baueReihe({ kat, lib, ver, hasFlags, schritt, bandMax = 6, funda
 }
 
 // ------------------------------------------------------------------ Ganze Kette
-const Z_SPUR = 1600;      // Höhe der Verbindungsbänder in der Logistik-Spalte (über allen Verteilerleitungen)
+const Z_SPUR_STANDARD = 1600, Z_SPUR = Z_SPUR_STANDARD;      // Höhe der Verbindungsbänder in der Logistik-Spalte (über allen Verteilerleitungen)
 const Z_ROHRSPUR = 650;   // unterste Rohrspur rechts (zwischen den Leitungshöhen 2/5/8 m); jede weitere 3 m höher
 
 /**
@@ -480,7 +489,7 @@ const Z_ROHRSPUR = 650;   // unterste Rohrspur rechts (zwischen den Leitungshöh
  * je Verbindung eine Spur auf eigener Höhe (äußere höher), Steigrohre direkt neben der Reihe.
  * Feste Nebenprodukte ohne Abnehmer → AWESOME-Schredder; flüssige → freies Rohr mit Schild.
  */
-export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fundament, strom = true, nur = null, wasser = false }) {
+export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fundament, strom = true, nur = null, wasser = false, etagen = false }) {
   const ctx = umgebung({ kat, lib, ver, bandMax, strom });
   const { band, stueck, verbinde, name, schild, neu, warnungen, mkFuer, rohrMk } = ctx;
   const alle = ergebnis.schritte.map((s, i) => ({ s, i, ok: baubar(s, kat).ok })).filter((x) => !nur || nur.has(x.i));
@@ -493,15 +502,45 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
   const gesamt = bau.reduce((a, x) => a + x.s.anzahl, 0);
   if (gesamt > 400) throw Object.assign(new Error(`Das wären ${gesamt} Maschinen – zu groß für eine Blaupause. Bitte kleinere Mengen oder eine Teilfabrik wählen.`), { status: 422 });
   bau.sort((a, b) => a.s.ebene - b.s.ebene || a.s.name.localeCompare(b.s.name));
-  let cursor = 0;
+  let cursor = 0, zBasis = 0;
   const reihen = [];
-  for (const x of bau) {
-    const m = reiheMasse(x.s, kat);
-    const oy = cursor - m.yMin;
-    const r = reihe(ctx, x.s, { oy, ausgangLinks: true, rohrSeite: 1 });
-    r.index = x.i;
-    reihen.push(r);
-    cursor = oy + m.yMax + REIHEN_LUECKE;
+  // Etagen: jede Stufe auf einem eigenen Boden übereinander (Rohstoffseite unten), nächster Boden 4 m über der höchsten
+  // Maschine bzw. Leitung. Alles einer Reihe wird nachträglich um die Bodenhöhe angehoben.
+  const anheben = (teile, dz) => {
+    const gesehen = new Set(), hoch = (p) => { if (p && !gesehen.has(p)) { gesehen.add(p); p[2] += dz; } };
+    for (const t of teile) { hoch(t.pos); (t.spline || []).forEach(hoch); (t.punkte || []).forEach((q) => hoch(q.loc)); hoch(t.anschluss); if (t.kabel) { hoch(t.kabel.locA); hoch(t.kabel.locB); } }
+  };
+  // Etagen: je Fertigungsebene ein Boden, darauf ihre Reihen nebeneinander (wie sonst entlang Y)
+  const gruppen = etagen ? [...new Set(bau.map((x) => x.s.ebene))].map((eb) => bau.filter((x) => x.s.ebene === eb)) : [bau];
+  for (const gruppe of gruppen) {
+    let oben = 0;
+    if (etagen) cursor = 0;
+    for (const x of gruppe) {
+      const m = reiheMasse(x.s, kat);
+      const oy = cursor - m.yMin;
+      const start = ctx.teile.length;
+      const r = reihe(ctx, x.s, { oy, ausgangLinks: true, rohrSeite: 1 });
+      r.index = x.i; r.oz = 0;
+      if (etagen && zBasis) {
+        anheben(ctx.teile.slice(start), zBasis);
+        for (const l of [...r.eingaenge, ...r.ausgaenge]) l.z += zBasis;
+      }
+      r.oz = etagen ? zBasis : 0;
+      oben = Math.max(oben, HOEHE[x.s.gebaeude] || 1200, ...[...r.eingaenge, ...r.ausgaenge].map((l) => l.z - r.oz - Z_BODEN + 200));
+      reihen.push(r);
+      cursor = oy + m.yMax + REIHEN_LUECKE;
+    }
+    if (etagen) zBasis += Math.ceil((oben + 400 + 100) / 100) * 100; // nächster Boden: 4 m über der höchsten Maschine + 1 m Fundament
+  }
+  // Böden (Etagen): gemeinsame Fläche über allen Reihen; links die Lift-Spalte, rechts die Rohr-Spalte außerhalb
+  let boeden = null, xBodenEnde = null;
+  if (etagen) {
+    const bx0 = Math.min(...reihen.map((r) => r.xMin)) - 100, bx1 = Math.max(...reihen.map((r) => r.xMax)) + 100;
+    const by0 = Math.min(...reihen.map((r) => r.yMin)) - 100, by1 = Math.max(...reihen.map((r) => r.yMax)) + 100;
+    const nx = Math.max(1, Math.ceil((bx1 - bx0) / 800)), ny = Math.max(1, Math.ceil((by1 - by0) / 800));
+    boeden = [...new Set(reihen.map((r) => r.oz))].map((oz) => ({ x0: bx0, y0: by0, nx, ny, z: oz + Z_BODEN - 50 }));
+    xBodenEnde = bx0 + nx * 800;
+    if (zBasis > 4800 * 2) warnungen.push(`Die Etagen sind zusammen ${zahl(zBasis / 100)} m hoch – Förderlifte gehen im Spiel nur bis 48 m; ggf. als Teilfabriken bauen.`);
   }
   for (let k = 0; k + 1 < reihen.length; k++) {
     const a = reihen[k].masten[reihen[k].masten.length - 1], b = reihen[k + 1].masten[0];
@@ -548,15 +587,15 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
   for (const v of vr) {
     const a = v.ausgang, e = v.eingang, lo = Math.min(a.y, e.y), hi = Math.max(a.y, e.y);
     const frei = (l) => l === a || l === e || l.y < lo || l.y > hi;
-    v.direkt = !e.mehrfach && e.x + 300 <= Math.max(a.x + 300, v.von.xMax + 400) && reihen.every((q) => (q === v.von || q === v.nach)
+    v.direkt = !etagen && !e.mehrfach && e.x + 300 <= Math.max(a.x + 300, v.von.xMax + 400) && reihen.every((q) => (q === v.von || q === v.nach)
       ? [...q.eingaenge, ...q.ausgaenge].every(frei) : q.yMax < lo || q.yMin > hi);
   }
   const maxAb = Math.max(1, ...reihen.flatMap((r) => r.ausgaenge.map((a) => vr.filter((v) => v.ausgang === a).length)));
-  const XR = Math.max(...reihen.map((r) => r.xMax)) + 600 + 300 * maxAb;
+  const XR = (etagen ? xBodenEnde + 300 : Math.max(...reihen.map((r) => r.xMax))) + 600 + 300 * maxAb;
   // Spuren mindestens 4 m über der höchsten Leitung (freie Rohre kreuzen die Spalte darunter)
   const zSpur = Math.max(Z_ROHRSPUR, ...reihen.flatMap((r) => [...r.eingaenge, ...r.ausgaenge].filter((l) => l.art === 'r').map((l) => l.z + 400)));
   const spur = vr.filter((v) => !v.direkt);
-  spur.forEach((v, k) => { v.x = XR + 400 + 400 * k; v.h = zSpur + 300 * k; });
+  spur.forEach((v, k) => { v.x = XR + 400 + 400 * k; v.h = etagen ? Math.max(v.ausgang.z, v.eingang.z) + 400 + 300 * k : zSpur + 300 * k; });
   vr.filter((v) => v.direkt).forEach((v) => { v.h = Infinity; });
   // mehrere Rohr-Zuflüsse: die höchste Spur fällt in die Kreuzung nächst der Reihe (überquert die übrigen oberhalb)
   for (const e of new Set(vr.filter((v) => v.eingang.quellJ).map((v) => v.eingang))) vr.filter((v) => v.eingang === e).sort((p, q) => q.h - p.h).forEach((v, i) => { v.J = e.quellJ[i]; });
@@ -581,6 +620,8 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
         verbinde(von[0], von[1], b0, 'ConveyorAny0'); verbinde(b0, 'ConveyorAny1', sp, 'Input1');
         von = [sp, 'Output1']; x = v.x - 100;
         const e = v.eingang, sgn = Math.sign(e.y - a.y) || 1, mk = mkFuer(v.voll);
+        const Z_SPUR = etagen ? Math.max(a.z, e.z) + 400 : Z_SPUR_STANDARD; // Etagen: Spur 4 m über der höheren Leitung
+        if (etagen && Math.max(Z_SPUR - a.z, Z_SPUR - e.z) > 4800) warnungen.push(`Verbindung ${name(v.item)}: Förderlift höher als 48 m – im Spiel ggf. zwei Lifte übereinander setzen.`);
         const b1 = band(mk, [v.x, a.y + 100 * sgn, a.z], [v.x, a.y + 200 * sgn, a.z]); // Lift mittig zwischen zwei Leitungen
         verbinde(sp, sgn > 0 ? 'Output3' : 'Output2', b1, 'ConveyorAny0');
         const l1 = lift(mk, [v.x, a.y + 200 * sgn, a.z], 90 * sgn + 180, Z_SPUR - a.z, 180);
@@ -614,7 +655,7 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
       // Rohr: je Abnehmer eine Kreuzung auf dem Ausgangsrohr (höhere Spur weiter links), Steigrohr hoch auf die Spurhöhe,
       // waagerecht zur Spur, entlang Y, zurück bis XR, Fallrohr auf Leitungshöhe, hinein.
       const reihenfolge = [...abgaenge].sort((p, q) => q.h - p.h);
-      const xs0 = Math.max(a.x + 300, r.xMax + 400);
+      const xs0 = etagen ? Math.max(a.x + 300, xBodenEnde + 300) : Math.max(a.x + 300, r.xMax + 400);
       reihenfolge.forEach((v, k) => { v.xk = xs0 + 300 * k; });
       for (const v of [...reihenfolge].sort((p, q) => p.xk - q.xk)) {
         const kr = neu({ cls: 'Build_PipelineJunction_Cross_C', pos: [v.xk, a.y, a.z], yaw: 0, conn: {} });
@@ -626,7 +667,7 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
           continue;
         }
         let start = [kr, sgn > 0 ? 'Connection2' : 'Connection3'], weg = [[v.xk, a.y + 100 * sgn, a.z], [v.xk, ys, a.z]];
-        if (v.h - Z_BODEN > HUB_FREI) { // Spur zu hoch für die Förderhöhe der Maschine: Pumpe senkrecht unten im Steigrohr
+        if (v.h - r.oz - Z_BODEN > HUB_FREI) { // Spur zu hoch für die Förderhöhe der Maschine: Pumpe senkrecht unten im Steigrohr
           const pp = [v.xk, ys, a.z + 350];
           const pu = ctx.pumpe(v.h - pp[2] > PUMPE.hubMk1 ? 2 : 1, pp, [0, -Math.SQRT1_2, 0, Math.SQRT1_2]); // lokal +X → nach oben
           if (pu) { rohrzug(mk, [...weg, pp], start, [pu, 'Connection0']); start = [pu, 'Connection1']; weg = [pp]; }
@@ -695,15 +736,16 @@ export function baueKette({ kat, lib, ver, hasFlags, ergebnis, bandMax = 6, fund
     }
     freieEin.push(e);
   }
-  for (const r of reihen) schild([r.xMax + 300, (r.yMin + r.yMax) / 2, Z_BODEN + 300], -90, `${r.schritt.anzahl}× ${kat.gebaeude[r.schritt.gebaeude]?.name || ''}: ${r.schritt.name}`, '#');
+  for (const r of reihen) schild([r.xMax + 300, (r.yMin + r.yMax) / 2, r.oz + Z_BODEN + 300], -90, `${r.schritt.anzahl}× ${kat.gebaeude[r.schritt.gebaeude]?.name || ''}: ${r.schritt.name}`, '#');
   if (!ctx.schildCls) warnungen.push('Keine Schild-Vorlage gefunden – Blaupause ohne Schilder.');
 
-  const f = abschliessen(ctx, { fundament, hasFlags, extraXs: [xFrei, vr.length ? xFreiR : XR], extraYs: reihen.flatMap((r) => [r.yMin, r.yMax]) });
+  const f = abschliessen(ctx, { fundament, hasFlags, extraXs: [xFrei, vr.length ? xFreiR : XR], extraYs: reihen.flatMap((r) => [r.yMin, r.yMax]), boeden });
   return {
     objs: f.objs, kopf: f.kopf,
     info: {
       reihen: reihen.length, maschinen: reihen.reduce((s, r) => s + r.schritt.anzahl, 0), verbindungen: verb.length, eingaenge: freieEin.length,
       baender: ctx.teile.filter((t) => t.spline && !t.rohr).length, rohre: ctx.teile.filter((t) => t.rohr).length, lifte: ctx.teile.filter((t) => t.lift).length, fundamente: f.fundamente,
+      etagen: etagen ? new Set(reihen.map((r) => r.oz)).size : 0, hoehe: etagen ? Math.round(zBasis / 100) : 0,
       masten: ctx.zaehler.masten, kabel: ctx.zaehler.kabel, schredder: ctx.zaehler.schredder, speicher: ctx.zaehler.speicher, extraktoren: ctx.zaehler.extraktoren, pumpen: ctx.zaehler.pumpen, groesse: f.groesse, warnungen, nichtGebaut: alle.filter((x) => !x.ok).map((x) => x.s.name),
     },
   };

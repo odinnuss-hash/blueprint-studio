@@ -61,6 +61,7 @@ function spline3d(o) {
 function parameter(o) {
   if (o.length) return o.length;
   if (o.liftTop) return o.liftTop[2] || 0;
+  if (o.dicke) return o.dicke; // Boden-Durchführung: Fundamentdicke
   if (o.hoehe !== undefined || o.stangeNr !== undefined) return (o.stangeNr !== undefined ? (o.stangeNr + 1) * 100000 : 0) + (o.hoehe || 0);
   return 0;
 }
@@ -98,7 +99,7 @@ export function weltDaten(buf) {
     const cls = kurz(o.typePath);
     if (cls === 'Char_Player_C') { spieler.push(o.pos.map(Math.round)); continue; }
     if (!/^Build_/.test(cls) || cls === 'Build_PowerLine_C') continue;
-    if (RX_SPLINE.test(cls) || /Beam|ConveyorLift|Pole|Support/.test(cls)) readProps(body, o);
+    if (RX_SPLINE.test(cls) || /Beam|ConveyorLift|Pole|Support|Passthrough/.test(cls)) readProps(body, o);
     if (o.spline?.length > 1) { linien.push([ki(cls), ...spline3d(o)]); linienRefs.push(o.level === haupt ? o.pathName : null); linienLage.push(...o.pos, ...o.rot); continue; }
     werte.push(o.pos[0], o.pos[1], o.pos[2], ...o.rot, ...(o.scale || [1, 1, 1]), ki(cls), parameter(o));
     refs.push(o.level === haupt ? o.pathName : null);

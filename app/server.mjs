@@ -16,7 +16,7 @@ import { baueReihe, baueKette } from './lib/fabrik.mjs';
 import { bauePixelbild } from './lib/pixelbild.mjs';
 import { planAusSchritten, bauePlantafel } from './lib/plantafel.mjs';
 import { baueSymbolschilder } from './lib/symbolschild.mjs';
-import { findeVorlagen, ladeVorlage, bauePlantafelVorlage } from './lib/plantafel-vorlage.mjs';
+import { bauePlantafelKarten, kartenFehlen } from './lib/plantafel-karten.mjs';
 import { ladeMuster, kopiere, qmul, qrot, qz } from './lib/muster.mjs';
 import { objekteEinfuegen } from './lib/spielstand-einfuegen.mjs';
 import { spielstandAendern } from './lib/spielstand-aendern.mjs';
@@ -28,7 +28,8 @@ import { rechneOptimal } from './public/js/planer-optimierer.js';
 import { buildLibrary, availability, buildObject, costDelta, makeHead, newInstance, templateFor, makeCfg, i32, replaceObjectProp } from './lib/vorlagen.mjs';
 import { loadKatalog } from './lib/katalog.mjs';
 import { readSavHeader, readSave } from './lib/sav.mjs';
-import { uebertrageBereich } from './lib/karte-transfer.mjs';
+import { uebertrageBereich, kopplungenVorschau } from './lib/karte-transfer.mjs';
+import { pruefeSpielstand, repariereSpielstand } from './lib/spielstand-pruefen.mjs';
 import { vorraeteLesen } from './lib/vorraete.mjs';
 import { punkteLaden, punkteMitZustand } from './lib/kartenpunkte.mjs';
 import { produktionLesen, maschineInfo } from './lib/produktion.mjs';
@@ -51,7 +52,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '1.5.0';
+const VERSION = '1.6.0';
 
 const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
 
@@ -264,6 +265,7 @@ function bpToClient(bp, session, name, cfg) {
     if (o.hoehe !== undefined) e.h = r1(o.hoehe); // Stützen/Masten: Höhe und gewählte Stangen-Variante (3D-Modell)
     if (o.stangeNr !== undefined) e.pv = o.stangeNr;
     if (o.length) e.len = o.length;
+    if (o.dicke) e.dk = r1(o.dicke); // Boden-Durchführung: Fundamentdicke
     ents.push(e);
   }
   return {
@@ -708,6 +710,24 @@ setInterval(() => {
 }, 2000).unref();
 
 // ------------------------------------------------------------------ Karte (Spielstaende)
+/** Spielstände (ids „Ordner/Datei.sav“) in den Papierkorb – nicht, solange das Spiel gerade hineinspeichert */
+async function spielstaendeLoeschen(ids) {
+  if (!Array.isArray(ids) || !ids.length) throw Object.assign(new Error('Keine Spielstände angegeben.'), { status: 400 });
+  const spielAn = await spielLaeuft();
+  const liste = [], fehler = [];
+  for (const id of ids.slice(0, 500)) {
+    const teile = String(id).split('/');
+    if (teile.length !== 2 || !teile.every((t) => safeName(t.replace(/\.sav$/i, ''))) || !/\.sav$/i.test(teile[1]) || teile[0] === 'blueprints') { fehler.push(`${id}: ungültig`); continue; }
+    const datei = path.join(settings.saveDir, ...teile);
+    let st; try { st = await fsp.stat(datei); } catch { fehler.push(`${teile[1]}: nicht gefunden`); continue; }
+    if (spielAn && Date.now() - st.mtimeMs < 60000) { fehler.push(`${teile[1]}: wird gerade vom Spiel benutzt`); continue; }
+    liste.push({ name: teile[1].replace(/\.sav$/i, ''), ort: 'Spielstand', dir: teile[0], dateien: [datei] });
+  }
+  const weg = liste.length ? await inPapierkorb(liste) : [];
+  for (const e of liste) try { await fsp.rm(path.join(DATA_DIR, 'karten', e.dir + '_' + e.name + '.sav.bin'), { force: true }); } catch { /* Zwischenspeicher */ }
+  log(`Spielstände gelöscht: ${liste.map((e) => e.name).join(', ')}${fehler.length ? ` (nicht: ${fehler.join('; ')})` : ''}`);
+  return { ok: true, geloescht: liste.length, fehler, weg: weg.length };
+}
 async function spielstaende() {
   const out = [];
   let dirs = [];
@@ -770,6 +790,7 @@ function spielZuordnung(session) {
 /** gemerkte Symbole (je Hauptgruppen-Nummer) → { Kategoriename in der aktuellen Struktur: IconID } */
 const symboleNachName = () => Object.fromEntries(Object.entries(settings.spielSymbole || {}).map(([c, id]) => [GRUPPE_NAME[c] ?? c, id]));
 let spielKatLauf = null, spielKatNochmal = new Set();
+let spielKatStand = null; // Fortschritt für den Ladebalken (GET /api/spielkategorien/stand)
 async function spielKategorienSetzen(session) {
   if (spielKatLauf) { spielKatNochmal.add(session); return { laeuft: true }; }
   spielKatLauf = (async () => {
@@ -780,7 +801,10 @@ async function spielKategorienSetzen(session) {
     const rang = {};
     for (const [c, n] of GRUPPEN) { const o = ablageOrdner(c).split('/'); if (c.includes('_')) rang[`${ohneNummer(o[0])}/${n}`] = +c.split('_')[1]; else rang[n] = +c; }
     const geschrieben = [], fehler = []; let kategorien = null;
+    spielKatStand = { session, i: 0, n: staende.length, name: '' };
     for (const stand of staende) {
+      spielKatStand = { session, i: geschrieben.length + fehler.length, n: staende.length, name: stand.name };
+      await new Promise((r) => setImmediate(r)); // Stand abfragbar halten
       const datei = path.join(settings.saveDir, ...stand.id.split('/'));
       try {
         if (spielAn && Date.now() - stand.geaendert < 15000) throw new Error('wird gerade vom Spiel gespeichert');
@@ -812,7 +836,7 @@ async function spielKategorienSetzen(session) {
   })();
   try { return await spielKatLauf; }
   finally {
-    spielKatLauf = null;
+    spielKatLauf = null; spielKatStand = null;
     const weiter = [...spielKatNochmal]; spielKatNochmal.clear();
     for (const s of weiter) spielKategorienSetzen(s).catch((e) => log('Kategorien: ' + e.message));
   }
@@ -942,6 +966,37 @@ async function karteUebertragen({ id, bereich, ohne = [], ziel, name, frei = fal
   log(`Karte → anderer Spielstand: ${id} → ${ziel} als ${aus} (${info.eingefuegt} Objekte, ${info.entfernt} im Ziel entfernt${sicherung ? `, alte Datei: ${sicherung}` : ''})`);
   return { ok: true, name, datei: path.basename(aus), info };
 }
+// Spielstand prüfen (lib/spielstand-pruefen.mjs): tote Verweise, Drohnen ohne Station/Heimat, Ladezustand ohne Drohne
+const savIdOk = (id) => typeof id === 'string' && /^[^\\/:*?"<>|]+\/[^\\/:*?"<>|]+\.sav$/i.test(id) && !id.startsWith('../');
+async function spielstandPruefen({ id }) {
+  if (!savIdOk(id)) throw Object.assign(new Error('Bitte einen Spielstand wählen.'), { status: 400 });
+  const r = pruefeSpielstand(await fsp.readFile(path.join(settings.saveDir, ...id.split('/'))));
+  const { ersetzen, ...rest } = r; return { ok: true, ...rest };
+}
+async function spielstandReparieren({ id, name, ueberschreiben = false }) {
+  if (!savIdOk(id)) throw Object.assign(new Error('Bitte einen Spielstand wählen.'), { status: 400 });
+  if (!safeName(name)) throw Object.assign(new Error('Bitte einen gültigen Namen für die reparierte Kopie angeben.'), { status: 400 });
+  const quelle = path.join(settings.saveDir, ...id.split('/')), aus = path.join(path.dirname(quelle), name + '.sav');
+  if (path.resolve(aus).toLowerCase() === path.resolve(quelle).toLowerCase()) throw Object.assign(new Error('Bitte einen neuen Namen wählen – das Original bleibt unverändert.'), { status: 400 });
+  const vorhanden = fs.existsSync(aus);
+  if (vorhanden && !ueberschreiben) throw Object.assign(new Error(`Den Spielstand „${name}“ gibt es schon.`), { status: 409 });
+  const r = repariereSpielstand(await fsp.readFile(quelle), name);
+  if (!r.ausgabe) return { ok: true, nichts: true };
+  let sicherung = null;
+  if (vorhanden) { const sdir = path.join(DATA_DIR, 'spielstand-sicherung'); await fsp.mkdir(sdir, { recursive: true }); sicherung = path.join(sdir, `${name}_${new Date().toISOString().replace(/[:.]/g, '-')}.sav`); await fsp.copyFile(aus, sicherung); }
+  await fsp.writeFile(aus + '.neu', r.ausgabe); await fsp.rename(aus + '.neu', aus);
+  log(`Spielstand repariert: ${id} → ${aus} (${r.vorher.behebbar} behoben, danach ${r.nachher.behebbar} offen)`);
+  return { ok: true, datei: path.basename(aus), behoben: r.vorher.behebbar, offen: r.nachher.behebbar, rest: r.nachher.befunde, sicherung: sicherung ? path.basename(sicherung) : null };
+}
+// Vorschau vor dem Übertragen: Kopplungen, die aufgehoben würden (lib/kopplungen.mjs) – schreibt nichts
+async function karteUebertragenPruefen({ id, bereich, ohne = [], ziel }) {
+  const b = bereichPruefen(id, bereich);
+  if (typeof ziel !== 'string' || !/^[^\\/:*?"<>|]+\/[^\\/:*?"<>|]+\.sav$/i.test(ziel)) throw Object.assign(new Error('Bitte einen Ziel-Spielstand wählen.'), { status: 400 });
+  const l = await getLib(), k = getKatalog();
+  if (!k) throw Object.assign(new Error('Spieldaten (Katalog) fehlen.'), { status: 422 });
+  const [q, z] = await Promise.all([fsp.readFile(path.join(settings.saveDir, ...id.split('/'))), fsp.readFile(path.join(settings.saveDir, ...ziel.split('/')))]);
+  return { ok: true, ...kopplungenVorschau(q, z, b, { lib: l, kat: k, ohne: new Set(Array.isArray(ohne) ? ohne : []) }) };
+}
 // ------------------------------------------------------------------ Welt-Ansicht (3D mit Gelände)
 let weltHoehenCache;
 const weltHoehen = () => { // neu laden, sobald die Datei neu erzeugt wurde
@@ -997,7 +1052,9 @@ async function weltSpielstand(body) {
 // ------------------------------------------------------------------ Master Class (Lehrbuch-Fabriken als Vorlagen)
 const MC_DIR = () => path.join(DATA_DIR, 'masterclass');
 // Quellen: eigene Einstellung, sonst Sortieren\Tschukki und der Ablage-Ordner „10 Master Class“ (dorthin wird einsortiert)
-const mcQuellen = () => (settings.masterclassOrdner?.length ? settings.masterclassOrdner : [path.join(bpRoot(), 'Sortieren', 'Tschukki'), ablage.ordnerPfad(ablageOrdner('10'))]).filter((d) => d && fs.existsSync(d));
+// Master-Class-Quellen (privat, nie im Repo): eigene Einstellung, sonst Sortieren\Tschukki, Ablage „10 Master Class“ und je Bibliothek ein Unterordner „Masterclass“
+const mcQuellen = () => (settings.masterclassOrdner?.length ? settings.masterclassOrdner : [path.join(bpRoot(), 'Sortieren', 'Tschukki'), ablage.ordnerPfad(ablageOrdner('10')),
+  ...(settings.bibliotheken || []).map((b) => (typeof b === 'string' ? b : b?.pfad)).filter(Boolean).map((b) => path.join(b, 'Masterclass'))]).filter((d) => d && fs.existsSync(d));
 async function masterclassEinsortieren() {
   await masterclass();
   const r = await masterclassAblegen({ ziel: MC_DIR(), quellen: mcQuellen(), ordnerFuer: (code) => ablage.ordnerPfad(ablageOrdner(code)) });
@@ -1059,7 +1116,7 @@ async function planerBauen(body) {
       if (i < 0) throw Object.assign(new Error('Die gewählte Stufe gibt es im Plan nicht (mehr).'), { status: 400 });
       nur = vorstufen(ergebnis, i); nur.max = i; bisName = ergebnis.schritte[i].name;
     }
-    const r = baueKette({ kat: k, lib: l, ver: basis.saveVersion, hasFlags: basis.hasFlags, ergebnis, bandMax, fundament: body.fundament, nur, wasser: !!body.wasser });
+    const r = baueKette({ kat: k, lib: l, ver: basis.saveVersion, hasFlags: basis.hasFlags, ergebnis, bandMax, fundament: body.fundament, nur, wasser: !!body.wasser, etagen: !!body.etagen });
     r.info.bis = bisName;
     const datei = createBlueprint(basis, r.objs, r.kopf);
     return { datei, info: { ...r.info, objekte: r.objs.length, rezept: bisName ? `bis ${bisName}` : 'ganze Kette' }, basis, ergebnis, kette: true, bis: bisName };
@@ -1129,14 +1186,6 @@ async function pixelSpeichern(body) {
 /** Symbol-Nummern der Schilder (userdata/symbole.json: Desc-Klasse → IconID), sonst ohne Bilder */
 function schildSymbole() { try { return JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'symbole.json'), 'utf8')).symbole || {}; } catch { return {}; } }
 const PLANTAFEL_AUS = () => path.join(DATA_DIR, 'plantafeln-aus');
-/** Schild-Vorlagen „Alternate Prod Sign (3/6 inputs)“ aus Spiel-Ordner und Bibliotheken (je Lauf einmal gesucht) */
-let tafelVorlagen = null;
-function plantafelVorlagen() {
-  if (tafelVorlagen) return tafelVorlagen;
-  const fund = findeVorlagen([bpRoot(), ...(settings.bibliotheken || []).map((b) => (typeof b === 'string' ? b : b?.pfad)).filter(Boolean)]);
-  const v = {}; for (const n of [3, 6]) if (fund[n]) try { v[n] = ladeVorlage(fund[n]); } catch (e) { log(`Plan-Tafel-Vorlage ${fund[n]}: ${e.message}`); }
-  return (tafelVorlagen = v);
-}
 async function plantafelSpeichern(body) {
   const { session, name } = body, kat = getKatalog();
   if (!kat) throw Object.assign(new Error(katalogFehler || 'Spieldaten (Katalog) fehlen.'), { status: 422 });
@@ -1145,8 +1194,8 @@ async function plantafelSpeichern(body) {
   if (fs.existsSync(dst) || fs.existsSync(path.join(PLANTAFEL_AUS(), session, name + '.sbp'))) throw Object.assign(new Error(`„${name}“ gibt es in „${session}“ schon. Bitte einen anderen Namen wählen.`), { status: 409 });
   const schritte = (Array.isArray(body.schritte) ? body.schritte : []).slice(0, 200).map((x) => ({ rezept: String(x.rezept || ''), gebaeude: typeof x.gebaeude === 'string' ? x.gebaeude : undefined, anzahl: +x.anzahl || 1, takt: +x.takt || 100 }));
   const titel = String(body.titel || name).slice(0, 60), lib = await getLib(), plan = planAusSchritten(kat, schritte);
-  const v = body.stil === 'einfach' ? {} : plantafelVorlagen();
-  const r = v[3] || v[6] ? bauePlantafelVorlage({ lib, kat, titel, plan, vorlagen: v, symbole: schildSymbole() }) : bauePlantafel({ lib, kat, titel, plan, symbole: schildSymbole() });
+  // Stil „optimiert“: eigene Karten mit Bildern und Ziffern (lib/plantafel-karten.mjs), „einfach“: Zeilen aus 4-m-Schildern
+  const r = body.stil === 'einfach' ? bauePlantafel({ lib, kat, titel, plan, symbole: schildSymbole() }) : bauePlantafelKarten({ lib, kat, titel, plan, symbole: schildSymbole() });
   await fsp.mkdir(path.dirname(dst), { recursive: true });
   await fsp.writeFile(dst, r.datei);
   const cfg = makeCfg(lib.basis?.cfg, `Blueprint Studio Plan-Tafel: ${titel} (${r.info.schritte} Schritte, ${r.info.breite} × ${r.info.hoehe} m)`);
@@ -1398,6 +1447,7 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/update' && req.method === 'GET') return sendJson(res, 200, await updater.pruefen(url.searchParams.get('neu') === '1'));
       if (p === '/api/update' && req.method === 'POST') return sendJson(res, 200, await updater.installieren());
       if (p === '/api/einrichtung/aktion' && req.method === 'POST') return sendJson(res, 200, await einrichtung.ausfuehren((await readJsonBody(req)).aktion));
+      if (p === '/api/karte/loeschen' && req.method === 'POST') return sendJson(res, 200, await spielstaendeLoeschen((await readJsonBody(req)).ids));
       if (p === '/api/karte/liste') return sendJson(res, 200, { ordner: settings.saveDir, spielstaende: await spielstaende(), megaprints: megaprintListe(), kartenbild: ['Map_0-0', 'Map_0-1', 'Map_1-0', 'Map_1-1'].every((n) => kartenKachel(n)) });
       if (p.startsWith('/api/karte/kachel/')) {
         const f = kartenKachel(decodeURIComponent(p.slice('/api/karte/kachel/'.length)));
@@ -1418,12 +1468,15 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/pixelbild/vorschau' && req.method === 'POST') return sendJson(res, 200, await pixelVorschau(await readJsonBody(req)));
       if (p === '/api/planer/plantafel' && req.method === 'POST') return sendJson(res, 200, await plantafelSpeichern(await readJsonBody(req)));
       if (p === '/api/planer/plantafel/schalten' && req.method === 'POST') return sendJson(res, 200, await plantafelSchalten(await readJsonBody(req)));
-      if (p === '/api/planer/plantafel/stile') { const v = plantafelVorlagen(); return sendJson(res, 200, { vorlage: !!(v[3] || v[6]) }); }
+      if (p === '/api/planer/plantafel/stile') { const l = await getLib(), k = getKatalog(); return sendJson(res, 200, { optimiertFehlt: kartenFehlen(l).map((c) => k?.gebaeude[c]?.name || c) }); }
       if (p === '/api/planer/plantafel/status' && req.method === 'POST') return sendJson(res, 200, plantafelStatus((await readJsonBody(req)).liste));
       if (p === '/api/symbole') return sendJson(res, 200, symbole());
       if (p === '/api/symbolschild/blaupause' && req.method === 'POST') return sendJson(res, 200, await symbolschildSpeichern(await readJsonBody(req)));
       if (p === '/api/pixelbild/blaupause' && req.method === 'POST') return sendJson(res, 200, await pixelSpeichern(await readJsonBody(req)));
       if (p === '/api/karte/uebertragen' && req.method === 'POST') return sendJson(res, 200, await karteUebertragen(await readJsonBody(req)));
+      if (p === '/api/karte/spielstand-pruefen' && req.method === 'POST') return sendJson(res, 200, await spielstandPruefen(await readJsonBody(req)));
+      if (p === '/api/karte/spielstand-reparieren' && req.method === 'POST') return sendJson(res, 200, await spielstandReparieren(await readJsonBody(req)));
+      if (p === '/api/karte/uebertragen/pruefen' && req.method === 'POST') return sendJson(res, 200, await karteUebertragenPruefen(await readJsonBody(req)));
       if (p === '/api/karte/blaupause' && req.method === 'POST') return sendJson(res, 200, await karteZuBlaupause(await readJsonBody(req)));
       // Welt-Ansicht: Gelände-Kacheln in Detailstufen, Bauteile eines Spielstands mit voller Drehung
       if (p.startsWith('/api/welt/felsen/')) { // Fels-Modelle + Platzierungen (werkzeuge/gelaende --felsen-modelle)
@@ -1491,6 +1544,7 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/ablage/ablegen' && req.method === 'POST') { const b = await readJsonBody(req); const r = b.von ? ablage.umordnen(b.von, b.name, b.nach, b.neuName || null) : ablage.ablegen(b.session, b.name, b.nach, b.neuName || null); bpCache.clear(); letzterPlan = null; return sendJson(res, 200, r); }
       if (p === '/api/ablage/schalten' && req.method === 'POST') { const b = await readJsonBody(req);
         if (b.aktiv && !(await spielSitzungen()).some((x) => x.name === b.session)) throw Object.assign(new Error(`„${b.session || '–'}“ ist kein Spielstand – das Spiel liest nur die Blaupausen-Ordner seiner Spielstände. Bitte einen Spielstand wählen.`), { status: 400 }); const r = ablage.schalten(b.ordner, b.namen || [], !!b.aktiv, b.session); bpCache.clear(); letzterPlan = null; return sendJson(res, 200, r); }
+      if (p === '/api/spielkategorien/stand') return sendJson(res, 200, { laeuft: !!spielKatLauf, ...(spielKatStand || {}) });
       if (p === '/api/spielkategorien' && req.method === 'POST') return sendJson(res, 200, await spielKategorienSetzen(String((await readJsonBody(req)).session || '')));
       if (p === '/api/ablage/struktur' && req.method === 'POST') { let n = 0; for (const rel of strukturOrdner()) { if (!fs.existsSync(ablage.ordnerPfad(rel))) { ablage.ordnerAnlegen(rel); n++; } } return sendJson(res, 200, { ok: true, angelegt: n, root: ablage.root }); }
       if (p === '/api/ablage/ordner' && req.method === 'POST') { const b = await readJsonBody(req); return sendJson(res, 200, b.entfernen ? ablage.ordnerEntfernen(b.ordner) : ablage.ordnerAnlegen(b.ordner)); }

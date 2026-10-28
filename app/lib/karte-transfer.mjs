@@ -6,6 +6,7 @@ import {objekteEinfuegen} from './spielstand-einfuegen.mjs';
 import {spielstandAendern} from './spielstand-aendern.mjs';
 import {leichtbauUebertragen} from './leichtbau-transfer.mjs';
 import {zerlege} from './eigenschaften.mjs';
+import {nachpruefen} from './kopplungen.mjs';
 
 /** Farbpalette (mColorSlots_Data im BP_BuildableSubsystem) aus der Quelle ins Ziel übernehmen; null = nichts zu tun */
 function paletteUebernehmen(quellDaten, zielDaten, name) {
@@ -25,7 +26,8 @@ function paletteUebernehmen(quellDaten, zielDaten, name) {
 /** Reiner Transfer im Speicher: Dateischreiben und Originalschutz übernimmt der Server. */
 export function uebertrageBereich(quellDaten,zielDaten,b,{lib:l,kat:k,ohne:ohneSet=new Set(),name,frei=false,palette=false,log=()=>{}}) {
   let daten=zielDaten;
-  const r = bereichAlsBlaupause(quellDaten, b, { lib: l, kat: k, ohne: ohneSet, log, weltkoordinaten: true, leichtbauAlsAkteure: false });
+  const zielSave = readSave(zielDaten, { props: false });
+  const r = bereichAlsBlaupause(quellDaten, b, { lib: l, kat: k, ohne: ohneSet, log, weltkoordinaten: true, leichtbauAlsAkteure: false, kopplungZiel: zielSave });
   if (r.info.falscheVersion) throw Object.assign(new Error(`${r.info.falscheVersion} Objekte besitzen ein abweichendes Format. Quelle bitte im aktuellen Spiel neu speichern; es wird nichts unvollständig übertragen.`), { status: 422 });
   const sv = readSavHeader(daten).saveVersion, m = ladeTransferMuster(r.datei);
   if (m.version > sv) throw Object.assign(new Error(`Die Quelle stammt aus einer neueren Spielversion (Format ${m.version}) als das Ziel (Format ${sv}).`), { status: 422 });
@@ -41,7 +43,7 @@ export function uebertrageBereich(quellDaten,zielDaten,b,{lib:l,kat:k,ohne:ohneS
     const zMin = Number.isFinite(b.z0) ? b.z0 : -Infinity, zMax = Number.isFinite(b.z1) ? b.z1 : Infinity, poly = b.poly;
     const imPoly = (x, y) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j]; if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
     const drin = (p) => p[0] >= x0 && p[0] <= x1 && p[1] >= y0 && p[1] <= y1 && p[2] >= zMin && p[2] <= zMax && (!poly || imPoly(p[0], p[1]));
-    const s = readSave(daten, { props: false }), haupt = s.levels.length - 1, loeschen = [];
+    const s = zielSave, haupt = s.levels.length - 1, loeschen = [];
     for (const o of s.objects) {
       if (o.kind !== 1 || o.level !== haupt || o.dBody === undefined) continue;
       const cls = o.typePath.split('.').pop();
@@ -56,5 +58,13 @@ export function uebertrageBereich(quellDaten,zielDaten,b,{lib:l,kat:k,ohne:ohneS
   const lw = leichtbauUebertragen(quellDaten, daten, b, { ohne: ohneSet, speichername: name });
   daten = lw.ausgabe; info.leichtbau = lw.info.leichtbau;
   if (palette) { const p = paletteUebernehmen(quellDaten, daten, name); if (p) { daten = p; info.palette = true; } }
+  // Nachprüfung im Ergebnis: zeigt ein übertragenes Objekt noch ins Leere?
+  try { info.nachpruefung = nachpruefen(readSave(daten, { props: false }), r.namen, r.quellNamen); } catch (x) { info.nachpruefung = { fehler: x.message }; }
   return {ausgabe:daten,info};
+}
+
+/** Vorschau vor dem Übertragen: welche Kopplungen aufgehoben würden (ohne etwas zu schreiben) */
+export function kopplungenVorschau(quellDaten, zielDaten, b, { lib: l, kat: k, ohne: ohneSet = new Set() }) {
+  const r = bereichAlsBlaupause(quellDaten, b, { lib: l, kat: k, ohne: ohneSet, weltkoordinaten: true, leichtbauAlsAkteure: false, kopplungZiel: readSave(zielDaten, { props: false }) });
+  return { kopplungen: r.info.kopplungen, gebaeude: r.info.gebaeude };
 }

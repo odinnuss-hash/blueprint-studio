@@ -167,6 +167,19 @@ public static class Programm
                     }
                     Zeile($"INFO {objekte.Count} Modelle zum Export");
                 }
+
+                // ---------------------------------------------------------------- 1b. Materialien (Spieloptik)
+                // Je Modell die Material-Instanzen samt Eltern-Kette als JSON (Materialien\<Name>.json) und die
+                // Texturen (Parameter „AO“, „Albedo“/„BaseColour“, „AOMasks“/„MaskAO“) + den Decal-Atlas ColorAtlas_Alb als PNG – daraus baut
+                // werkzeuge\modelle-aufbereiten.mjs die Spieloptik (Material-Raster, Decals, Schatten).
+                try { MaterialienSammeln(provider, objekte, ziel); }
+                catch (Exception e) { Zeile($"WARNUNG Materialien übersprungen ({e.GetType().Name}: {e.Message})"); }
+
+                // ---------------------------------------------------------------- 1c. Gebiete (Biome) für die Welt-Ansicht
+                // Alle Pakete mit „MapArea“ im Pfad als JSON (Export\Gebiete\…), enthaltene Texturen als PNG –
+                // daraus liest werkzeuge\modelle-aufbereiten.mjs die Gebietskarte (Name je Bildpunkt).
+                try { GebieteSammeln(provider, objekte, ziel); }
+                catch (Exception e) { Zeile($"WARNUNG Gebiete übersprungen ({e.GetType().Name}: {e.Message})"); }
             }
 
             // ---------------------------------------------------------------- 2. Icons
@@ -215,6 +228,116 @@ public static class Programm
             foreach (var z in e.ToString().Split('\n').Skip(1).Take(25)) Zeile("  " + z.TrimEnd());
             return 1;
         }
+    }
+
+    private static readonly Regex MatRef = new("\"ObjectName\":\\s*\"(MaterialInstanceConstant|Material)'([^']+)'\",\\s*\"ObjectPath\":\\s*\"([^\"]+)\"", RegexOptions.Compiled);
+    // Texturen, die die Spieloptik braucht: Schatten (Maschinen), Grundfarbe + Lack-/Schattenmaske (übrige Bauteile)
+    private static readonly Regex AoParameter = new("^(AO|AOMask|AOMasks|AO_Masks?|MaskAO|Albedo|BaseColou?r)$", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+    private const string DecalAtlas = "/Game/FactoryGame/Buildable/-Shared/Texture/ColorAtlas_Alb.ColorAtlas_Alb";
+
+    private static readonly Regex TexturRef = new("\"ObjectName\":\\s*\"Texture2D'([^']+)'\",\\s*\"ObjectPath\":\\s*\"([^\"]+)\"", RegexOptions.Compiled);
+
+    /// <summary>Gebiets-Daten (MapArea-Pakete) als JSON speichern, ihre Texturen zum Export vormerken</summary>
+    private static void GebieteSammeln(DefaultFileProvider provider, ConcurrentDictionary<string, UObject> objekte, string ziel)
+    {
+        var dateien = provider.Files.Values
+            .Where(f => f.Extension.Equals("uasset", StringComparison.OrdinalIgnoreCase)
+                     && f.Path.StartsWith("FactoryGame/", StringComparison.OrdinalIgnoreCase)
+                     && f.Path.Contains("MapArea", StringComparison.OrdinalIgnoreCase))
+            .Take(3000).ToList();
+        Zeile($"SCHRITT Gebiete lesen ({dateien.Count})");
+        var ordner = Path.Combine(ziel, "Gebiete");
+        Directory.CreateDirectory(ordner);
+        var liste = new List<string>();
+        int texturen = 0;
+        foreach (var f in dateien)
+        {
+            try
+            {
+                var pkg = provider.LoadPackage(f);
+                var exporte = pkg.GetExports().ToList();
+                var json = JsonConvert.SerializeObject(exporte, Formatting.Indented);
+                var name = f.PathWithoutExtension.Replace('/', '_');
+                File.WriteAllText(Path.Combine(ordner, name + ".json"), json, new UTF8Encoding(false));
+                liste.Add(f.PathWithoutExtension);
+                foreach (var o in exporte.OfType<UTexture>()) if (objekte.TryAdd("T:" + f.PathWithoutExtension, o)) texturen++;
+                foreach (Match m in TexturRef.Matches(json))
+                {
+                    var pfad = ObjektPfad(m.Groups[2].Value);
+                    try { if (provider.TryLoadPackageObject<UTexture>(pfad, out var tex) && objekte.TryAdd("T:" + pfad, tex)) texturen++; } catch { /* egal */ }
+                }
+            }
+            catch (Exception e) { Zeile($"WARNUNG {f.Name}: {e.Message}"); }
+        }
+        File.WriteAllText(Path.Combine(ordner, "_liste.json"), JsonConvert.SerializeObject(liste, Formatting.Indented), new UTF8Encoding(false));
+        Zeile($"INFO {liste.Count} Gebiets-Pakete, {texturen} Gebiets-Texturen");
+    }
+
+    /// <summary>„/Game/A/B/X.0“ oder „/Game/A/B/X.X“ → „/Game/A/B/X.X“ (Paket + Objektname)</summary>
+    private static string ObjektPfad(string objectPath)
+    {
+        var paket = objectPath.Split('.')[0];
+        return paket + "." + paket[(paket.LastIndexOf('/') + 1)..];
+    }
+
+    /// <summary>Material-Instanzen der Modelle (mit Eltern) als JSON speichern, benötigte Texturen zum Export vormerken</summary>
+    private static void MaterialienSammeln(DefaultFileProvider provider, ConcurrentDictionary<string, UObject> objekte, string ziel)
+    {
+        var modelle = objekte.Where(kv => kv.Key.StartsWith("M:")).Select(kv => kv.Value).ToList();
+        Zeile($"SCHRITT Materialien lesen ({modelle.Count} Modelle)");
+        var ordner = Path.Combine(ziel, "Materialien");
+        Directory.CreateDirectory(ordner);
+        var offen = new Queue<string>();
+        var gesehen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var zuordnung = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase); // Modell -> Materialnamen (Reihenfolge der Slots)
+        foreach (var m in modelle)
+        {
+            string json;
+            try { json = JsonConvert.SerializeObject(m); } catch { continue; }
+            var liste = new List<string>();
+            foreach (Match x in MatRef.Matches(json))
+            {
+                liste.Add(x.Groups[2].Value);
+                if (x.Groups[1].Value == "MaterialInstanceConstant" && gesehen.Add(x.Groups[3].Value)) offen.Enqueue(x.Groups[3].Value);
+            }
+            zuordnung[m.Name] = liste;
+        }
+        var texturen = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { DecalAtlas };
+        int n = 0;
+        while (offen.Count > 0)
+        {
+            var pfad = offen.Dequeue();
+            try
+            {
+                if (!provider.TryLoadPackageObject<UObject>(ObjektPfad(pfad), out var mi)) continue;
+                var json = JsonConvert.SerializeObject(mi, Formatting.Indented);
+                File.WriteAllText(Path.Combine(ordner, mi.Name + ".json"), json, new UTF8Encoding(false));
+                n++;
+                var obj = Newtonsoft.Json.Linq.JObject.Parse(json);
+                var props = obj["Properties"];
+                // Eltern-Kette weiter verfolgen (nur Instanzen – Master-Materialien genügen als Name)
+                var parent = props?["Parent"];
+                var pn = (string?)parent?["ObjectName"];
+                var pp = (string?)parent?["ObjectPath"];
+                if (pn != null && pp != null && pn.StartsWith("MaterialInstanceConstant'") && gesehen.Add(pp)) offen.Enqueue(pp);
+                if (props?["TextureParameterValues"] is Newtonsoft.Json.Linq.JArray tpv)
+                    foreach (var t in tpv)
+                    {
+                        var name = (string?)t["ParameterInfo"]?["Name"];
+                        var tp = (string?)t["ParameterValue"]?["ObjectPath"];
+                        if (name != null && tp != null && AoParameter.IsMatch(name)) texturen.Add(ObjektPfad(tp));
+                    }
+            }
+            catch (Exception e) { Zeile($"WARNUNG Material {pfad}: {e.Message}"); }
+        }
+        File.WriteAllText(Path.Combine(ordner, "_modelle.json"), JsonConvert.SerializeObject(zuordnung, Formatting.Indented), new UTF8Encoding(false));
+        var vorher = objekte.Count;
+        foreach (var t in texturen)
+        {
+            try { if (provider.TryLoadPackageObject<UTexture>(t, out var tex)) objekte.TryAdd("T:" + t, tex); }
+            catch (Exception e) { Zeile($"WARNUNG Textur {t}: {e.Message}"); }
+        }
+        Zeile($"INFO {n} Material-Instanzen gespeichert, {objekte.Count - vorher} Texturen zum Export");
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ import { colorFor } from './scene.js';
 import { teilLabel } from './generator.js';
 import { zeichnePunkte, filterLaden, filterMenue, zahlenJeGruppe, punktText } from './kartenpunkte.js';
 import { ungespeichert, auswahl, eingabe, frage } from './dialog.js';
+import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -116,11 +117,39 @@ export class Karte {
   renderListe() {
     const f = ($('k-filter').value || '').toLowerCase();
     const L = this.liste.filter((s) => !f || s.name.toLowerCase().includes(f) || s.sitzung.toLowerCase().includes(f));
-    const zeile = (s) => `<button type="button" class="item${s.id === this.id ? ' on' : ''}" data-id="${esc(s.id)}">
-      <span class="n">${esc(s.name)}</span><span class="m">${esc(s.sitzung)} · ${new Date(s.geaendert).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })} · ${(s.groesse / 1e6).toFixed(1)} MB${s.version && s.version < 46 ? ' · alt' : ''}</span></button>`;
-    const sv = L.filter((s) => s.art !== 'megaprint'), mp = L.filter((s) => s.art === 'megaprint');
-    $('k-liste').innerHTML = sv.map(zeile).join('') || '<div class="muted pad">Keine Spielstände gefunden.</div>'; // Megaprints: Werkzeug „Megaprints“
-    void mp;
+    const zeile = (s) => `<div class="k-zeile"><button type="button" class="item${s.id === this.id ? ' on' : ''}" data-id="${esc(s.id)}">
+      <span class="n">${esc(s.name)}</span><span class="m">${new Date(s.geaendert).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })} · ${(s.groesse / 1e6).toFixed(1)} MB${s.version && s.version < 46 ? ' · alt' : ''}</span></button>
+      <button type="button" class="k-weg" data-weg="${esc(s.id)}" title="Spielstand „${esc(s.name)}“ löschen (Papierkorb)" aria-label="Spielstand löschen">🗑</button></div>`;
+    const sv = L.filter((s) => s.art !== 'megaprint');
+    // nach Karte (Sitzung) gruppiert, auf-/zuklappbar; innerhalb der Gruppe neueste zuerst
+    const gruppen = new Map();
+    for (const s of sv) { const g = s.sitzung || '(ohne Namen)'; if (!gruppen.has(g)) gruppen.set(g, []); gruppen.get(g).push(s); }
+    let offen = {}; try { offen = JSON.parse(localStorage.getItem('bs-karte-gruppen') || '{}'); } catch { /* egal */ }
+    const aktiv = sv.find((s) => s.id === this.id)?.sitzung;
+    $('k-liste').innerHTML = [...gruppen.entries()].sort((a, b) => a[0].localeCompare(b[0], 'de', { numeric: true })).map(([g, l]) => {
+      const auf = f || offen[g] === true || g === aktiv;
+      return `<details class="k-gruppe" data-g="${esc(g)}"${auf ? ' open' : ''}><summary><span class="n">${esc(g)}</span><span class="m">${l.length}</span>
+        <button type="button" class="k-weg" data-weg-gruppe="${esc(g)}" title="Alle ${l.length} Spielstände der Karte „${esc(g)}“ löschen (Papierkorb)" aria-label="Ganze Karte löschen">🗑</button></summary>${l.map(zeile).join('')}</details>`;
+    }).join('') || '<div class="muted pad">Keine Spielstände gefunden.</div>'; // Megaprints: Werkzeug „Megaprints“
+    $('k-liste').querySelectorAll('details.k-gruppe').forEach((d) => d.addEventListener('toggle', () => {
+      if (f) return; offen[d.dataset.g] = d.open; try { localStorage.setItem('bs-karte-gruppen', JSON.stringify(offen)); } catch { /* egal */ }
+    }));
+    $('k-liste').querySelectorAll('[data-weg]').forEach((b) => b.addEventListener('click', (e) => { e.stopPropagation(); this.loeschen(sv.filter((s) => s.id === b.dataset.weg)); }));
+    $('k-liste').querySelectorAll('[data-weg-gruppe]').forEach((b) => b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); this.loeschen(gruppen.get(b.dataset.wegGruppe) || [], b.dataset.wegGruppe); }));
+  }
+  /** Spielstände löschen = in den Windows-Papierkorb (wiederherstellbar) */
+  async loeschen(liste, karte = null) {
+    if (!liste.length) return;
+    const text = karte ? `${t(`Alle ${liste.length} Spielstände der Karte „${karte}“ kommen in den Papierkorb (dort wiederherstellbar):`)}\n${liste.slice(0, 12).map((s) => '• ' + s.name).join('\n')}${liste.length > 12 ? '\n…' : ''}`
+      : `„${liste[0].name}“ (${liste[0].sitzung}) kommt in den Papierkorb – dort wiederherstellbar.`;
+    if (!(await frage({ art: 'warnung', titel: karte ? 'Ganze Karte löschen?' : 'Spielstand löschen?', text, ok: 'In den Papierkorb' }))) return;
+    try {
+      const r = await fetch('/api/karte/loeschen', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ ids: liste.map((s) => s.id) }) });
+      const j = await r.json(); if (!r.ok) throw new Error(j.fehler || r.status);
+      this.app.toast([`${j.geloescht} Spielstand/Spielstände in den Papierkorb gelegt.`, ...(j.fehler?.length ? [`Nicht möglich: ${j.fehler.join('; ')}`] : [])].join(' · '), j.fehler?.length ? 'err' : 'ok');
+      if (liste.some((s) => s.id === this.id)) this.id = null;
+      await this.ladeListe();
+    } catch (e) { this.app.toast(e.message, 'err'); }
   }
 
   // ------------------------------------------------------------ Laden
@@ -561,6 +590,26 @@ export class Karte {
       optionen: ziele.map((s) => ({ wert: s.id, text: s.name, info: [s.sitzung, new Date(s.geaendert).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })].filter(Boolean).join(' · ') })) });
     if (!w) return;
     const ziel = ziele.find((s) => s.id === w.wert);
+    // Vorab prüfen: Kopplungen zu Teilen außerhalb des Bereichs (Drohnen-Partner, Anschlüsse, Kabel, Stationsnamen …)
+    {
+      const b0 = $('k-bp-uebertragen'); if (b0) { b0.disabled = true; b0.textContent = 'Prüfe Kopplungen …'; }
+      let pr = null;
+      try {
+        const r = await fetch('/api/karte/uebertragen/pruefen', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify({ id: this.id, ohne: this.ohneKlassen(), bereich: this.bereichDaten(), ziel: ziel.id }) });
+        pr = await r.json(); if (!r.ok) throw new Error(pr.fehler || r.status);
+      } catch (e) { this.app.toast('Prüfung nicht möglich: ' + e.message, 'err'); return; }
+      finally { const bb = $('k-bp-uebertragen'); if (bb) { bb.disabled = false; bb.textContent = 'In anderen Spielstand übertragen …'; } }
+      const kl = pr.kopplungen?.liste || [], nb = Object.entries(pr.kopplungen?.nichtBereinigt || {});
+      if (kl.length || nb.length) {
+        const zz = (n) => n.toLocaleString(document.documentElement.lang || 'de');
+        const liste = kl.map((f) => `${f.anzahl ? zz(f.anzahl) + '× ' : ''}${t(f.art)}${f.umgelenkt ? ' ' + t(`(${zz(f.umgelenkt)}× auf das Gegenstück im Ziel umgelenkt)`) : ''}${f.gleichnamig ? ' – ' + t(`davon ${zz(f.gleichnamig)}× gleichnamig im Ziel`) : ''}${f.hinweis ? ' – ' + t(f.hinweis) : ''}`);
+        if (nb.length) liste.push(t(`Nicht bereinigt (gemischte Einträge): ${nb.map(([n, a]) => `${a}× ${n}`).join(', ')}`));
+        const ok = await frage({ art: 'warnung', titel: 'Kopplungen nach außen', ok: 'Übertragen und Kopplungen aufheben', abbrechen: 'Abbrechen',
+          text: `Einige Teile im Bereich hängen an Objekten, die nicht mit übertragen werden. Im Ziel würden diese Verweise ins Leere (oder auf fremde Objekte) zeigen – das kann das Spiel zum Absturz bringen. Die App hebt diese Kopplungen beim Übertragen auf:`,
+          liste, listeUmbruch: true, hinweis: 'Tipp: Gehört das Gegenstück dazu (z. B. die Partner-Drohnenstation), den Bereich größer wählen.' });
+        if (!ok) return;
+      }
+    }
     const art = await auswahl({ titel: 'Was steht im Ziel an dieser Stelle?', ok: 'Weiter', optionen: [
       { wert: 'frei', text: 'Vorher frei räumen', info: 'Entfernt im Ziel alles im selben Bereich (ausgeblendete Ebenen und der Höhenfilter gelten mit), dann wird eingefügt.' },
       { wert: 'dazu', text: 'Nur hinzufügen', info: 'Was im Ziel schon steht, bleibt – Neues kann sich damit überschneiden.' }] });
@@ -589,7 +638,13 @@ export class Karte {
       if (i.leichtbau) teile.push(`${i.leichtbau.toLocaleString('de-DE')} Leichtbau-Teile mit Originaldaten übernommen.`);
       if (fehlt.length) teile.push(`Ohne Vorlage übersprungen: ${fehlt.map(([c, n]) => n + '× ' + c.replace(/^Build_|_C$/g, '')).join(', ')}.`);
       if (i.sicherung) teile.push(`Alte Datei gesichert: ${i.sicherung}`);
-      this.app.toast(teile.join(' · '), fehlt.length ? 'err' : 'ok');
+      const kz = (i.kopplungen?.liste || []).reduce((a, f) => a + f.anzahl, 0), ku = (i.kopplungen?.liste || []).reduce((a, f) => a + f.umgelenkt, 0);
+      if (kz) teile.push(`${kz.toLocaleString('de-DE')} Kopplungen nach außen aufgehoben.`);
+      if (ku) teile.push(`${ku.toLocaleString('de-DE')} Verweise auf das Gegenstück im Ziel umgelenkt.`);
+      const np = i.nachpruefung;
+      if (np?.tot) teile.push(`Achtung: Nachprüfung fand ${np.tot} Verweise ins Leere (${np.beispiele.join('; ')}) – vor dem Laden im Spiel bitte melden.`);
+      else if (np && !np.fehler) teile.push('Nachprüfung: alle Verweise in Ordnung.');
+      this.app.toast(teile.join(' · '), fehlt.length || np?.tot ? 'err' : 'ok');
     } catch (e) { this.app.toast(e.message, 'err'); }
     finally { const bb = $('k-bp-uebertragen'); if (bb) { bb.disabled = false; bb.textContent = 'In anderen Spielstand übertragen …'; } }
   }
@@ -776,6 +831,44 @@ export class Karte {
   }
 
   /** Spielstand in der eigenen Welt-Ansicht öffnen */
+  /** Spielstand auf Fehler prüfen (lib/spielstand-pruefen.mjs) und auf Wunsch eine reparierte Kopie anlegen */
+  async spielstandPruefen() {
+    if (!this.id || this.id.startsWith('mp:')) { await frage({ art: 'frage', titel: 'Spielstand prüfen', text: 'Bitte links zuerst einen Spielstand laden.', ok: 'OK', abbrechen: 'Schließen' }); return; }
+    const s = (this.liste || []).find((x) => x.id === this.id), name0 = s?.name || this.id.split('/').pop().replace(/\.sav$/i, '');
+    const b = $('k-pruefen'), alt = b.innerHTML; b.disabled = true; b.textContent = 'Prüfe …';
+    // deutlich zeigen, dass gearbeitet wird (große Spielstände brauchen einige Sekunden)
+    const laden = (text) => { $('k-loading').hidden = false; $('k-loading-text').textContent = text; };
+    laden(`„${name0}“ wird geprüft … (große Spielstände brauchen bis zu einer Minute)`);
+    const post = async (url, daten) => { const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-BS': '1' }, body: JSON.stringify(daten) }); const j = await r.json(); return { r, j }; };
+    try {
+      const { r, j } = await post('/api/karte/spielstand-pruefen', { id: this.id });
+      if (!r.ok) throw new Error(j.fehler || r.status);
+      const zz = (n) => n.toLocaleString(document.documentElement.lang || 'de');
+      $('k-loading').hidden = true;
+      if (!j.befunde.length) { await frage({ art: 'frage', titel: 'Keine Fehler gefunden', text: `„${name0}“: keine Fehler gefunden (${zz(j.objekte)} Objekte, ${j.stationen} Drohnenstationen, ${j.drohnen} Drohnen geprüft).`, ok: 'OK', abbrechen: 'Schließen' }); return; }
+      const liste = j.befunde.map((f) => `${f.kritisch ? '⚠ ' : ''}${zz(f.anzahl)}× ${t(f.art)}${f.hinweis ? ' – ' + t(f.hinweis) : ''}`);
+      if (!j.behebbar) { await frage({ art: 'warnung', titel: 'Hinweise zum Spielstand', text: 'Nichts automatisch zu reparieren:', liste, listeUmbruch: true, ok: 'OK', abbrechen: 'Schließen' }); return; }
+      const ok = await frage({ art: 'warnung', titel: `${zz(j.behebbar)} Fehler in „${name0}“`, ok: 'Reparierte Kopie anlegen', abbrechen: 'Schließen',
+        text: j.kritisch ? `Davon ${zz(j.kritisch)} kritisch (⚠) – die können das Spiel beim Laden abstürzen lassen. Die App kann eine reparierte Kopie anlegen; das Original bleibt unverändert.` : 'Keine kritischen Fehler – die Reparatur räumt verwaiste Verweise auf. Das Original bleibt unverändert.',
+        liste, listeUmbruch: true });
+      if (!ok) return;
+      const name = await eingabe({ titel: 'Name der reparierten Kopie', text: `Wird neben „${name0}“ gespeichert.`, wert: (name0 + '_repariert').slice(0, 60), ok: 'Reparieren' });
+      if (!name) return;
+      if (/[\\/:*?"<>|]/.test(name)) { this.app.toast('Bitte einen gültigen Namen angeben (ohne \\ / : * ? " < > |).', 'err'); return; }
+      b.textContent = 'Repariere …'; laden(`Reparierte Kopie „${name}“ wird angelegt …`);
+      let { r: r2, j: j2 } = await post('/api/karte/spielstand-reparieren', { id: this.id, name });
+      if (r2.status === 409) {
+        if (!(await frage({ art: 'warnung', titel: 'Spielstand überschreiben?', text: `Den Spielstand „${name}“ gibt es schon. Die alte Datei wird vorher gesichert.`, ok: 'Überschreiben' }))) return;
+        ({ r: r2, j: j2 } = await post('/api/karte/spielstand-reparieren', { id: this.id, name, ueberschreiben: true }));
+      }
+      if (!r2.ok) throw new Error(j2.fehler || r2.status);
+      $('k-loading').hidden = true;
+      this.liste = null; await this.ladeListe();
+      await frage({ art: j2.offen ? 'warnung' : 'frage', titel: 'Reparatur fertig', ok: 'OK', abbrechen: 'Schließen',
+        text: [`„${name}“ gespeichert: ${zz(j2.behoben)} Fehler behoben.`, j2.offen ? `${zz(j2.offen)} Fehler offen.` : 'Nachprüfung ohne Fehler.', ...(j2.sicherung ? [`Alte Datei gesichert: ${j2.sicherung}`] : [])].map((x) => t(x)).join('\n') });
+    } catch (e) { $('k-loading').hidden = true; await frage({ art: 'warnung', titel: 'Prüfen fehlgeschlagen', text: t('Prüfen fehlgeschlagen: ' + e.message) + (/Unbekannt|404/.test(e.message) ? '\n' + t('Bitte die App einmal neu starten – der Server kennt die Prüfung noch nicht.') : ''), ok: 'OK', abbrechen: 'Schließen' }); }
+    finally { $('k-loading').hidden = true; b.disabled = false; b.innerHTML = alt; }
+  }
   oeffne3d() {
     if (!this.id) { this.app.toast('Bitte zuerst links einen Spielstand wählen.', 'err'); return; }
     if (this.id.startsWith('mp:')) { this.app.toast('Megaprints zeigt die Welt-Ansicht nicht – nur Spielstände.', 'err'); return; }
@@ -868,6 +961,7 @@ export class Karte {
     for (const id of ['k-hmin', 'k-hmax']) $(id).addEventListener('change', () => this.puffer());
     $('k-bild').addEventListener('change', () => this.zeichne());
     $('k-3d').addEventListener('click', () => this.oeffne3d());
+    $('k-pruefen').addEventListener('click', () => this.spielstandPruefen());
     const werkzeug = (art) => {
       this.auswahl = this.auswahl === art ? null : art;
       for (const [id, a] of [['k-bereich', 'rechteck'], ['k-stift', 'stift']]) { $(id).classList.toggle('on', this.auswahl === a); $(id).setAttribute('aria-pressed', String(this.auswahl === a)); }

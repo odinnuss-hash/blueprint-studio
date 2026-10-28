@@ -178,7 +178,7 @@ export function buildScene(bp, kat) {
     const cls = bp.klassen[e.c];
     const g = kat?.gebaeude?.[cls] || null;
     const o = { i: e.i, cls, g, name: g ? g.name : cls.replace(/^Build_|_C$/g, '').replace(/_/g, ' '), p: e.p.slice(), q: e.q.slice(), s: e.s || null,
-      sp: e.sp || null, lt: e.lt || null, len: e.len || null, h: e.h ?? null, pv: e.pv ?? null, r: e.r || null, w: e.w || null, color: colorFor(g, cls), removed: false };
+      sp: e.sp || null, lt: e.lt || null, len: e.len || null, h: e.h ?? null, pv: e.pv ?? null, dk: e.dk ?? null, r: e.r || null, w: e.w || null, color: colorFor(g, cls), removed: false };
     o.p0 = e.p.slice(); o.q0 = e.q.slice(); o.cls0 = cls;
     return computeGeometry(o);
   });

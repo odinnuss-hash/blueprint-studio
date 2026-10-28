@@ -425,7 +425,7 @@ body.ab-groesse, body.ab-groesse * { user-select: none !important; }
 
 /* Rückfrage-Fenster (statt Browser-Meldung) */
 dialog.bs-frage { position: fixed; inset: 0; margin: auto; width: min(460px, 92vw); max-height: 86vh; padding: 0; border: 1px solid var(--line2); border-radius: 14px;
-  background: linear-gradient(180deg, #20232a, var(--panel)); box-shadow: 0 24px 70px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset; animation: bf-auf .16s ease-out; overflow: auto; }
+  background: linear-gradient(180deg, var(--panel2, var(--panel)), var(--panel)); box-shadow: 0 24px 70px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset; animation: bf-auf .16s ease-out; overflow: auto; }
 dialog.bs-frage.zu { animation: bf-zu .12s ease-in forwards; }
 dialog.bs-frage::backdrop { background: rgba(8,9,11,.62); backdrop-filter: blur(3px); }
 @keyframes bf-auf { from { opacity: 0; transform: translateY(8px) scale(.97); } to { opacity: 1; transform: none; } }
@@ -439,6 +439,11 @@ dialog.bs-frage::backdrop { background: rgba(8,9,11,.62); backdrop-filter: blur(
 .bf-liste { list-style: none; margin: 2px 0 0; padding: 6px; width: 100%; max-height: 180px; overflow: auto; text-align: left; background: var(--field); border: 1px solid var(--line); border-radius: 8px; font: 12px var(--font-mono); color: var(--text2); }
 .bf-liste li { padding: 3px 6px; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bf-liste li:nth-child(odd) { background: rgba(255,255,255,.02); }
+/* Liste mit Erklärtexten (Prüf- und Kopplungs-Fenster): umbrechen statt abschneiden */
+.bf-liste.umbruch { max-height: 280px; font-family: inherit; font-size: 13px; line-height: 1.45; }
+.bf-liste.umbruch li { white-space: normal; overflow: visible; padding: 5px 8px; }
+.bf-liste.umbruch li + li { border-top: 1px solid var(--line); border-radius: 0; }
+dialog.bs-frage:has(.bf-liste.umbruch) { width: min(560px, 94vw); }
 .bf-eingabe { width: 100%; min-height: 40px; margin-top: 4px; font-family: var(--font-mono); }
 .bf-knoepfe { display: flex; gap: 10px; width: 100%; margin-top: 10px; }
 .bf-knoepfe .btn { flex: 1; min-height: 40px; justify-content: center; font-weight: 600; }
@@ -923,3 +928,67 @@ body.nur-ablage #ab-gross-zu, body.nur-ablage .dlg-ablage-kopf .hint { display: 
 .w-laden-zeile .btn { flex: 1; }
 .w-amenue { max-width: 420px; }
 .w-amenue b { flex: 1 0 100%; }
+
+/* Stil-Wahl mit kleinem Bild (Planer: Plan-Tafel, Blaupause) */
+.stil-wahl { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.stil-karte { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; text-align: left; padding: 8px; border: 1px solid var(--line, #333); border-radius: 8px; background: var(--panel2, #1a1d22); color: inherit; cursor: pointer; font: inherit; }
+.stil-karte .stil-bild, .stil-karte img { width: 100%; height: auto; aspect-ratio: 12 / 7; border-radius: 4px; object-fit: cover; }
+.stil-karte small { color: var(--muted, #999); line-height: 1.3; }
+.stil-karte.on { border-color: var(--accent, #f5a623); box-shadow: 0 0 0 1px var(--accent, #f5a623) inset; }
+.stil-karte:disabled { opacity: .5; cursor: not-allowed; }
+.pl-bp-grid .stil-wahl { grid-column: 2; }
+.pl-hinweis-funktional { border-left: 3px solid var(--accent, #f5a623); padding: 6px 10px; background: rgba(245, 166, 35, .08); border-radius: 4px; }
+
+/* Ladebalken (Ablage: viele Blaupausen ins Spiel holen / Kategorien in alle Spielstände schreiben) */
+.ab-ladebalken { position: fixed; right: 16px; bottom: 16px; z-index: 1000; width: min(360px, calc(100vw - 32px)); padding: 10px 12px; border-radius: 8px; background: var(--panel, #1a1d22); border: 1px solid var(--accent, #f5a623); box-shadow: 0 6px 24px rgba(0,0,0,.4); display: flex; flex-direction: column; gap: 6px; }
+.ab-ladebalken[hidden] { display: none; }
+.ab-lb-balken { height: 8px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+.ab-lb-balken i { display: block; height: 100%; width: 0; background: var(--accent, #f5a623); transition: width .25s; }
+.ab-lb-balken i.unbestimmt { width: 30% !important; animation: ab-lb 1.2s linear infinite; }
+@keyframes ab-lb { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+.ab-ladebalken small { color: var(--muted, #999); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Karte: Spielstände nach Karte gruppiert, Löschen */
+.k-gruppe > summary { display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 6px 8px; font-weight: 600; list-style: none; border-bottom: 1px solid var(--line, #333); }
+.k-gruppe > summary::before { content: '▸'; color: var(--muted, #999); }
+.k-gruppe[open] > summary::before { content: '▾'; }
+.k-gruppe > summary .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.k-gruppe > summary .m { color: var(--muted, #999); font-weight: 400; font-size: .85em; }
+.k-zeile { display: flex; align-items: stretch; }
+.k-zeile > .item { flex: 1; min-width: 0; }
+.k-weg { background: none; border: 0; color: var(--muted, #999); cursor: pointer; padding: 0 6px; opacity: .5; }
+.k-weg:hover, .k-weg:focus-visible { opacity: 1; color: #e5534b; }
+
+/* Welt: Kompass mit Biom (oben rechts) – feste Himmelsrichtungen, Pfeil = Blickrichtung */
+.w-kompass { position: absolute; right: 14px; top: 10px; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: none; user-select: none; }
+.w-k-rose { width: 108px; height: 108px; display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)); }
+.w-k-rand { stroke: rgba(255,255,255,.28); stroke-width: 1.2; }
+.w-k-ring { fill: none; stroke: rgba(255,255,255,.14); stroke-width: 1; }
+.w-k-striche line { stroke: rgba(255,255,255,.3); stroke-width: .8; }
+.w-k-striche line.gross { stroke: rgba(255,255,255,.65); stroke-width: 1.2; }
+.w-kompass text { font: 600 10px system-ui, sans-serif; text-anchor: middle; dominant-baseline: central; fill: #e3e8ef; }
+.w-kompass text.w-k-n { fill: #fff; font-weight: 800; }
+#w-k-pfeil { transition: transform .08s linear; }
+.w-k-grad, .w-k-biom { padding: 2px 10px; border-radius: 999px; background: rgba(20, 23, 28, .8); border: 1px solid rgba(255,255,255,.18); color: #e8ebf0; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; backdrop-filter: blur(4px); }
+.w-k-biom { font-weight: 600; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+.w-werkzeuge { max-width: calc(100% - 150px); }
+@media (max-width: 700px) { .w-k-rose { width: 80px; height: 80px; } }
+
+/* Schiebebalken passend zum gewählten Stil (Farben aus den Stil-Variablen; Chromium/Edge: ::-webkit-scrollbar).
+   Die Standard-Eigenschaften scrollbar-width/-color schalten in Chromium die Gestaltung ab – daher dort auf „auto“ zurück. */
+@supports selector(::-webkit-scrollbar) {
+  * { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+  ::-webkit-scrollbar { width: 11px; height: 11px; background: transparent; }
+  ::-webkit-scrollbar-track { background: color-mix(in srgb, var(--bg2) 70%, transparent); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb { background: var(--line2); border: 3px solid transparent; background-clip: padding-box; border-radius: 999px; min-height: 36px; min-width: 36px; }
+  ::-webkit-scrollbar-thumb:hover { background-color: var(--muted); }
+  ::-webkit-scrollbar-thumb:active { background-color: var(--accent); }
+  ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+}
+/* Firefox: nur Farben möglich */
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-color: var(--line2) transparent; }
+}
+.library-categories::-webkit-scrollbar, .map-toolbar::-webkit-scrollbar { height: 7px; }
+.library-categories::-webkit-scrollbar-thumb, .map-toolbar::-webkit-scrollbar-thumb { border-width: 2px; }

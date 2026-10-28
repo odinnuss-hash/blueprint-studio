@@ -2,6 +2,7 @@
 // Kaesten fuer alles ohne Modell, Splines (Foerderbaender, Rohre, Schienen) als Segmente.
 // Linke Maustaste: drehen · rechte/mittlere: verschieben · Mausrad: Zoom · Klick: auswaehlen.
 import { teileDynamisch } from './teile.js';
+import { SPIEL_VS, SPIEL_FS, spielTexturenLaden, schattenRect, bauteilRect, spielUniforms, spielOptikGewuenscht, spielOptikMerken } from './spieloptik.js';
 
 const VS = `#version 300 es
 layout(location=0) in vec3 aPos;
@@ -13,13 +14,13 @@ layout(location=5) in vec4 iM3;
 layout(location=6) in vec4 iCol;
 layout(location=7) in vec4 iId;
 uniform mat4 uVP;
-uniform vec3 uQMin, uQSpan;
+uniform vec3 uQMin, uQSpan;${SPIEL_VS}
 out vec3 vW; out vec3 vN; out vec4 vCol; out vec4 vId;
 void main() {
   vec3 p = uQMin + (aPos * 0.5 + 0.5) * uQSpan;
   mat4 M = mat4(iM0, iM1, iM2, iM3);
   vec4 w = M * vec4(p, 1.0);
-  vW = w.xyz; vN = mat3(M) * aNrm; vCol = iCol; vId = iId;
+  vW = w.xyz; vN = mat3(M) * aNrm; vCol = iCol; vId = iId; vUv = aUv;
   gl_Position = uVP * w;
 }`;
 
@@ -29,7 +30,7 @@ in vec3 vW; in vec3 vN; in vec4 vCol; in vec4 vId;
 uniform vec3 uEye;
 uniform float uGlass;
 layout(location=0) out vec4 oCol;
-layout(location=1) out vec4 oId;
+layout(location=1) out vec4 oId;${SPIEL_FS}
 void main() {
   vec3 n = vN;
   if (dot(n, n) < 0.01) n = cross(dFdx(vW), dFdy(vW));
@@ -40,6 +41,13 @@ void main() {
   float dif = max(dot(n, L), 0.0);
   float hemi = 0.5 + 0.5 * n.z;
   float spec = pow(max(dot(n, normalize(L + v)), 0.0), 24.0) * 0.18;
+  if (uArt >= 0) {
+    float ao, rau; vec4 g = spielGrund(ao, rau);
+    vec3 c = spielLicht(g, ao, rau, n, v, L);
+    if (vId.a > 0.5) c = c * 0.45 + vec3(1.0, 0.70, 0.28) * 0.55; // ausgewählt
+    if (vCol.a < 0.75) c = c * 0.3 + 0.09;                          // andere Ebene (Geist)
+    oCol = vec4(c, 1.0); oId = vId; return;
+  }
   vec3 base = vCol.rgb;
   float a = 1.0;
   if (uGlass > 0.5) { base = mix(base, vec3(0.62, 0.85, 0.95), 0.6); a = 0.38; spec *= 2.5; }
@@ -122,27 +130,29 @@ const CYL = (() => {
 })();
 // Prozedurale Modelle aus Quadern im Einheitswuerfel (x = Laenge, y = Breite, z = Hoehe)
 function quaderMesh(boxes) {
-  const v = [], idx = [];
+  // 7. Wert je Quader: Material für die Spieloptik (UV.x, spieloptik.js Art 6): 0 Gummi, 1 graues Metall, 2 Lackfarbe, 3 dunkler Stahl
+  const v = [], uv = [], idx = [];
   const F = [[0, 2, 6, 4], [1, 5, 7, 3], [0, 4, 5, 1], [2, 3, 7, 6], [0, 1, 3, 2], [4, 6, 7, 5]];
   const q = (t) => Math.round(Math.max(0, Math.min(1, t)) * 65534 - 32767);
-  for (const [x0, y0, z0, x1, y1, z1] of boxes) for (const f of F) {
+  for (const [x0, y0, z0, x1, y1, z1, mat = 0] of boxes) for (const f of F) {
     const b = v.length / 3;
-    for (const k of f) v.push(q(k & 1 ? x1 : x0), q(k & 2 ? y1 : y0), q(k & 4 ? z1 : z0));
+    for (const k of f) { v.push(q(k & 1 ? x1 : x0), q(k & 2 ? y1 : y0), q(k & 4 ? z1 : z0)); uv.push(mat, 0, 0, 0); }
     idx.push(b, b + 1, b + 2, b, b + 2, b + 3);
   }
-  return { pos: new Int16Array(v), idx: new Uint32Array(idx) };
+  return { pos: new Int16Array(v), uv: new Float32Array(uv), idx: new Uint32Array(idx) };
 }
+// gleiches Profil wie in der Welt-Ansicht (welt3d.js BAND): Unterbau, tiefer liegendes Laufband, Rahmen mit Lackkante
 const BAND = quaderMesh([
-  [0, 0.08, 0.42, 1, 0.92, 0.58],   // Laufflaeche
-  [0, 0, 0.25, 1, 0.08, 1],         // Seitenwange links
-  [0, 0.92, 0.25, 1, 1, 1],         // Seitenwange rechts
-  [0, 0.3, 0, 1, 0.7, 0.42],        // Unterbau
+  [0, 0.1, 0, 1, 0.9, 0.3, 3],      // Unterbau
+  [0, 0.1, 0.3, 1, 0.9, 0.72, 0],   // Laufband
+  [0, 0, 0, 1, 0.1, 0.78, 1], [0, 0.9, 0, 1, 1, 0.78, 1],   // Rahmen
+  [0, 0, 0.78, 1, 0.1, 1, 2], [0, 0.9, 0.78, 1, 1, 1, 2],   // Rahmen oben (Lack)
 ]);
 const LIFT = quaderMesh([
-  [0, 0, 0, 0.14, 0.14, 1], [0.86, 0, 0, 1, 0.14, 1], [0, 0.86, 0, 0.14, 1, 1], [0.86, 0.86, 0, 1, 1, 1], // Eckpfosten
-  [0.3, 0.3, 0, 0.7, 0.7, 1],       // Band im Schacht
-  [0, 0, 0, 1, 1, 0.06], [0, 0, 0.94, 1, 1, 1], // Ein-/Ausgang
-  [0, 0, 0.48, 1, 0.14, 0.52], [0, 0.86, 0.48, 1, 1, 0.52], // Querstreben
+  [0, 0, 0, 0.14, 0.14, 1, 1], [0.86, 0, 0, 1, 0.14, 1, 1], [0, 0.86, 0, 0.14, 1, 1, 1], [0.86, 0.86, 0, 1, 1, 1, 1], // Eckpfosten
+  [0.3, 0.3, 0, 0.7, 0.7, 1, 0],    // Band im Schacht
+  [0, 0, 0, 1, 1, 0.06, 3], [0, 0, 0.94, 1, 1, 1, 3], // Ein-/Ausgang
+  [0, 0, 0.48, 1, 0.14, 0.52, 2], [0, 0.86, 0.48, 1, 1, 0.52, 2], // Querstreben (Lack)
 ]);
 const PROZ = { '#band': BAND, '#lift': LIFT };
 const ROHR = /Pipeline|Pipe_|PipeHyper|Hypertube/;
@@ -159,6 +169,7 @@ export class View3DGL {
     this.drag = null; this.raf = 0; this.fast = false; this.fitted = false;
     this.models = { state: 'aus', index: null };
     try { this.useModels = localStorage.getItem('bs-modelle') !== '0'; } catch { this.useModels = true; }
+    this.spielOptik = spielOptikGewuenscht(); this.spielTex = null;
     this.stift = false; this.lasso = null;
     this.onDown = this.onDown.bind(this); this.onMove = this.onMove.bind(this); this.onUp = this.onUp.bind(this); this.onWheel = this.onWheel.bind(this);
     this.initGl();
@@ -192,8 +203,11 @@ export class View3DGL {
     for (const [k, m] of Object.entries(PROZ)) {
       const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb); gl.bufferData(gl.ARRAY_BUFFER, m.pos, gl.STATIC_DRAW);
       const ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, m.idx, gl.STATIC_DRAW);
-      this.proz[k] = { vb, ib, n: m.idx.length };
+      const ub = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, ub); gl.bufferData(gl.ARRAY_BUFFER, m.uv, gl.STATIC_DRAW);
+      this.proz[k] = { vb, ib, ub, n: m.idx.length };
     }
+    const leer = (w) => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(w)); return t; };
+    this.leerTex = { decal: leer([0, 0, 0, 0]), schatten: leer([255, 255, 255, 255]), bauteil: leer([200, 200, 200, 255]), bauteilMaske: leer([255, 0, 0, 255]) };
     this.instVbo = gl.createBuffer();
     this.lineVbo = gl.createBuffer();
     this.vao = gl.createVertexArray();
@@ -220,6 +234,9 @@ export class View3DGL {
   }
 
   // ------------------------------------------------------------ Modelle laden
+  /** Spieloptik (Lackfarben, Metall, Decals, Schatten) ein/aus – nur mit Modellen, die Spieloptik-Daten haben */
+  setSpielOptik(an) { this.spielOptik = !!an; spielOptikMerken(this.spielOptik); this.render(); }
+  get spielOptikMoeglich() { return !!(this.spielTex && this.useModels && this.models.state === 'bereit'); }
   setModels(on) {
     this.useModels = on;
     try { localStorage.setItem('bs-modelle', on ? '1' : '0'); } catch { /* egal */ }
@@ -251,6 +268,8 @@ export class View3DGL {
         }
         this.meshVbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.meshVbo); gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
         this.meshIbo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.meshIbo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ib, gl.STATIC_DRAW);
+        for (const m of Object.values(index.meshes)) if (m.uv != null) m.oUv = m.uv;
+        try { this.spielTex = await spielTexturenLaden(gl, index); } catch { this.spielTex = null; }
         this.models.index = index; this.models.state = 'bereit';
         this.app.onModelsState?.('bereit', Object.keys(index.klassen).length);
       } catch (e) {
@@ -263,7 +282,7 @@ export class View3DGL {
   partsFor(o) {
     if (!this.useModels || this.models.state !== 'bereit' || o.sp || NO_MESH.test(o.cls)) return null;
     // Lifte und Stützen/Masten wie im Spiel aus Teilen (Höhe aus der Blaupause; js/teile.js)
-    const dyn = teileDynamisch(this.models.index, o.cls, o.lt ? o.lt[2] : (o.pv != null ? (o.pv + 1) * 100000 : 0) + (o.h || 0));
+    const dyn = teileDynamisch(this.models.index, o.cls, o.lt ? o.lt[2] : o.dk ? o.dk : (o.pv != null ? (o.pv + 1) * 100000 : 0) + (o.h || 0));
     if (dyn) return dyn;
     if (o.lt) return null;
     return this.models.index.klassen[o.cls] || null;
@@ -356,7 +375,7 @@ export class View3DGL {
       if (parts) rgb = rgb.map((c) => c * 0.75 + 0.78 * 0.25);
       if (isSel) rgb = rgb.map((c, k) => c * 0.35 + [1, 0.70, 0.28][k] * 0.65);
       if (ghost) rgb = rgb.map((c) => c * 0.3 + 0.09);
-      const col = [rgb[0], rgb[1], rgb[2], 1];
+      const col = [rgb[0], rgb[1], rgb[2], ghost ? 0.5 : 1];
       const idc = [(id & 255) / 255, ((id >> 8) & 255) / 255, ((id >> 16) & 255) / 255, isSel ? 1 : 0];
       if (parts) {
         const R = qm(o.q, o.s || [1, 1, 1]);
@@ -430,6 +449,9 @@ export class View3DGL {
       gl.useProgram(this.pMain.p);
       gl.uniformMatrix4fv(this.pMain.u.uVP, false, VP);
       gl.uniform3fv(this.pMain.u.uEye, cam.eye);
+      gl.uniform1i(this.pMain.u.uArt, -1);
+      this.spielAn = !!(this.spielOptik && this.spielOptikMoeglich);
+      spielUniforms(gl, this.pMain.u, this.spielAn ? this.spielTex : this.leerTex, 4); // immer eigene Einheiten (keine Rückkopplung mit dem Bildpuffer)
       gl.bindVertexArray(this.vao);
       const glassDraws = [];
       for (const rg of this.inst.ranges) {
@@ -468,6 +490,7 @@ export class View3DGL {
 
   drawRange(rg, m, glass) {
     const gl = this.gl, u = this.pMain.u;
+    gl.uniform1i(u.uArt, this.spielAn && !glass ? (m === '#cyl' ? 7 : m === '#band' || m === '#lift' ? 6 : -1) : -1);
     if (m === '#cyl') {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.cylVbo);
       gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.SHORT, true, 6, 0);
@@ -480,11 +503,13 @@ export class View3DGL {
       gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.SHORT, true, 6, 0);
       gl.disableVertexAttribArray(1); gl.vertexAttrib3f(1, 0, 0, 0);
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.proz[m].ib);
+      gl.bindBuffer(gl.ARRAY_BUFFER, this.proz[m].ub); gl.enableVertexAttribArray(8); gl.vertexAttribPointer(8, 4, gl.FLOAT, false, 16, 0); // Material je Quader
       gl.uniform3f(u.uQMin, 0, 0, 0); gl.uniform3f(u.uQSpan, 1, 1, 1);
     } else if (m && m !== '#cube') {
       gl.bindBuffer(gl.ARRAY_BUFFER, this.meshVbo);
       gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.SHORT, true, 6, m.oPos);
       gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.BYTE, true, 4, m.oNrm);
+      if (m.oUv != null) { gl.enableVertexAttribArray(8); gl.vertexAttribPointer(8, 4, gl.HALF_FLOAT, false, 8, m.oUv); } else { gl.disableVertexAttribArray(8); gl.vertexAttrib4f(8, 0, 0, 0, 0); }
       gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.meshIbo);
       gl.uniform3fv(u.uQMin, m.min); gl.uniform3f(u.uQSpan, m.max[0] - m.min[0], m.max[1] - m.min[1], m.max[2] - m.min[2]);
     } else {
@@ -503,10 +528,25 @@ export class View3DGL {
       gl.vertexAttribDivisor(loc, 1);
     }
     gl.uniform1f(u.uGlass, glass ? 1 : 0);
+    if (!(m && typeof m === 'object' && m.oUv != null) && !this.proz[m]) { gl.disableVertexAttribArray(8); gl.vertexAttrib4f(8, 0, 0, 0, 0); }
     if (m === '#cyl') gl.drawElementsInstanced(gl.TRIANGLES, CYL.idx.length, gl.UNSIGNED_INT, 0, rg.count);
     else if (this.proz[m]) gl.drawElementsInstanced(gl.TRIANGLES, this.proz[m].n, gl.UNSIGNED_INT, 0, rg.count);
     else if (m && m !== '#cube') {
       const es = m.u32 ? 4 : 2, type = m.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
+      if (!glass && this.spielAn && m.teile) {
+        // Spieloptik: Teile einzeln (Material-Raster, Decals leicht nach vorn, Normalen-Decals weg, Sonstiges wie bisher)
+        for (const [von, anz, art, ao] of m.teile) {
+          if (art === 2 || art === 4 || von >= m.gi) continue;
+          gl.uniform1i(u.uArt, art === 3 ? -1 : art);
+          if (art === 0) gl.uniform4fv(u.uAoRect, schattenRect(this.spielTex, ao));
+          if (art === 5) gl.uniform4fv(u.uBtRect, bauteilRect(this.spielTex, ao));
+          if (art === 1) { gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-1, -2); }
+          gl.drawElementsInstanced(gl.TRIANGLES, Math.min(anz, m.gi - von), type, m.oIdx + von * es, rg.count);
+          if (art === 1) gl.disable(gl.POLYGON_OFFSET_FILL);
+        }
+        gl.uniform1i(u.uArt, -1);
+        return;
+      }
       const from = glass ? m.gi : 0, cnt = glass ? m.ni - m.gi : m.gi;
       if (cnt > 0) gl.drawElementsInstanced(gl.TRIANGLES, cnt, type, m.oIdx + from * es, rg.count);
     } else gl.drawElementsInstanced(gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0, rg.count);

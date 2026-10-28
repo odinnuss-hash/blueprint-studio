@@ -1,9 +1,11 @@
 // Separater Startbereich. Keine Savegame- oder Renderer-Änderungen.
 import { designAnwenden, gespeichertesDesign } from './design.js';
 import { einstellungenGestalten } from './einstellungen-design.js';
-const STILE = ['werkhalle', 'atlas', 'kommandobruecke'];
-const NAMEN = ['Werkhalle', 'Atlas', 'Kommandobrücke'];
+const STILE = ['werkhalle', 'atlas', 'kommandobruecke', 'industrial', 'immersive'];
+const NAMEN = ['Werkhalle', 'Atlas', 'Kommandobrücke', 'Industrial Precision', 'Immersive Command'];
 const AUSSCHNITTE = {
+  immersive: [[900,140,730,230],[900,390,730,230],[900,650,730,230]],
+  industrial: [[30,200,530,440],[580,200,510,440],[1115,200,530,440]],
   werkhalle: [[30,200,530,440],[580,200,510,440],[1115,200,530,440]],
   atlas: [[1000,145,650,240],[145,145,835,530],[1000,480,650,220]],
   kommandobruecke: [[900,140,730,230],[900,390,730,230],[900,650,730,230]],
@@ -38,7 +40,7 @@ export class Startseite {
     const label = document.createElement('label'); label.className = 'label'; label.htmlFor = 'set-startseite'; label.textContent = 'App-Design · gesamte Oberfläche';
     const select = document.createElement('select'); select.id = 'set-startseite';
     STILE.forEach((s,i) => select.add(new Option(NAMEN[i], s))); select.value = this.stil;
-    const note = document.createElement('p'); note.className = 'muted'; note.textContent = 'Wird sofort auf diesem Gerät gespeichert. Alle drei Designs öffnen dieselben Werkzeuge.';
+    const note = document.createElement('p'); note.className = 'muted'; note.textContent = 'Wird sofort auf diesem Gerät gespeichert. Alle Designs öffnen dieselben Werkzeuge.';
     document.getElementById('set-sprache').after(label, select, note);
     select.addEventListener('change', () => {
       this.stil = STILE.includes(select.value) ? select.value : 'kommandobruecke';
@@ -53,11 +55,11 @@ export class Startseite {
   starten() { if (!this.gestartet) { this.gestartet = true; this.app.setMode('start'); } }
   bild(index) {
     const box = AUSSCHNITTE[this.stil][index].join(' ');
-    return `<svg class="home-art" viewBox="${box}" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><image href="/startseite/${this.stil}.png" width="1672" height="941" /></svg>`;
+    return `<svg class="home-art" viewBox="${box}" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><image href="/startseite/${this.stil === 'industrial' ? 'werkhalle' : this.stil === 'immersive' ? 'kommandobruecke' : this.stil}.png" width="1672" height="941" /></svg>`;
   }
   render() {
     this.root.dataset.stil = this.stil;
-    const title = {werkhalle:'Deine nächste große Idee.',atlas:'Raum für deine Fabrik.',kommandobruecke:'Deine Welt. Dein Plan.'}[this.stil];
+    const title = {immersive:'Deine Welt. Dein Plan.',industrial:'Deine nächste große Idee.',werkhalle:'Deine nächste große Idee.',atlas:'Raum für deine Fabrik.',kommandobruecke:'Deine Welt. Dein Plan.'}[this.stil];
     const tiles = [['bibliothek','Blaupausen','Ordner öffnen · verwalten · bearbeiten'],['welt','Weltkarte 3D','Deine Welt erkunden und gestalten'],['karte','Taktische Karte','Die Welt in 2D · auswählen · übertragen']];
     this.root.innerHTML = `<header class="home-intro"><span class="home-eyebrow">BLUEPRINT STUDIO / ${NAMEN[STILE.indexOf(this.stil)]}</span><h1>${title}</h1><p>Wähle deinen Arbeitsbereich.</p></header><div class="home-tiles">${tiles.map(([mode,title,sub],i)=>`<button class="home-tile home-${mode}" type="button" data-home-mode="${mode}">${this.bild(i)}${i===2?'<div class="home-real-map" aria-hidden="true"></div>':''}<span class="home-caption"><span><strong>${title}</strong><small>${sub}</small></span><span class="home-arrow" aria-hidden="true">↗</span></span></button>`).join('')}</div><footer class="home-shortcuts"><button type="button" data-home-mode="editor"><span>◇</span><strong>Blaupausen-Editor</strong><small>Öffnen und bearbeiten</small></button><button type="button" data-home-mode="planer"><span>⌘</span><strong>Produktionsplaner</strong><small>Produktionsketten planen</small></button><button type="button" data-home-settings><span>⚙</span><strong>Einstellungen</strong><small>Design und App anpassen</small></button></footer>`;
     this.zeigeKarte();

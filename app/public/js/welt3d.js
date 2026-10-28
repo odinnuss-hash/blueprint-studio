@@ -6,6 +6,7 @@ import { WELT } from './karte.js';
 import { colorFor } from './scene.js';
 import { teileDynamisch } from './teile.js';
 import { zeichnePunkte, filterLaden, punktText } from './kartenpunkte.js';
+import { SPIEL_VS, SPIEL_FS, spielTexturenLaden, schattenRect, bauteilRect, spielUniforms, spielOptikGewuenscht } from './spieloptik.js';
 
 const LEER = -32768;
 const TERRAIN_VS = `#version 300 es
@@ -49,23 +50,24 @@ void main() {
 const OBJ_VS = `#version 300 es
 layout(location=0) in vec3 aPos; layout(location=1) in vec3 aNrm;
 layout(location=2) in vec4 iM0; layout(location=3) in vec4 iM1; layout(location=4) in vec4 iM2; layout(location=5) in vec4 iM3; layout(location=6) in vec4 iCol;
-uniform mat4 uVP, uM; uniform vec3 uQMin, uQSpan; uniform vec4 uTint;
+uniform mat4 uVP, uM; uniform vec3 uQMin, uQSpan; uniform vec4 uTint;${SPIEL_VS}
 out vec3 vW; out vec3 vN; out vec4 vCol; flat out float vId;
 void main() {
-  vec3 p = uQMin + (aPos * 0.5 + 0.5) * uQSpan; vId = iCol.a;
+  vec3 p = uQMin + (aPos * 0.5 + 0.5) * uQSpan; vId = iCol.a; vUv = aUv;
   mat4 M = uM * mat4(iM0, iM1, iM2, iM3); vec4 w = M * vec4(p, 1.0);
   vW = w.xyz; vN = mat3(M) * aNrm; vCol = vec4(mix(iCol.rgb, uTint.rgb, uTint.a), 1.0); gl_Position = uVP * w;
 }`;
 const OBJ_FS = `#version 300 es
 precision highp float;
 uniform float uPick; // 1 = Weltposition statt Farbe ausgeben (Mausklick-Treffer)
-in vec3 vW; in vec3 vN; in vec4 vCol; flat in float vId; uniform vec3 uEye; out vec4 o;
+in vec3 vW; in vec3 vN; in vec4 vCol; flat in float vId; uniform vec3 uEye; uniform vec4 uTint; out vec4 o;${SPIEL_FS}
 void main() {
   vec3 n = vN; if (dot(n, n) < 0.01) n = cross(dFdx(vW), dFdy(vW)); n = normalize(n);
   vec3 v = normalize(uEye - vW); if (dot(n, v) < 0.0) n = -n;
   vec3 L = normalize(vec3(0.35, -0.45, 0.82));
   float dif = max(dot(n, L), 0.0), hemi = 0.5 + 0.5 * n.z, spec = pow(max(dot(n, normalize(L + v)), 0.0), 24.0) * 0.18;
   vec3 c = vCol.rgb * (0.32 + 0.28 * hemi + 0.5 * dif) + spec;
+  if (uArt >= 0) { float ao, rau; vec4 g = spielGrund(ao, rau); c = mix(spielLicht(g, ao, rau, n, v, L), uTint.rgb, uTint.a); }
   float d = length(uEye - vW), dunst = 1.0 - exp(-d / 900000.0);
   o = vec4(mix(c, vec3(0.62, 0.70, 0.78), dunst * 0.7), 1.0);
   if (uPick > 0.5) o = vec4(vW, vId);
@@ -113,6 +115,21 @@ const CUBE = (() => {
   for (const f of F) { const b = v.length / 3; for (const k of f) v.push(k & 1 ? 32767 : -32767, k & 2 ? 32767 : -32767, k & 4 ? 32767 : -32767); idx.push(b, b + 1, b + 2, b, b + 2, b + 3); }
   return { pos: new Int16Array(v), idx: new Uint32Array(idx) };
 })();
+// Förderband-Abschnitt: x 0…1 Länge, y 0…1 Breite, z 0…1 Höhe (wie CUBE normiert). UV.x = Material für die Spieloptik (spieloptik.js, Art 6):
+// 0 Gummi (Laufband), 1 graues Metall (Rahmen), 2 Lackfarbe (Rahmen oben), 3 dunkler Stahl (Unterbau)
+const BAND = (() => {
+  const v = [], uv = [], idx = [];
+  const q = (x) => Math.round((x * 2 - 1) * 32767);
+  const kasten = (y0, y1, z0, z1, mat) => {
+    const F = [[0, 2, 6, 4], [1, 5, 7, 3], [0, 4, 5, 1], [2, 3, 7, 6], [0, 1, 3, 2], [4, 6, 7, 5]];
+    for (const f of F) { const b = v.length / 3; for (const k of f) { v.push(q(k & 1 ? 1 : 0), q(k & 2 ? y1 : y0), q(k & 4 ? z1 : z0)); uv.push(mat, 0, 0, 0); } idx.push(b, b + 1, b + 2, b, b + 2, b + 3); }
+  };
+  kasten(0.1, 0.9, 0.0, 0.3, 3);   // Unterbau
+  kasten(0.1, 0.9, 0.3, 0.72, 0);  // Laufband (liegt tiefer als der Rahmen)
+  kasten(0, 0.1, 0.0, 0.78, 1); kasten(0.9, 1, 0.0, 0.78, 1);       // Rahmen
+  kasten(0, 0.1, 0.78, 1, 2); kasten(0.9, 1, 0.78, 1, 2);           // Rahmen oben (Lack)
+  return { pos: new Int16Array(v), uv: new Float32Array(uv), idx: new Uint32Array(idx), n: idx.length };
+})();
 // Zylinder für Rohre: Achse x 0…1, Querschnitt y/z −0,5…0,5 (Positionen wie CUBE normiert, dazu Normalen für runde Schattierung)
 const ROHR_SEG = 12;
 const ROHR = (() => {
@@ -144,7 +161,7 @@ const drehQ = (dreh = 0, kx = 0, ky = 0) => { const h = (g) => g * Math.PI / 360
 const qdreh = (q, [x, y, z]) => { const [a, b, c, d] = q, t = qmul(qmul(q, [x, y, z, 0]), [-a, -b, -c, d]); return [t[0], t[1], t[2]]; };
 const qmul = ([ax, ay, az, aw], [bx, by, bz, bw]) => [aw * bx + ax * bw + ay * bz - az * by, aw * by - ax * bz + ay * bw + az * bx, aw * bz + ax * by - ay * bx + az * bw, aw * bw - ax * bx - ay * by - az * bz];
 // Querschnitt (Breite, Höhe in cm) für Linien-Bauteile – grob nach Spielmodellen
-const LINIE_MASS = (cls) => (/RailroadTrack/.test(cls) ? [420, 40] : /PipeHyper/.test(cls) ? [260, 260] : /Pipeline/.test(cls) ? [110, 110] : [120, 25]);
+const LINIE_MASS = (cls) => (/RailroadTrack/.test(cls) ? [420, 40] : /PipeHyper/.test(cls) ? [260, 260] : /Pipeline/.test(cls) ? [110, 110] : /Conveyor/.test(cls) ? [120, 40] : [120, 25]);
 const hexRgb = (hex) => { const n = parseInt((hex || '#8a8f99').slice(1), 16); return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]; };
 
 export class Welt3D {
@@ -174,6 +191,9 @@ export class Welt3D {
     this.felsInstVbo = gl.createBuffer();
     this.cubeVbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.cubeVbo); gl.bufferData(gl.ARRAY_BUFFER, CUBE.pos, gl.STATIC_DRAW);
     this.cubeIbo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.cubeIbo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, CUBE.idx, gl.STATIC_DRAW);
+    this.bandVbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.bandVbo); gl.bufferData(gl.ARRAY_BUFFER, BAND.pos, gl.STATIC_DRAW);
+    this.bandUv = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.bandUv); gl.bufferData(gl.ARRAY_BUFFER, BAND.uv, gl.STATIC_DRAW);
+    this.bandIbo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.bandIbo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, BAND.idx, gl.STATIC_DRAW);
     this.rohrVbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.rohrVbo); gl.bufferData(gl.ARRAY_BUFFER, ROHR.pos, gl.STATIC_DRAW);
     this.rohrNrm = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.rohrNrm); gl.bufferData(gl.ARRAY_BUFFER, ROHR.nrm, gl.STATIC_DRAW);
     this.rohrIbo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.rohrIbo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ROHR.idx, gl.STATIC_DRAW);
@@ -340,7 +360,7 @@ export class Welt3D {
       const nL = meta.linien.length, lListe = liste ? liste.filter((i) => i >= meta.anzahl).map((i) => i - meta.anzahl) : null;
       for (let jj = 0, nj = lListe ? lListe.length : nL; jj < nj; jj++) {
         const li = lListe ? lListe[jj] : jj, i = meta.anzahl + li; if (ohne?.has(i)) continue;
-        const l = meta.linien[li], cls = meta.klassen[l[0]], [B, H] = LINIE_MASS(cls), d = delta?.get(i); const hv = /Pipe/.test(cls) ? 0.5 : 1; // Rohre mittig auf der Kurve, Bänder/Schienen darunter
+        const l = meta.linien[li], cls = meta.klassen[l[0]], [B, H] = LINIE_MASS(cls), d = delta?.get(i); const hv = /Pipe/.test(cls) ? 0.5 : 1, band = /Conveyor/.test(cls); // Rohre mittig auf der Kurve, Bänder/Schienen darunter
         const c = d ? Math.cos(d.a) : 1, sn = d ? Math.sin(d.a) : 0;
         const pt = (k) => { let x = l[k], y = l[k + 1], z = l[k + 2]; if (d) { [x, y] = [c * x - sn * y + d.t[0], sn * x + c * y + d.t[1]]; z += d.t[2]; } return lage(x, y, z); };
         const col = [...farben[l[0]].map((v) => v * 0.75 + 0.2), id || (ids ? i + 2 : 1)];
@@ -351,7 +371,7 @@ export class Welt3D {
           let sd = [dv[1], -dv[0], 0], sl = Math.hypot(sd[0], sd[1]); sd = sl > 1e-6 ? [sd[0] / sl, sd[1] / sl, 0] : [1, 0, 0];
           const u = [sd[1] * dv[2] / len - 0, -sd[0] * dv[2] / len, (sd[0] * dv[1] - sd[1] * dv[0]) / len]; // oben = Seite × Richtung
           if (hv < 1) push('#rohr', [dv[0], dv[1], dv[2], 0, sd[0] * B, sd[1] * B, 0, 0, u[0] * H, u[1] * H, u[2] * H, 0, a0[0], a0[1], a0[2], 1, ...col]);
-          else push('#cube', [dv[0], dv[1], dv[2], 0, sd[0] * B, sd[1] * B, 0, 0, u[0] * H, u[1] * H, u[2] * H, 0, a0[0] - sd[0] * B / 2 - u[0] * H * hv, a0[1] - sd[1] * B / 2 - u[1] * H * hv, a0[2] - u[2] * H * hv, 1, ...col]);
+          else push(band ? '#band' : '#cube', [dv[0], dv[1], dv[2], 0, sd[0] * B, sd[1] * B, 0, 0, u[0] * H, u[1] * H, u[2] * H, 0, a0[0] - sd[0] * B / 2 - u[0] * H * hv, a0[1] - sd[1] * B / 2 - u[1] * H * hv, a0[2] - u[2] * H * hv, 1, ...col]);
           a0 = b0;
         }
       }
@@ -443,10 +463,13 @@ export class Welt3D {
   /** Lifte/Stützen aus Teilen (js/teile.js) – sonst null */
   teileFuer(cls, p) { return teileDynamisch(this.modelle, cls, p); }
   /** Dreiecke eines Modells (Quader 12) */
-  dreieckeVon(key) { return key === '#cube' ? 12 : key === '#rohr' ? ROHR_SEG * 2 : (this.modelle?.meshes[key]?.ni || 0) / 3; }
+  dreieckeVon(key) { return key === '#cube' ? 12 : key === '#band' ? BAND.n / 3 : key === '#rohr' ? ROHR_SEG * 2 : (this.modelle?.meshes[key]?.ni || 0) / 3; }
   zeichneSatz(VP, satz, M = EINS, tint = [0, 0, 0, 0]) {
     if (!satz.ranges.length && !satz.nLinie && !satz.zellen?.length) return;
     const gl = this.gl, O = this.pO; gl.useProgram(O.p); gl.uniformMatrix4fv(O.u.uVP, false, VP); gl.uniformMatrix4fv(O.u.uM, false, M); gl.uniform4fv(O.u.uTint, tint); gl.uniform3fv(O.u.uEye, this.eye); gl.uniform1f(O.u.uPick, this.pick ? 1 : 0);
+    this.spielAn = !!(this.spielTex && spielOptikGewuenscht()); gl.uniform1i(O.u.uArt, -1);
+    if (!this.leerTex) { const leer = (w) => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(w)); return t; }; this.leerTex = { decal: leer([0, 0, 0, 0]), schatten: leer([255, 255, 255, 255]), bauteil: leer([200, 200, 200, 255]), bauteilMaske: leer([255, 0, 0, 255]) }; }
+    spielUniforms(gl, O.u, this.spielAn ? this.spielTex : this.leerTex, 6);
     gl.bindVertexArray(this.vao);
     if (satz.zellen) { // Leistungsmodus: nur Zellen im Bild; ferne Zellen als Quader
       const E = ebenen(VP), e = this.eye; let gez = 0, nah = 0, mittel = 0;
@@ -471,14 +494,38 @@ export class Welt3D {
     const gl = this.gl, O = this.pO, models = this.modelle;
     if (!rg.count) return;
     {
-      const eigen = rg.key === '#cube' || rg.key === '#rohr', m = eigen ? null : models?.meshes[rg.key]; if (!eigen && !m) return;
+      const eigen = rg.key === '#cube' || rg.key === '#rohr' || rg.key === '#band', m = eigen ? null : models?.meshes[rg.key]; if (!eigen && !m) return;
+      gl.uniform1i(O.u.uArt, this.spielAn && !this.pick && (rg.key === '#rohr' || rg.key === '#band') ? (rg.key === '#rohr' ? 7 : 6) : -1);
+      if (rg.key === '#band') { gl.bindBuffer(gl.ARRAY_BUFFER, this.bandUv); gl.enableVertexAttribArray(8); gl.vertexAttribPointer(8, 4, gl.FLOAT, false, 16, 0); } else if (m && m.oUv != null) { gl.bindBuffer(gl.ARRAY_BUFFER, this.meshVbo); gl.enableVertexAttribArray(8); gl.vertexAttribPointer(8, 4, gl.HALF_FLOAT, false, 8, m.oUv); } else { gl.disableVertexAttribArray(8); gl.vertexAttrib4f(8, 0, 0, 0, 0); }
       if (m) { gl.bindBuffer(gl.ARRAY_BUFFER, this.meshVbo); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.SHORT, true, 6, m.oPos); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.BYTE, true, 4, m.oNrm); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.meshIbo); gl.uniform3fv(O.u.uQMin, m.min); gl.uniform3f(O.u.uQSpan, m.max[0] - m.min[0], m.max[1] - m.min[1], m.max[2] - m.min[2]); }
       else if (rg.key === '#rohr') { gl.bindBuffer(gl.ARRAY_BUFFER, this.rohrVbo); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.SHORT, true, 6, 0); gl.bindBuffer(gl.ARRAY_BUFFER, this.rohrNrm); gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1, 3, gl.BYTE, true, 4, 0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.rohrIbo); gl.uniform3f(O.u.uQMin, 0, -0.5, -0.5); gl.uniform3f(O.u.uQSpan, 1, 1, 1); }
+      else if (rg.key === '#band') { gl.bindBuffer(gl.ARRAY_BUFFER, this.bandVbo); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.SHORT, true, 6, 0); gl.disableVertexAttribArray(1); gl.vertexAttrib3f(1, 0, 0, 0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.bandIbo); gl.uniform3f(O.u.uQMin, 0, 0, 0); gl.uniform3f(O.u.uQSpan, 1, 1, 1); }
       else { gl.bindBuffer(gl.ARRAY_BUFFER, this.cubeVbo); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 3, gl.SHORT, true, 6, 0); gl.disableVertexAttribArray(1); gl.vertexAttrib3f(1, 0, 0, 0); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.cubeIbo); gl.uniform3f(O.u.uQMin, 0, 0, 0); gl.uniform3f(O.u.uQSpan, 1, 1, 1); }
       gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
       for (let k = 0; k < 5; k++) { gl.enableVertexAttribArray(2 + k); gl.vertexAttribPointer(2 + k, 4, gl.FLOAT, false, 80, rg.first * 80 + k * 16); gl.vertexAttribDivisor(2 + k, 1); }
-      if (m) { const g = grob && m.niGrob; gl.drawElementsInstanced(gl.TRIANGLES, g ? m.niGrob : m.ni, m.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, g ? m.oIdxGrob : m.oIdx, rg.count); }
+      if (m) {
+        const g = grob && m.niGrob, typ = m.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, es = m.u32 ? 4 : 2;
+        if (this.spielAn && m.teile && !this.pick) {
+          // Spieloptik: nah je Teil (Raster, Decals, Rest wie bisher), mittel die grobe Liste ganz als Raster
+          if (g) { // grob: das Material des größten Teils für alles
+            const t0 = m.teile.filter((t) => t[2] === 0 || t[2] === 5).sort((a, b) => b[1] - a[1])[0];
+            gl.uniform1i(O.u.uArt, t0 ? t0[2] : -1); gl.uniform4f(O.u.uAoRect, 0, 0, 0, 0); if (t0?.[2] === 5) gl.uniform4fv(O.u.uBtRect, bauteilRect(this.spielTex, t0[3]));
+            gl.drawElementsInstanced(gl.TRIANGLES, m.niGrob, typ, m.oIdxGrob, rg.count);
+          }
+          else for (const [von, anz, art, ao] of m.teile) {
+            if (art === 4) continue;
+            gl.uniform1i(O.u.uArt, art === 0 || art === 1 || art === 5 ? art : -1);
+            if (art === 0) gl.uniform4fv(O.u.uAoRect, schattenRect(this.spielTex, ao));
+            if (art === 5) gl.uniform4fv(O.u.uBtRect, bauteilRect(this.spielTex, ao));
+            if (art === 1) { gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(-1, -2); }
+            gl.drawElementsInstanced(gl.TRIANGLES, anz, typ, m.oIdx + von * es, rg.count);
+            if (art === 1) gl.disable(gl.POLYGON_OFFSET_FILL);
+          }
+          gl.uniform1i(O.u.uArt, -1);
+        } else gl.drawElementsInstanced(gl.TRIANGLES, g ? m.niGrob : m.ni, typ, g ? m.oIdxGrob : m.oIdx, rg.count);
+      }
       else if (rg.key === '#rohr') gl.drawElementsInstanced(gl.TRIANGLES, ROHR_SEG * 6, gl.UNSIGNED_SHORT, 0, rg.count);
+      else if (rg.key === '#band') gl.drawElementsInstanced(gl.TRIANGLES, BAND.n, gl.UNSIGNED_INT, 0, rg.count);
       else gl.drawElementsInstanced(gl.TRIANGLES, 36, gl.UNSIGNED_INT, 0, rg.count);
       for (let k = 0; k < 5; k++) gl.vertexAttribDivisor(2 + k, 0);
     }
@@ -791,6 +838,8 @@ export class Welt3D {
         }
         this.meshVbo = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, this.meshVbo); gl.bufferData(gl.ARRAY_BUFFER, buf, gl.STATIC_DRAW);
         this.meshIbo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.meshIbo); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, ib, gl.STATIC_DRAW);
+        for (const m of Object.values(index.meshes)) if (m.uv != null) m.oUv = m.uv;
+        try { this.spielTex = await spielTexturenLaden(gl, index); } catch { this.spielTex = null; }
         this.modelle = index;
       } catch { this.modelle = null; } // ohne Modelle: Kästen
     })();

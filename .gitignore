@@ -37,3 +37,9 @@ werkzeuge/extraktor/daten/
 # Gelände-Werkzeug: Bauordner (Daten landen in userdata)
 werkzeuge/gelaende/bin/
 werkzeuge/gelaende/obj/
+# Website (eigenes Projekt, wird später getrennt veröffentlicht)
+website/
+# Interne Übergabe-Notizen
+STARTSEITE-UEBERGABE.md
+# Fremdprogramm Satisfactory 3D Map (lädt der Einrichtungs-Assistent herunter; enthält Spiel-DLL)
+werkzeuge/Satisfactory3DMap/
