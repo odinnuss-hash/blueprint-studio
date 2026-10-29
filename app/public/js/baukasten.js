@@ -12,6 +12,7 @@ import { rechne as planRechnen, rezeptOptionen } from './planer-rechner.js';
 import { rechneOptimal } from './planer-optimierer.js';
 import { bildwahl } from './bildwahl.js';
 import { profilKnopf, profileOeffnen } from './profile.js';
+import { i18nStart, t as tr } from './i18n.js'; // tr: t ist hier meist ein Teil
 
 const $ = (id) => document.getElementById(id);
 const RASTER = 100; // 1 m
@@ -415,7 +416,7 @@ function zeichne(nurBild = false) {
     let bi = 1, bl = 0; for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); if (l > bl) { bl = l; bi = i; } }
     if (bl > 60 && v.fluss && (ansicht.s > 0.18 || v === wahl)) {
       const mx = (pts[bi][0] + pts[bi - 1][0]) / 2, my = (pts[bi][1] + pts[bi - 1][1]) / 2, it = D.items[v.fluss.item];
-      const text = `${zahl(v.fluss.menge)}/min · ${rohr ? 'Rohr' : 'Band'} Mk.${v.mk}`;
+      const text = `${zahl(v.fluss.menge)}/min · ${tr(rohr ? 'Rohr' : 'Band')} Mk.${v.mk}`;
       g.font = '600 11px system-ui'; const tw = g.measureText(text).width + (it?.icon ? 18 : 0) + 10;
       if (tw <= bl - 10 || v === wahl) {
         g.fillStyle = v.zuviel ? 'rgba(90,25,25,.92)' : 'rgba(12,14,18,.88)'; g.beginPath(); g.roundRect(mx - tw / 2, my - 10, tw, 20, 10); g.fill();
@@ -479,7 +480,7 @@ function zeichneTeil(t, st, modell) {
   // Schild mittig: Rezept (Maschinen) bzw. Name (Vorlage, Lager …)
   if (!T.anbau && gr > 50) {
     const prod = r ? D.items[r.produkte[0]?.item] : null, im = prod?.icon ? bild(prod.icon) : null;
-    const text = (T.block ? T.name : r ? r.name + (takt(t) !== 1 ? ` · ${zahl(takt(t) * 100, 0)} %` : '') : T.rezepte.length ? 'Rezept wählen' : T.name).slice(0, 34);
+    const text = (T.block ? T.name : r ? r.name + (takt(t) !== 1 ? ` · ${zahl(takt(t) * 100, 0)} %` : '') : T.rezepte.length ? tr('Rezept wählen') : T.name).slice(0, 34);
     g.font = '600 11px system-ui'; const tw = g.measureText(text).width + (im ? 20 : 0) + 12, mx = (x0 + x1) / 2, my = T.block ? y0 + 8 : (y0 + y1) / 2 - 10;
     g.fillStyle = r || T.block || !T.rezepte.length ? 'rgba(14,17,22,.82)' : 'rgba(90,55,10,.88)'; g.beginPath(); g.roundRect(mx - tw / 2, my, tw, 20, 6); g.fill();
     if (r || T.block) { g.strokeStyle = 'rgba(245,154,35,.7)'; g.lineWidth = 1; g.stroke(); }
@@ -755,12 +756,12 @@ function beschreibungText() {
   const zf = zusammenfassung(), nm = (it) => D.items[it]?.name || it, z = (v) => zahl(v, v < 10 ? 1 : 0);
   const liste = (o, n = 6) => { const e = Object.entries(o).sort((a, b) => b[1] - a[1]); return e.slice(0, n).map(([it, m]) => `${z(m)}/min ${nm(it)}`).join(', ') + (e.length > n ? ` (+${e.length - n})` : ''); };
   const zl = zielListe(), zeilen = [];
-  zeilen.push(zl.length ? `Ziel: ${zl.map((x) => `${z(x.menge)}/min ${nm(x.item)}`).join(', ')}` : 'Blueprint Studio Baukasten');
-  if (zf.stufe) zeilen.push(`Braucht: Stufe ${zf.stufe.stufe}${zf.stufe.name ? ` (${zf.stufe.name})` : ''}${zf.extra.length ? '; ' + zf.extra.slice(0, 6).map((x) => x.name).join(', ') + (zf.extra.length > 6 ? ' …' : '') : ''}`);
-  if (Object.keys(zf.bedarf).length) zeilen.push(`Zulieferung: ${liste(zf.bedarf)}`);
-  if (Object.keys(zf.frei).length) zeilen.push(`Ergebnis/Überschuss: ${liste(zf.frei)}`);
-  zeilen.push(`Maschinen: ${Object.entries(zf.arten).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n, k]) => `${k}× ${n}`).join(', ')}`);
-  zeilen.push(`Strom: ca. ${zahl(zf.mw, 0)} MW${zf.erz ? ` (Erzeugung bis ${zahl(zf.erz, 0)} MW)` : ''}`);
+  zeilen.push(zl.length ? `${tr('Ziel:')} ${zl.map((x) => `${z(x.menge)}/min ${nm(x.item)}`).join(', ')}` : 'Blueprint Studio');
+  if (zf.stufe) zeilen.push(`${tr('Braucht:')} ${tr(`Stufe ${zf.stufe.stufe}`)}${zf.stufe.name ? ` (${zf.stufe.name})` : ''}${zf.extra.length ? '; ' + zf.extra.slice(0, 6).map((x) => x.name).join(', ') + (zf.extra.length > 6 ? ' …' : '') : ''}`);
+  if (Object.keys(zf.bedarf).length) zeilen.push(`${tr('Zulieferung:')} ${liste(zf.bedarf)}`);
+  if (Object.keys(zf.frei).length) zeilen.push(`${tr('Ergebnis/Überschuss:')} ${liste(zf.frei)}`);
+  zeilen.push(`${tr('Maschinen:')} ${Object.entries(zf.arten).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n, k]) => `${k}× ${n}`).join(', ')}`);
+  zeilen.push(tr(`Strom: ca. ${zahl(zf.mw, 0)} MW`) + (zf.erz ? ' ' + tr(`(Erzeugung bis ${zahl(zf.erz, 0)} MW)`) : ''));
   return zeilen.join('\n').slice(0, 1500);
 }
 function infoZeigen() {
@@ -925,8 +926,8 @@ function ausPlanerAufbauen(pp) {
   let erg; try { erg = planVoll(pl); } catch (e) { toast('Plan lässt sich nicht rechnen: ' + e.message, true); return; }
   if (!erg?.schritte?.length) { toast('Im Planer ist kein Ziel mit Fertigung festgelegt.', true); return; }
   const nMasch = erg.schritte.reduce((q, st) => q + (st.anzahl || 0), 0);
-  if (nMasch > 250 && !confirm(`Sehr große Fabrik: rund ${Math.round(nMasch)} Maschinen auf einer Ebene. Der Aufbau dauert eine Weile, und das Reißbrett wird bei so vielen Teilen träge. Tipp: Ziel kleiner stellen oder in Abschnitten planen.\n\nTrotzdem aufbauen?`)) return;
-  if (teile.length && !confirm('Das Reißbrett wird durch den Aufbau aus dem Planer ersetzt (Rückgängig mit Strg+Z). Weiter?')) return;
+  if (nMasch > 250 && !confirm(tr(`Sehr große Fabrik: rund ${Math.round(nMasch)} Maschinen auf einer Ebene. Der Aufbau dauert eine Weile, und das Reißbrett wird bei so vielen Teilen träge. Tipp: Ziel kleiner stellen oder in Abschnitten planen.\n\nTrotzdem aufbauen?`))) return;
+  if (teile.length && !confirm(tr('Das Reißbrett wird durch den Aufbau aus dem Planer ersetzt (Rückgängig mit Strg+Z). Weiter?'))) return;
   merke();
   teile = []; verb = []; wahl = null; mehr = [];
   const fl = (it) => !!D.items[it]?.fluessig;
@@ -1061,7 +1062,9 @@ function ausPlanerAufbauen(pp) {
   planCache = null;
   if (pp.name !== 'Baukasten-Ziel') try { localStorage.removeItem('bs-baukasten-uebergabe'); } catch { /* egal */ }
   sichern(); einpassen();
-  const meldung = `${pp.name === 'Baukasten-Ziel' ? 'Aufgebaut' : 'Aus dem Planer aufgebaut'}: ${erg.schritte.length} Stufen, ${teile.filter((t) => !TYP.get(t.cls).anbau).length} Maschinen, ${verb.length} Verbindungen.${fehlt.length ? ' Nicht im Baukasten: ' + fehlt.join(', ') + '.' : ''} Offene Eingänge = Rohstoffe von außen.${lager ? ` Am Ende: ${lager}× Lagercontainer (Überlauf → AWESOME-Schredder).` : ''}`;
+  // Meldung aus einzeln übersetzbaren Sätzen (Englisch/Französisch/Japanisch)
+  const meldung = [tr(`${pp.name === 'Baukasten-Ziel' ? 'Aufgebaut' : 'Aus dem Planer aufgebaut'}: ${erg.schritte.length} Stufen, ${teile.filter((x) => !TYP.get(x.cls).anbau).length} Maschinen, ${verb.length} Verbindungen.`),
+    fehlt.length ? tr('Nicht im Baukasten:') + ' ' + fehlt.join(', ') + '.' : '', tr('Offene Eingänge = Rohstoffe von außen.'), lager ? tr(`Am Ende: ${lager}× Lagercontainer (Überlauf → AWESOME-Schredder).`) : ''].filter(Boolean).join(' ');
   verlegeSchrittweise().then(() => { sichern(); zeichne(); toast(meldung, !!fehlt.length); });
 }
 /** Alle Wege in Häppchen verlegen (die Seite bleibt bedienbar, Fortschritt als Meldung) */
@@ -1267,7 +1270,7 @@ addEventListener('mousemove', (e) => {
   const p = e.target === cv && werkzeug !== 'faerben' ? portUnter(maus.x, maus.y) : null, tp = $('tipp');
   if (p) {
     const z = rechnung.zuteilung.get(`${p.teil.id}:${p.name}`), st = rechnung.stand.get(`${p.teil.id}:${p.name}`);
-    tp.innerHTML = `${p.art === 'r' ? 'Rohr' : 'Band'}-${p.ein ? 'Eingang' : 'Ausgang'}${z ? ` · ${esc(D.items[z.item]?.name || z.item)} ${zahl(z.menge)}/min` : ''}${st && st.st !== 'frei' ? ` · ${st.st === 'ok' ? 'versorgt' : st.st === 'extern' ? 'von außen' : st.st === 'knapp' ? 'zu wenig' : st.st}` : ''}${belegt(p.teil, p.name) ? ' · verbunden' : ''}`;
+    tp.innerHTML = `${tr(`${p.art === 'r' ? 'Rohr' : 'Band'}-${p.ein ? 'Eingang' : 'Ausgang'}`)}${z ? ` · ${esc(D.items[z.item]?.name || z.item)} ${zahl(z.menge)}/min` : ''}${st && st.st !== 'frei' ? ` · ${tr(st.st === 'ok' ? 'versorgt' : st.st === 'extern' ? 'von außen' : st.st === 'knapp' ? 'zu wenig' : st.st === 'falsch' ? 'falsches Item' : 'leer')}` : ''}${belegt(p.teil, p.name) ? ' · ' + tr('verbunden') : ''}`;
     tp.style.display = 'block'; tp.style.left = maus.x + 14 + 'px'; tp.style.top = maus.y + 10 + 'px';
   } else tp.style.display = 'none';
   if (start) zeichne();
@@ -1352,7 +1355,7 @@ $('w-stift').onclick = () => setzeWerkzeug('stift');
 $('b-drehen').onclick = drehen; $('b-kopie').onclick = duplizieren; $('b-loeschen').onclick = loeschen; $('b-auto').onclick = autoVerbinden; $('b-rueck').onclick = rueck; $('b-einpassen').onclick = einpassen;
 $('s-bandmax').onchange = () => { sichern(); zeichne(); };
 $('c-fluss').onchange = () => zeichne();
-$('b-neu').onclick = () => { if (teile.length && !confirm('Reißbrett leeren?')) return; merke(); teile = []; verb = []; wahl = null; mehr = []; mehrV = []; sichern(); zeichne(); };
+$('b-neu').onclick = () => { if (teile.length && !confirm(tr('Reißbrett leeren?'))) return; merke(); teile = []; verb = []; wahl = null; mehr = []; mehrV = []; sichern(); zeichne(); };
 addEventListener('resize', () => { if (einpassenOffen && cv.clientWidth) einpassen(); else zeichne(); });
 // Farbwahl (Werkzeugleiste)
 function farbknopf() { const f = farbInfo(farbe) || { name: 'wie Vorlage', prim: '#777', sek: '#555' }; const b = $('b-farbe'); b.querySelector('i').style.cssText = `--p:${f.prim};--s:${f.sek}`; b.querySelector('span').textContent = f.name; }
@@ -1399,7 +1402,7 @@ $('b-idee').onclick = () => { sichern(); try { if (EINGEBETTET && window.top.bsI
 $('b-speichern').onclick = async () => {
   if (!teile.length) { toast('Das Reißbrett ist leer.', true); return; }
   const offen = verb.filter((v) => v.ok === false).length;
-  if (offen && !confirm(`${offen} Verbindung(en) haben keinen freien Weg (rot). Trotzdem speichern?`)) return;
+  if (offen && !confirm(tr(`${offen} Verbindung(en) haben keinen freien Weg (rot). Trotzdem speichern?`))) return;
   const sel = $('d-sitzung');
   try { const s = await (await fetch('/api/sessions')).json(); sel.innerHTML = s.filter((x) => !x.lib).map((x) => `<option value="${esc(x.name)}">${esc(x.label)}</option>`).join(''); } catch { /* leer */ }
   if (!sel.options.length) { toast('Kein Spielstand-Ordner für Blaupausen gefunden.', true); return; }
@@ -1424,13 +1427,16 @@ $('d-ok').onclick = async (e) => {
     try { localStorage.setItem('bs-baukasten-sitzung', session); } catch { /* egal */ }
     $('d-speichern').close();
     const i = j.info;
-    toast(`„${name}“ gespeichert: ${i.maschinen} Gebäude, ${i.anbau} Splitter/Merger/Kreuzungen, ${i.baender} Bänder, ${i.rohre} Rohre, ${i.masten} Strommasten, ${i.fundamente} Fundamente${i.vorlagen ? `, ${i.vorlagen} Vorlage(n)` : ''} (${i.groesse[0]} × ${i.groesse[1]} m).${i.warnungen?.length ? ' Hinweis: ' + i.warnungen.join(' ') : ''}`, !!i.warnungen?.length);
+    const stueck = [`${i.maschinen} Gebäude`, `${i.anbau} Splitter/Merger/Kreuzungen`, `${i.baender} Bänder`, `${i.rohre} Rohre`, `${i.masten} Strommasten`, `${i.fundamente} Fundamente`, ...(i.vorlagen ? [`${i.vorlagen} Vorlage(n)`] : [])].map((x) => tr(x));
+    toast(`${tr(`„${name}“ gespeichert:`)} ${stueck.join(', ')} (${i.groesse[0]} × ${i.groesse[1]} m).${i.warnungen?.length ? ' ' + tr('Hinweis:') + ' ' + i.warnungen.map((w) => tr(w)).join(' ') : ''}`, !!i.warnungen?.length);
   } catch (err) { toast('Speichern fehlgeschlagen: ' + err.message, true); }
   finally { b.disabled = false; b.textContent = 'Speichern'; }
 };
 
 // ------------------------------------------------------------------ Start
 (async () => {
+  // Sprache der App (Englisch, Französisch, Japanisch: Oberfläche wird übersetzt)
+  try { const c = await (await fetch('/api/config')).json(); await i18nStart(c.sprache); } catch { /* deutsch */ }
   try { const r = await fetch('/api/baukasten/daten'); D = await r.json(); if (!r.ok) throw new Error(D.fehler || r.status); }
   catch (e) { $('info').innerHTML = `<p class="err">Daten nicht verfügbar: ${esc(e.message)}</p>`; return; }
   for (const t of D.teile) TYP.set(t.cls, t);

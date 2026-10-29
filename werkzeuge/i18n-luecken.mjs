@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const stand = process.argv[2] && !process.argv[2].startsWith('--') ? process.argv[2] : 'v0.9.1';
 const jsonAus = process.argv.includes('--json') ? process.argv[process.argv.indexOf('--json') + 1] : null;
-const DATEIEN = ['app/public/index.html', ...fs.readdirSync(path.join(ROOT, 'app/public/js')).map((f) => 'app/public/js/' + f), 'app/server.mjs', ...fs.readdirSync(path.join(ROOT, 'app/lib')).map((f) => 'app/lib/' + f)];
+const DATEIEN = ['app/public/index.html', 'app/public/baukasten.html', ...fs.readdirSync(path.join(ROOT, 'app/public/js')).map((f) => 'app/public/js/' + f), 'app/server.mjs', ...fs.readdirSync(path.join(ROOT, 'app/lib')).map((f) => 'app/lib/' + f)];
 
 // neue Zeilen seit <stand> (inkl. nicht committeter und neuer Dateien)
 const neueZeilen = [];

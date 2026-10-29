@@ -37,7 +37,7 @@ export async function vorbereitungZeigen() {
   const anzeigen = () => {
     if (fertig) return;
     if (!el && Date.now() - start > 700) { el = document.createElement('div'); el.id = 'bs-vorbereitung'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
-    if (el) el.innerHTML = `<span class="kreis"></span><span><b>Blueprint Studio wird vorbereitet</b><small>${esc(text())} Klicks werden danach ausgeführt.</small></span>`;
+    if (el) el.innerHTML = `<span class="kreis"></span><span><b>Blueprint Studio wird vorbereitet</b><small><span>${esc(text())}</span> <span>Klicks werden danach ausgeführt.</span></small></span>`;
   };
   const tick = setInterval(anzeigen, 400);
   while (!fertig && Date.now() - start < 180000) {

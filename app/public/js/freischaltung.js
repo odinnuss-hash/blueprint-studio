@@ -1,3 +1,4 @@
+import { t } from './i18n.js';
 // Welche Freischaltung ein Plan braucht: höchste Meilenstein-Stufe (Rezepte und Gebäude) plus Alternativrezepte, M.A.M. usw.
 // Grundlage: Katalog (freischaltungen = Schematics mit typ, stufe, rezepte). Gleiche Regel wie im Baukasten (lib/baukasten.mjs).
 const RANG = { Start: 0, 'HUB-Upgrade': 1, Meilenstein: 2, 'M.A.M.-Forschung': 3, Festplatte: 4, 'AWESOME-Shop': 5 };
@@ -27,5 +28,5 @@ export function benoetigt(kat, schritte) {
 /** Kurzer Text: „Stufe 6 (Industrielle Fertigung); Eisendraht, …“ */
 export function benoetigtText(b) {
   if (!b.stufe && !b.extra.length) return '';
-  return `${b.stufe ? `Stufe ${b.stufe.stufe}${b.stufe.name ? ` (${b.stufe.name})` : ''}` : ''}${b.extra.length ? `${b.stufe ? '; ' : ''}${b.extra.slice(0, 6).map((x) => x.name).join(', ')}${b.extra.length > 6 ? ' …' : ''}` : ''}`;
+  return `${b.stufe ? `${t(`Stufe ${b.stufe.stufe}`)}${b.stufe.name ? ` (${b.stufe.name})` : ''}` : ''}${b.extra.length ? `${b.stufe ? '; ' : ''}${b.extra.slice(0, 6).map((x) => x.name).join(', ')}${b.extra.length > 6 ? ' …' : ''}` : ''}`;
 }

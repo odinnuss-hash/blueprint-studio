@@ -42,7 +42,7 @@ const FAHR = { KeyW: [1, 0], KeyS: [-1, 0], KeyA: [0, -1], KeyD: [0, 1] };
 // Abgelöstes Ablage-Fenster (Welt): gleiche Seite mit ?fenster=ablage – zeigt nur die Ablage-Kacheln und meldet die Wahl über diesen Kanal
 const NUR_ABLAGE = new URLSearchParams(location.search).get('fenster') === 'ablage';
 const ABLAGE_KANAL = 'bs-ablage-wahl';
-const APP_VERSION = '1.6.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
+const APP_VERSION = '1.7.0'; // muss zur Server-Version passen – sonst laeuft noch ein alter Server
 
 class App {
   constructor() {

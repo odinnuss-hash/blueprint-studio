@@ -11,7 +11,9 @@ STARTEN
     Spielmodelle per FModel – Schritt fuer Schritt mit Kopier-Knoepfen), Extras.
     Jederzeit wieder: Einstellungen -> Einrichtungs-Assistent.
   - Die App oeffnet sich in einem eigenen Fenster (Edge/Chrome im App-Modus).
-  - Schliesst du das Fenster, beendet sich das Programm nach ca. 25 Sekunden selbst.
+  - Der Server laeuft unsichtbar im Hintergrund; seine Ausgaben stehen unter
+    Einstellungen -> Server-Protokoll und in userdata\server.log.
+  - Schliesst du das Fenster, beendet sich das Programm nach wenigen Sekunden selbst.
   - Alles laeuft lokal auf deinem PC.
 
 ORDNER (im Assistenten bzw. unter "Einstellungen" aenderbar)
@@ -30,6 +32,16 @@ PLANER
   Wasserextraktoren, mehrere Quellen je Stoff (Intern geht vor, der Rest kommt von aussen bzw.
   "von oben"). Kompakte Bauweise wie in echten Blaupausen gemessen.
   Vom Planer erzeugte Blaupausen dienen nie als Bauteil-Vorlagen.
+
+BAUKASTEN (BETA)
+  Fabrik von oben auf einem Reissbrett planen – mit den Spielmodellen, Baendern und Rohren
+  (automatisch oder ueber eigene Wegpunkte), intelligenten Splittern mit Sortierregeln, Lager und
+  Schredder am Ende, Mengen pro Minute und Zusammenfassung (noetige Stufe, Baukosten).
+  Speichern als Blaupause; die Zusammenfassung wird zur Beschreibung im Spiel.
+
+PROFILE & IDEEN
+  Planer und Baukasten werden laufend im aktiven Profil gespeichert. Ideen = benannte Staende
+  (Planer, Reissbrett, Blaupausen-Auswahl), einzeln oder zusammen wieder ladbar.
 
 HILFE
   In der App oben auf "Hilfe": Handbuch, Namensschema, Checkliste bei Spiel-Updates,

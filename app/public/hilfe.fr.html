@@ -61,6 +61,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <a href="#spiel-kategorien">Catégories dans le jeu</a>
   <a href="#planer">Planificateur</a>
   <a href="#masterclass">Master Class</a>
+  <a href="#baukasten">Bac à sable (bêta)</a>
+  <a href="#profile">Profils &amp; idées</a>
   <a href="#sprachen">Langues</a>
   <a href="#karte">Carte (sauvegardes)</a>
   <a href="#megaprints">Megaprints</a>
@@ -91,7 +93,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">À propos de l'app</h2>
 <table>
   <tr><th style="width:200px">Programme</th><td><b>Blueprint Studio</b> – outil de plans pour Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version" data-version>1.6.0</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.7.0</td></tr>
   <tr><th>Auteur</th><td><b>ODINnuss</b> – idée, concept et conception</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. Tous droits réservés.</td></tr>
   <tr><th>Réalisation</th><td>Programmé pour le compte de l'auteur avec l'aide de l'IA (Claude, Anthropic).</td></tr>
@@ -119,7 +121,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <!-- ============================================================ HANDBUCH -->
 <h2 class="sec" id="start">Démarrage &amp; vue d'ensemble</h2>
 <ul>
-  <li><b>Démarrer :</b> double-clic sur <code>start.bat</code> ou sur le raccourci du bureau. L'app s'ouvre dans sa propre fenêtre. Si vous fermez la fenêtre, le programme s'arrête de lui-même au bout d'env. 25 secondes.</li>
+  <li><b>Démarrer :</b> double-clic sur <code>start.bat</code> ou sur le raccourci du bureau. L'app s'ouvre dans sa propre fenêtre ; le serveur tourne de façon invisible en arrière-plan (plus de deuxième fenêtre). Pendant la lecture des données du jeu et de la bibliothèque de modèles après le démarrage, l'app affiche en haut « Préparation de Blueprint Studio » – les clics sont exécutés ensuite. Si tu fermes la fenêtre, le programme s'arrête tout seul après quelques secondes.</li>
   <li><b>En haut</b>, vous choisissez la section : <b>Plan</b> (voir/modifier), <b>Catalogue des bâtiments</b> (tous les éléments avec leurs données), <b>Organiser</b> (uniformiser les noms) et <b>Aide</b> (cette page).</li>
   <li>En <b>haut</b>, il n’y a plus que les zones, à côté <b>Visite guidée</b> (?) et <b>Paramètres</b> (engrenage).</li>
   <li>Dans l’<b>éditeur de plans</b>, la barre d’outils commence par <b>Dossier</b> (dossier des plans dans l’Explorateur), <b>afficher/masquer le stockage</b> et <b>stockage en grande fenêtre</b> ; <b>Enregistrer …</b> est à la fin de la barre, le dossier actuel dans la ligne d’état en bas.</li>
@@ -289,6 +291,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Limites :</b> certains bâtiments n’ont pas encore de plan de rangée (grisés, survoler pour la raison) – des entrées/sorties libres avec panneau y sont créées. Les plans créés par le planificateur ne servent jamais de modèles ; si un modèle contient des objets dans son inventaire, enregistre dans le jeu un plan avec le bâtiment vide.</li>
   <li><b>Style du plan :</b> <b>Simple</b> – fonctionnel sur un seul niveau, rangées côte à côte ; <b>Étages</b> – un étage par niveau de production, superposés, avec des ascenseurs de convoyeur (emprise compacte ; les ascenseurs atteignent 48 m maximum dans le jeu). Les plans du planificateur sont fonctionnels : connectés et opérationnels, mais pas un design soigné.</li>
   <li><b>Tableau du plan :</b> le plan de flux en mur de panneaux, style <b>Simple</b> (lignes de panneaux de 4 m) ou <b>Optimisé</b> (cartes avec grandes images et affichages chiffrés). Pour « Optimisé », l’application a besoin d’un panneau correspondant issu de l’un de vos plans au format actuel du jeu.</li>
+  <li><b>Construire dans le bac à sable :</b> place le plan en rangées de machines sur la planche du <a href="#baukasten">bac à sable</a> pour continuer à l'agencer vu de dessus.</li>
+  <li><b>Déblocage &amp; description :</b> à droite figure le palier (étape) dont le plan a besoin, ainsi que les recettes alternatives ou recherches M.A.M. Le dialogue de plan en prépare une <b>description</b> (objectif, déblocage, approvisionnement, résultat, machines, électricité) qui apparaît avec le plan dans le jeu – modifiable avant l'enregistrement.</li>
 </ul>
 <h3 id="planer-rechenweg">Méthode de calcul et recettes alternatives</h3>
 <p>À gauche sous <b>Méthode de calcul</b> : <b>Simple</b> (une recette par objet, comme avant), <b>Optimal</b> (calcule toute l’usine d’un coup avec le moins de ressources possible – les minerais rares comptent plus ; boucles comme le plastique recyclé et sous-produits s’équilibrent) ou <b>Maximum à partir de « Disponible »</b> (le plus possible des objectifs à partir des approvisionnements). Pour Optimal et Maximum, <b>« Recettes alternatives … »</b> définit les alternatives autorisées – idéalement celles débloquées dans ton jeu.</p>
@@ -314,6 +318,28 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>Clic sur un modèle : produits finaux, approvisionnement et machines ; <b>Voir en 3D</b>, <b>Copier dans le jeu</b> (dans une sauvegarde) ou <b>Utiliser comme objectif</b> (les produits finaux deviennent des objectifs du planificateur).</li>
   <li><b>Ranger dans la réserve</b> classe tous les modèles sous « 10 Master Class » par thème, avec le palier dans le nom.</li>
   <li><b>Enregistrer le paquet / Charger un paquet</b> : enregistrer tous les modèles dans un fichier (<code>.bsmc</code>) et le recharger sur un autre ordinateur.</li>
+</ul>
+<h2 class="sec" id="baukasten">Bac à sable (bêta) – planifier une usine vue de dessus</h2>
+<p>Dans l'onglet <b>Bac à sable</b>, tu composes une usine sur une <b>planche</b> vue d'en haut – avec les modèles du jeu vus de dessus (après « Récupérer les modèles du jeu »). Tout est sur un seul niveau, les convoyeurs peuvent se croiser. Tu enregistres le résultat comme plan pour le jeu.</p>
+<ul>
+  <li><b>Placer des bâtiments :</b> fais glisser un bâtiment de gauche – ou (onglet <b>Modèles</b>) une usine Master Class à un niveau – sur la planche ; la molette tourne pendant le glissement. Les pièces s'aimantent précisément aux raccords des autres. Un clic sur une pièce ouvre à côté un panneau avec recette, cadence, couleur, tourner, dupliquer et supprimer.</li>
+  <li><b>Relier :</b> avec l'outil <b>Relier</b>, clique une sortie (orange) puis une entrée (bleue, turquoise = tuyau) – le chemin est posé automatiquement. Des clics dans le vide entre les deux posent tes propres points de passage (<kbd>Retour arrière</kbd> retire le dernier). <b>Automatique</b> relie les raccords libres correspondants. Un clic sur un convoyeur montre quantité et niveau : l'app choisit le niveau Mk selon la quantité (au plus celui de la barre), ou tu le fixes à la main.</li>
+  <li><b>Calcul :</b> une fois les recettes définies, le bac à sable calcule la quantité par minute sur chaque convoyeur ; les répartiteurs distribuent selon le besoin. <b>Flux</b> fait défiler les objets. Les raccords ou convoyeurs rouges signalent un problème – trop peu, mauvais objet, convoyeur trop petit, pas de chemin libre.</li>
+  <li><b>Sélectionner :</b> Maj + glisser, <b>Rectangle</b> ou <b>Crayon</b> marquent plusieurs pièces avec leurs convoyeurs – déplacer, dupliquer (<kbd>Ctrl</kbd>+<kbd>D</kbd>), tourner (<kbd>R</kbd>) ou supprimer (<kbd>Suppr</kbd>). <b>Peindre</b> colore pièces et convoyeurs avec les emplacements de couleur de ta sauvegarde.</li>
+  <li><b>Répartiteurs :</b> dans le panneau d'un répartiteur tu changes son type – normal, intelligent ou programmable – et règles les <b>règles de tri</b> par sortie (gauche, centre, droite dans le sens de défilement : un objet, N'importe lequel, Aucun ou Débordement). Les règles apparaissent en petits symboles sur le répartiteur et sont écrites dans le plan.</li>
+  <li><b>Objectif et liste :</b> choisis à droite un produit final et une quantité – la liste montre les machines nécessaires par étape, coche ce qui est déjà posé et place les machines manquantes en rangée avec « + ». <b>Construire en rangées</b> construit tout l'objectif. Depuis le planificateur : <b>Construire dans le bac à sable</b>.</li>
+  <li><b>Construction en rangées :</b> une rangée de machines par étape avec distributeurs et collecteurs ; répartiteurs et fusionneurs sont orientés vers l'arrivée ou le consommateur. Les sorties sans consommateur finissent dans un répartiteur intelligent : tout droit dans un conteneur de stockage, le débordement dans le broyeur AWESOME. Pour les très grandes usines (plus de 250 machines), l'app demande d'abord ; les convoyeurs sont alors posés pas à pas.</li>
+  <li><b>Résumé :</b> sous « Vue d'ensemble » se trouvent approvisionnement, résultat/excédent, électricité, machines, coût des bâtiments et le déblocage nécessaire (palier, recettes alternatives, M.A.M.). <b>Copier en texte</b> le met dans le presse-papiers.</li>
+  <li><b>Enregistrer :</b> <b>Enregistrer le plan …</b> construit le plan avec fondations et un poteau électrique par machine. Le résumé y figure comme <b>description</b>, modifiable avant. Pour chaque pièce, l'app a besoin d'un modèle tiré d'un de tes plans au format de jeu actuel – s'il manque, le type est grisé dans le panneau.</li>
+</ul>
+<p class="muted">Bêta : chemins et espacements sont fonctionnels mais pas toujours aussi beaux qu'à la main – vérifie le plan dans le jeu.</p>
+<h2 class="sec" id="profile">Profils &amp; idées</h2>
+<p>Le bouton <b>Profil : …</b> en haut à droite ouvre <b>Profils &amp; idées</b>. Un <b>profil</b> est ton espace de travail : le planificateur (toutes les usines) et la planche du bac à sable sont enregistrés en continu dans le profil actif. S'il n'y en a pas encore, il est créé dès ta première planification.</p>
+<ul>
+  <li><b>Nouveau profil :</b> avec ton état actuel ou vide. <b>Passer à ce profil</b> sauvegarde l'état actuel et charge le profil choisi.</li>
+  <li><b>Idées :</b> <b>Enregistrer l'état actuel comme idée …</b> (dans le bac à sable aussi <b>Enregistrer l'idée …</b>) conserve planificateur, planche et, si tu veux, une sélection de plans sous un nom, avec une note.</li>
+  <li><b>Charger :</b> coche des idées puis <b>Charger la sélection</b> – remplacer le planificateur ou ajouter les usines. L'app place les plans des idées depuis la réserve dans le jeu ; les autres plans actifs restent. Avant cela, elle sauvegarde ton état comme idée « Sauvegardé automatiquement » (les trois dernières sont conservées).</li>
+  <li>Les profils sont dans <code>userdata\profile</code> ; ce qui est supprimé va dans la corbeille de l'app. <b>? Visite guidée</b> dans le dialogue explique tout pas à pas.</li>
 </ul>
 <h2 class="sec" id="sprachen">Langues</h2>
 <p>Sous <b>Paramètres → Langue</b> : Deutsch, English, Français, 日本語 – l’application se recharge ensuite ; cette aide existe aussi dans les quatre langues. Les noms de vos plans et dossiers restent inchangés. Les noms des dossiers de la réserve, et donc des <a href="#spiel-kategorien">catégories dans le jeu</a>, viennent de la structure de la réserve (Paramètres → « Modifier la structure … ») dans la langue choisie ; l’application retient les icônes de catégorie par numéro de groupe, elles sont conservées lors d’un changement de langue.</p>
@@ -438,6 +464,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Préfixes</b> : mots comme votre nom de joueur ou de monde, à retirer du début lors de la suggestion de nom (séparés par des virgules).</li>
   <li><b>Mises à jour</b> : recherche automatique au démarrage (oui/non), source des mises à jour sur GitHub (<code>propriétaire/dépôt</code>, vide = valeur par défaut de l'app) et « Rechercher des mises à jour maintenant » – voir <a href="#updates">Mises à jour</a>.</li>
   <li><b>Vue à l'ouverture d'un plan</b> : <i>Dernière vue utilisée</i> (par défaut – l'app mémorise si vous étiez en dernier en 2D ou en 3D), <i>Toujours 2D</i> ou <i>Toujours 3D</i>. Basculer avec les boutons 2D/3D ou les touches <kbd>2</kbd>/<kbd>3</kbd> reste possible à tout moment.</li>
+  <li><b>Journal du serveur …</b> : montre la sortie du serveur (auparavant dans sa propre fenêtre de console) – mis à jour en continu, avec « Copier ». Il est aussi écrit dans <code>userdata\server.log</code> (l'exécution précédente dans <code>server.alt.log</code>). Si le serveur ne démarre pas, <code>start.bat</code> affiche la fin du journal.</li>
 </ul>
 
 <h2 class="sec" id="grenzen">Limites &amp; remarques</h2>
@@ -652,7 +679,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Les modèles sont tournés/décalés dans l'app</td><td>Le format de mesh de FModel doit être <code>glTF 2.0 (binary)</code> ; relancez l'outil.</td></tr>
   <tr><td>Boîtes grises au lieu des modèles</td><td>Il manque un modèle pour cet élément (voir le message de l'outil) – ou il s'agit d'un convoyeur/tuyau/rail/ascenseur (volontairement sans modèle).</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.6.0</span> · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.7.0</span> · © 2026 ODINnuss · <a href="#zur-app">Conditions d'utilisation</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

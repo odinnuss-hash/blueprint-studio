@@ -7,6 +7,7 @@ import { bildwahl, itemBild } from './bildwahl.js';
 import { tileHtml, fmt, ICONS, iconFile } from './katalog.js';
 import { eingabe, frage, auswahl } from './dialog.js';
 import { benoetigt, benoetigtText } from './freischaltung.js';
+import { t } from './i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -577,15 +578,15 @@ export class PlanerUI {
     for (const s of schritte) { for (const q of s.zutaten) ein[q.item] = (ein[q.item] || 0) + q.proMin; for (const q of s.produkte) aus[q.item] = (aus[q.item] || 0) + q.proMin; }
     for (const it of Object.keys(ein)) { const k = Math.min(ein[it], aus[it] || 0); ein[it] -= k; if (aus[it] != null) aus[it] -= k; }
     const sortiert = (o) => Object.entries(o).filter(([, m]) => m > 1e-6).sort((a, b) => b[1] - a[1]);
-    if (einzel) zeilen.push(`${schritte.length === 1 ? `${einzel.anzahl}× ${this.kat.gebaeude[einzel.gebaeude]?.name || einzel.gebaeude}: ` : 'Bis '}${einzel.name}`);
-    else zeilen.push(`Ziel: ${r.ziele.map((x) => `${z(x.menge)}${e(x.item)} ${nm(x.item)}`).join(', ')}`);
-    const fr = benoetigtText(benoetigt(this.kat, schritte)); if (fr) zeilen.push(`Braucht: ${fr}`);
-    const zu = sortiert(ein); if (zu.length) zeilen.push(`Zulieferung: ${liste(zu)}`);
-    const ab = sortiert(aus); if (ab.length) zeilen.push(`${einzel ? 'Ausgang' : 'Ergebnis/Überschuss'}: ${liste(ab)}`);
+    if (einzel) zeilen.push(schritte.length === 1 ? `${einzel.anzahl}× ${this.kat.gebaeude[einzel.gebaeude]?.name || einzel.gebaeude}: ${einzel.name}` : `${t('Bis')} ${einzel.name}`);
+    else zeilen.push(`${t('Ziel:')} ${r.ziele.map((x) => `${z(x.menge)}${e(x.item)} ${nm(x.item)}`).join(', ')}`);
+    const fr = benoetigtText(benoetigt(this.kat, schritte)); if (fr) zeilen.push(`${t('Braucht:')} ${fr}`);
+    const zu = sortiert(ein); if (zu.length) zeilen.push(`${t('Zulieferung:')} ${liste(zu)}`);
+    const ab = sortiert(aus); if (ab.length) zeilen.push(`${t(einzel ? 'Ausgang:' : 'Ergebnis/Überschuss:')} ${liste(ab)}`);
     const masch = {}; for (const s of schritte) { const n = this.kat.gebaeude[s.gebaeude]?.name || s.gebaeude; masch[n] = (masch[n] || 0) + s.anzahl; }
-    zeilen.push(`Maschinen: ${Object.entries(masch).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n, k]) => `${k}× ${n}`).join(', ')}`);
+    zeilen.push(`${t('Maschinen:')} ${Object.entries(masch).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n, k]) => `${k}× ${n}`).join(', ')}`);
     const mw = schritte.reduce((a, s) => a + (this.kat.gebaeude[s.gebaeude]?.werte?.strom || 0) * s.anzahl * Math.pow((s.takt || 100) / 100, 1.321928), 0);
-    if (mw) zeilen.push(`Strom: ca. ${fmt(mw, 0)} MW`);
+    if (mw) zeilen.push(t(`Strom: ca. ${fmt(mw, 0)} MW`));
     return zeilen.join('\n').slice(0, 1500);
   }
   blaupauseDialog(i, art = 'einzeln') {

@@ -61,6 +61,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <a href="#spiel-kategorien">Categories in the game</a>
   <a href="#planer">Planner</a>
   <a href="#masterclass">Master Class</a>
+  <a href="#baukasten">Sandbox (beta)</a>
+  <a href="#profile">Profiles &amp; ideas</a>
   <a href="#sprachen">Languages</a>
   <a href="#karte">Map (saves)</a>
   <a href="#megaprints">Megaprints</a>
@@ -91,7 +93,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">About the app</h2>
 <table>
   <tr><th style="width:200px">Program</th><td><b>Blueprint Studio</b> – blueprint tool for Satisfactory</td></tr>
-  <tr><th>Version</th><td id="za-version" data-version>1.6.0</td></tr>
+  <tr><th>Version</th><td id="za-version" data-version>1.7.0</td></tr>
   <tr><th>Author</th><td><b>ODINnuss</b> – idea, concept and design</td></tr>
   <tr><th>Copyright</th><td>© 2026 ODINnuss. All rights reserved.</td></tr>
   <tr><th>Implementation</th><td>Programmed on behalf of the author with AI assistance (Claude, Anthropic).</td></tr>
@@ -119,7 +121,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <!-- ============================================================ HANDBUCH -->
 <h2 class="sec" id="start">Start &amp; overview</h2>
 <ul>
-  <li><b>Starting:</b> Double-click <code>start.bat</code> or the desktop shortcut. The app opens in its own window. If you close the window, the program exits by itself after about 25 seconds.</li>
+  <li><b>Starting:</b> Double-click <code>start.bat</code> or the desktop shortcut. The app opens in its own window; the server runs invisibly in the background (no second window any more). While game data and the template library are read after start, the app shows “Blueprint Studio is getting ready” at the top – clicks are carried out afterwards. If you close the window, the program ends by itself after a few seconds.</li>
   <li><b>At the top</b> you choose the area: <b>Blueprint</b> (view/edit), <b>Building catalog</b> (all buildables with data), <b>Organize</b> (unify names) and <b>Help</b> (this page).</li>
   <li>At the <b>top</b> there are only the areas, next to them <b>Guide</b> (?) and <b>Settings</b> (gear).</li>
   <li>In the <b>blueprint editor</b> the tool bar starts with <b>Folder</b> (blueprint folder in Explorer), <b>show/hide storage</b> and <b>storage as a large window</b>; <b>Save …</b> is at the end of the bar, the current folder in the status line below.</li>
@@ -289,6 +291,8 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Limits:</b> some buildings have no row plan yet (greyed out, hover to see why) – free inputs/outputs with signs are created there. Blueprints made by the planner are never used as part templates; if a template has items in its inventory, save a blueprint with the empty building in the game.</li>
   <li><b>Blueprint style:</b> <b>Simple</b> – functional on one level, rows side by side; <b>Floors</b> – one floor per production level, stacked, with conveyor lifts in between (compact footprint; conveyor lifts reach up to 48 m in game). Planner blueprints are functional: connected and working, but not a pretty build design.</li>
   <li><b>Plan board:</b> the flow plan as a wall of signs in the <b>Simple</b> style (rows of 4 m signs) or <b>Optimized</b> (cards with large images and digit displays). For “Optimized” the app needs one matching sign from one of your own blueprints in the current game format.</li>
+  <li><b>Build in the sandbox:</b> puts the plan as machine rows on the drawing board of the <a href="#baukasten">sandbox</a>, so you can keep arranging it from above.</li>
+  <li><b>Unlock &amp; description:</b> the right side shows which tier (milestone) the plan needs and which alternate recipes or M.A.M. research. The blueprint dialog prepares a <b>description</b> from it (goal, unlock, supply, result, machines, power) that appears with the blueprint in the game – editable before saving.</li>
 </ul>
 <h3 id="planer-rechenweg">Calculation and alternate recipes</h3>
 <p>On the left under <b>Calculation</b>: <b>Simple</b> (one recipe per item, as before), <b>Optimal</b> (calculates the whole factory at once with as few raw resources as possible – scarce ores count more; loops such as recycled plastic and byproducts balance out) or <b>Maximum from “Available”</b> (as much of the goals as possible from the supplies). For Optimal and Maximum, <b>“Alternate recipes …”</b> sets which alternates the planner may use – ideally the ones you have unlocked in the game.</p>
@@ -314,6 +318,28 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li>Click a template: end products, supply and machines; <b>View in 3D</b>, <b>Copy into the game</b> (into a save) or <b>Use as target</b> (the end products become targets in the planner).</li>
   <li><b>Sort into archive</b> files all templates under “10 Master Class” by topic, with the tier in the name.</li>
   <li><b>Save package / Load package</b>: save all templates as one file (<code>.bsmc</code>) and load it again on another computer.</li>
+</ul>
+<h2 class="sec" id="baukasten">Sandbox (beta) – plan a factory from above</h2>
+<p>In the <b>Sandbox</b> tab you put a factory together on a <b>drawing board</b> from a bird's-eye view – with the game models seen from above (after “Fetch models from the game”). Everything is on one level, belts may cross. You save the result as a blueprint for the game.</p>
+<ul>
+  <li><b>Placing buildings:</b> drag a building from the left – or (tab <b>Templates</b>) a one-level Master Class factory – onto the board; the mouse wheel rotates while dragging. Parts snap precisely to the ports of other parts. Clicking a part opens a panel next to it with recipe, clock speed, colour, rotate, duplicate and delete.</li>
+  <li><b>Connecting:</b> with the <b>Connect</b> tool click an output (orange) and an input (blue, turquoise = pipe) – the route is laid automatically. Clicks into empty space in between set your own waypoints (<kbd>Backspace</kbd> removes the last one). <b>Automatic</b> connects matching free ports. Clicking a belt shows amount and tier: the app picks the Mk tier from the amount (at most the tier from the toolbar), or you set it by hand.</li>
+  <li><b>Calculating:</b> once recipes are set, the sandbox calculates the amount per minute on every belt; splitters distribute by demand. <b>Flow</b> lets the items run. Red ports or belts show problems – too little, wrong item, belt too small, no free route.</li>
+  <li><b>Selecting:</b> Shift + drag, <b>Rectangle</b> or <b>Pen</b> mark several parts including their belts – move, duplicate (<kbd>Ctrl</kbd>+<kbd>D</kbd>), rotate (<kbd>R</kbd>) or delete (<kbd>Del</kbd>). <b>Paint</b> colours parts and belts with the colour slots from your save.</li>
+  <li><b>Splitters:</b> in a splitter's panel you switch its type – normal, smart or programmable – and set the <b>sort rules</b> per output (left, centre, right in the direction of travel: an item, Any, None or Overflow). The rules are shown as small symbols at the splitter and are written into the blueprint.</li>
+  <li><b>Goal and to-do:</b> choose an end product and amount on the right – the list shows the machines needed per stage, ticks off what is already placed and puts missing machines down as a row with “+”. <b>Build as rows</b> builds the whole goal. From the planner use <b>Build in the sandbox</b>.</li>
+  <li><b>Building as rows:</b> one machine row per stage with distributors and collectors; splitters and mergers face the feeding belt or the consumer. Outputs without a consumer end in a smart splitter: straight on into a storage container, the overflow into the AWESOME Sink. For very large factories (over 250 machines) the app asks first; the belts are then laid step by step.</li>
+  <li><b>Summary:</b> under “Overview” you find supply, result/surplus, power, machines, the building costs and the unlock needed (tier, alternate recipes, M.A.M.). <b>Copy as text</b> puts it on the clipboard.</li>
+  <li><b>Saving:</b> <b>Save blueprint …</b> builds the blueprint with foundations and one power pole per machine. The summary goes in as the <b>description</b> and can be edited beforehand. For every part the app needs a template from one of your own blueprints in the current game format – if it is missing, the type is greyed out in the panel.</li>
+</ul>
+<p class="muted">Beta: routes and spacing are functional but not always as pretty as built by hand – check the blueprint in the game.</p>
+<h2 class="sec" id="profile">Profiles &amp; ideas</h2>
+<p>The <b>Profile: …</b> button at the top right opens <b>Profiles &amp; ideas</b>. A <b>profile</b> is your workspace: the planner (all factories) and the sandbox drawing board are saved continuously in the active profile. If there is none yet, one is created the first time you plan.</p>
+<ul>
+  <li><b>New profile:</b> either with your current state or empty. <b>Switch to this profile</b> saves the current state and loads the selected profile.</li>
+  <li><b>Ideas:</b> <b>Save current state as idea …</b> (in the sandbox also <b>Save idea …</b>) keeps planner, drawing board and optionally a selection of blueprints under a name, with a note.</li>
+  <li><b>Loading:</b> tick ideas and <b>Load selected</b> – replace the planner or add the factories. The app brings the ideas' blueprints from the archive into the game; other active blueprints stay. Before that it saves your state as an idea “Saved automatically” (the last three are kept).</li>
+  <li>Profiles are stored in <code>userdata\profile</code>; deleted ones go to the app's recycle bin. <b>? Guide</b> in the dialog explains everything step by step.</li>
 </ul>
 <h2 class="sec" id="sprachen">Languages</h2>
 <p>Under <b>Settings → Language</b>: Deutsch, English, Français, 日本語 – the app then reloads; this help exists in all four languages too. The names of your blueprints and folders stay as they are. The names of the archive folders, and therefore of the <a href="#spiel-kategorien">categories in the game</a>, come from the archive structure (Settings → “Edit structure …”) in the language chosen there; the app remembers the category icons per group number, so they are kept when the language changes.</p>
@@ -438,6 +464,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>Prefixes</b>: words such as your player or world name that should be dropped from the front in the name suggestion (separated by commas).</li>
   <li><b>Updates</b>: check automatically on start (on/off), update source on GitHub (<code>owner/repository</code>, empty = app default) and “Check for updates now” – see <a href="#updates">Updates</a>.</li>
   <li><b>View when opening a blueprint</b>: <i>Last used view</i> (default – the app remembers whether you last had 2D or 3D), <i>Always 2D (top view)</i> or <i>Always 3D</i>. Switching with the 2D/3D buttons or the keys <kbd>2</kbd>/<kbd>3</kbd> still works at any time.</li>
+  <li><b>Server log …</b>: shows what the server outputs (formerly in its own console window) – updated continuously, with “Copy”. It is also written to <code>userdata\server.log</code> (the previous run in <code>server.alt.log</code>). If the server ever fails to start, <code>start.bat</code> shows the end of the log.</li>
 </ul>
 
 <h2 class="sec" id="grenzen">Limitations &amp; notes</h2>
@@ -652,7 +679,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>Models are rotated/offset in the app</td><td>The FModel mesh format must be <code>glTF 2.0 (binary)</code>; run the tool again.</td></tr>
   <tr><td>Gray boxes instead of models</td><td>A model is missing for this part (see the tool's message) – or it is a belt/pipeline/railway/lift (intentionally without a model).</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.6.0</span> · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.7.0</span> · © 2026 ODINnuss · <a href="#zur-app">Terms of use</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

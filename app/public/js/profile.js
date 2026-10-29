@@ -2,6 +2,7 @@
 // Baukasten-Reißbrett werden laufend darin gespeichert. Je Profil gibt es Ideen – benannte Planungsstände mit Planer,
 // Reißbrett und einer Auswahl von Blaupausen –, die einzeln oder zusammen geladen werden. Gemeinsam für Haupt-App
 // (Knopf oben) und Baukasten; beide liegen im Browser-Speicher derselben App. Nach Laden/Wechseln lädt die Seite neu.
+import { t } from './i18n.js';
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const datum = (t) => new Date(t).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 async function api(url, body) {
@@ -127,17 +128,17 @@ export async function profileOeffnen({ neueIdee = false } = {}) {
     d.querySelector('#pf-tour').onclick = () => einfuehrung(d, true);
     d.querySelectorAll('[data-prof]').forEach((b) => (b.onclick = () => { gewaehlt = b.dataset.prof; uebersicht(); }));
     d.querySelector('#pf-neuprof').onclick = async () => {
-      const n = prompt('Name für das neue Profil:', ''); if (!n || !n.trim()) return;
-      const mit = confirm('Mit deinem aktuellen Stand (Planer und Reißbrett) beginnen?\n\nOK = aktuellen Stand mitnehmen · Abbrechen = leer beginnen\n(Der bisherige Stand bleibt im bisherigen Profil gespeichert.)');
+      const n = prompt(t('Name für das neue Profil:'), ''); if (!n || !n.trim()) return;
+      const mit = confirm(t('Mit deinem aktuellen Stand (Planer und Reißbrett) beginnen?\n\nOK = aktuellen Stand mitnehmen · Abbrechen = leer beginnen\n(Der bisherige Stand bleibt im bisherigen Profil gespeichert.)'));
       try { await sichern(true); const r = await api('/api/profile/anlegen', { name: n.trim(), arbeitsstand: mit ? aktuellerStand() : null }); if (!mit) { standSetzen({ planer: null, baukasten: null }); d.close(); location.reload(); return; } gewaehlt = r.id; letzter = null; uebersicht(); } catch (e) { alert(e.message); }
     };
     if (!P) return;
     d.querySelector('#pf-wechseln')?.addEventListener('click', async () => {
       try { await sichern(true); const r = await api('/api/profile/aktivieren', { id: P.id }); standSetzen(r.arbeitsstand || {}); letzter = JSON.stringify(aktuellerStand()); d.close(); location.reload(); } catch (e) { alert(e.message); }
     });
-    d.querySelector('#pf-pumb').onclick = async () => { const n = prompt('Neuer Name für das Profil:', P.name); if (n && n.trim()) { try { await api('/api/profile/umbenennen', { id: P.id, name: n.trim() }); uebersicht(); } catch (e) { alert(e.message); } } };
+    d.querySelector('#pf-pumb').onclick = async () => { const n = prompt(t('Neuer Name für das Profil:'), P.name); if (n && n.trim()) { try { await api('/api/profile/umbenennen', { id: P.id, name: n.trim() }); uebersicht(); } catch (e) { alert(e.message); } } };
     d.querySelector('#pf-pweg').onclick = async () => {
-      if (!confirm(`Profil „${P.name}“ mit allen Ideen löschen?\nEs kommt in den Papierkorb der App (userdata\\papierkorb\\profile).${P.aktiv ? '\nDein aktueller Stand bleibt im Planer und Reißbrett; beim nächsten Planen entsteht wieder ein Profil.' : ''}`)) return;
+      if (!confirm(t(`Profil „${P.name}“ mit allen Ideen löschen?\nEs kommt in den Papierkorb der App (userdata\\papierkorb\\profile).${P.aktiv ? '\nDein aktueller Stand bleibt im Planer und Reißbrett; beim nächsten Planen entsteht wieder ein Profil.' : ''}`))) return;
       try { await api('/api/profile/loeschen', { id: P.id }); if (P.aktiv) { aktivName = ''; beschriften(); } gewaehlt = null; uebersicht(); } catch (e) { alert(e.message); }
     };
     d.querySelector('#pf-neuidee').onclick = () => ideeBearbeiten(P, null);
@@ -150,8 +151,8 @@ export async function profileOeffnen({ neueIdee = false } = {}) {
         const i = P.ideen.find((x) => x.id === k.dataset.idee);
         try {
           if (b.dataset.akt === 'ueber') return ideeBearbeiten(P, await api(`/api/profile/eintrag?profil=${encodeURIComponent(P.id)}&idee=${encodeURIComponent(i.id)}`));
-          if (b.dataset.akt === 'umb') { const n = prompt('Neuer Name für die Idee:', i.name); if (n && n.trim()) { await api('/api/profile/idee/umbenennen', { profil: P.id, idee: i.id, name: n.trim() }); uebersicht(); } return; }
-          if (b.dataset.akt === 'weg') { if (confirm(`Idee „${i.name}“ löschen? (Papierkorb der App)`)) { await api('/api/profile/idee/loeschen', { profil: P.id, idee: i.id }); uebersicht(); } }
+          if (b.dataset.akt === 'umb') { const n = prompt(t('Neuer Name für die Idee:'), i.name); if (n && n.trim()) { await api('/api/profile/idee/umbenennen', { profil: P.id, idee: i.id, name: n.trim() }); uebersicht(); } return; }
+          if (b.dataset.akt === 'weg') { if (confirm(t(`Idee „${i.name}“ löschen? (Papierkorb der App)`))) { await api('/api/profile/idee/loeschen', { profil: P.id, idee: i.id }); uebersicht(); } }
         } catch (err) { alert(err.message); }
       });
     });
@@ -194,7 +195,7 @@ export async function profileOeffnen({ neueIdee = false } = {}) {
       try {
         await api('/api/profile/idee', { profil: P.id, idee: alt?.id, name, notiz: d.querySelector('#pf-notiz').value, planer: d.querySelector('#pf-planer').checked ? st.planer : null, baukasten: d.querySelector('#pf-bk').checked ? st.baukasten : null, blaupausen: auswahl });
         gewaehlt = P.id; uebersicht();
-      } catch (err) { alert('Speichern fehlgeschlagen: ' + err.message); }
+      } catch (err) { alert(t('Speichern fehlgeschlagen:') + ' ' + err.message); }
     };
     d.querySelector('#pf-name').focus();
   };
@@ -235,7 +236,7 @@ export async function profileOeffnen({ neueIdee = false } = {}) {
           <p class="muted">${planer || brett ? 'Planer/Reißbrett sind gesetzt – die Seite lädt neu, sobald du schließt.' : ''}</p></div>
           <div class="pf-fuss"><button class="primaer" id="pf-fertig">Schließen</button></div></div>`;
         d.querySelector('#pf-fertig').onclick = () => { d.close(); if (planer || brett) location.reload(); };
-      } catch (err) { alert('Laden fehlgeschlagen: ' + err.message); knopf.disabled = false; knopf.textContent = 'Laden'; }
+      } catch (err) { alert(t('Laden fehlgeschlagen:') + ' ' + err.message); knopf.disabled = false; knopf.textContent = 'Laden'; }
     };
   };
 
