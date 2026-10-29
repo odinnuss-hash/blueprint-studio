@@ -35,9 +35,12 @@ echo done> "userdata\.setup-done"
 
 rem ---------- 5. Starten ----------
 :launch
-rem Server minimiert starten; er oeffnet das App-Fenster selbst und beendet sich,
-rem sobald das Fenster geschlossen wird.
-start "Blueprint Studio (Server)" /min "%NODE_EXE%" "%~dp0app\server.mjs" --open
+rem Server ohne eigenes Fenster starten; er oeffnet das App-Fenster selbst und beendet sich,
+rem sobald das Fenster geschlossen wird. Ausgaben: in der App unter Einstellungen - Server-Protokoll
+rem bzw. in userdata\server.log.
+echo  Blueprint Studio startet ...
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0app\start-server.ps1" -Node "%NODE_EXE%" -Root "%~dp0."
+if errorlevel 1 goto startfehler
 exit /b 0
 
 rem ---------- Unterprogramme ----------
@@ -75,6 +78,19 @@ echo  Bitte die aktuelle LTS-Version von https://nodejs.org installieren.
 echo.
 pause
 exit /b 1
+
+:startfehler
+echo.
+echo  Der Server von Blueprint Studio hat nicht geantwortet. Letzte Meldungen:
+echo.
+if exist "userdata\server.log" powershell -NoProfile -Command "Get-Content -Tail 25 'userdata\server.log'"
+echo.
+echo  Vollstaendiges Protokoll: userdata\server.log
+echo.
+echo  Blueprint Studio wird jetzt wie frueher mit eigenem Serverfenster gestartet ...
+start "Blueprint Studio (Server)" /min "%NODE_EXE%" "%~dp0app\server.mjs" --open
+timeout /t 8 >nul
+exit /b 0
 
 :broken
 echo.

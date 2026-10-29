@@ -23,11 +23,13 @@
       <button type="button" role="tab" id="mode-karte" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M384 476.1L192 421.2l0-385.3L384 90.8l0 385.3zm32-1.2l0-386.5L543.1 37.5c15.8-6.3 32.9 5.3 32.9 22.3l0 334.8c0 9.8-6 18.6-15.1 22.3L416 474.8zM15.1 95.1L160 37.2l0 386.5L32.9 474.5C17.1 480.8 0 469.2 0 452.2L0 117.4c0-9.8 6-18.6 15.1-22.3z"/></svg> Karte</button>
       <button type="button" role="tab" id="mode-welt" class="seg" aria-selected="false" title="Ganze Karte in 3D mit Gelände und Spielstand">Welt</button>
       <button type="button" role="tab" id="mode-planer" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 576 512" fill="currentColor" aria-hidden="true"><path d="M208 80c0-26.5 21.5-48 48-48l64 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-8 0 0 40 152 0c30.9 0 56 25.1 56 56l0 32 8 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-64 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l8 0 0-32c0-4.4-3.6-8-8-8l-152 0 0 40 8 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-64 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l8 0 0-40-152 0c-4.4 0-8 3.6-8 8l0 32 8 0c26.5 0 48 21.5 48 48l0 64c0 26.5-21.5 48-48 48l-64 0c-26.5 0-48-21.5-48-48l0-64c0-26.5 21.5-48 48-48l8 0 0-32c0-30.9 25.1-56 56-56l152 0 0-40-8 0c-26.5 0-48-21.5-48-48l0-64z"/></svg> Planer</button>
+      <button type="button" role="tab" id="mode-baukasten" class="seg" aria-selected="false" title="Baukasten (Beta): Fabrik von oben auf dem Reißbrett zusammenstellen und als Blaupause speichern">Baukasten</button>
       <button type="button" role="tab" id="mode-hilfe" class="seg" aria-selected="false"><svg class="fa" width="14" height="14" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM169.8 165.3c7.9-22.3 29.1-37.3 52.8-37.3l58.3 0c34.9 0 63.1 28.3 63.1 63.1c0 22.6-12.1 43.5-31.7 54.8L280 264.4c-.2 13-10.9 23.6-24 23.6c-13.3 0-24-10.7-24-24l0-13.5c0-8.6 4.6-16.5 12.1-20.8l44.3-25.4c4.7-2.7 7.6-7.7 7.6-13.1c0-8.4-6.8-15.1-15.1-15.1l-58.3 0c-3.4 0-6.4 2.1-7.5 5.3l-.4 1.2c-4.4 12.5-18.2 19-30.6 14.6s-19-18.2-14.6-30.6l.4-1.2zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z"/></svg> Hilfe</button>
     </nav>
     <div class="actions">
       <button type="button" class="btn primary" id="btn-update" hidden title="Neue Version verfügbar">⬆ Update</button>
       <button type="button" class="btn" id="btn-tour" title="Einführung: die Funktionen dieses Bereichs Schritt für Schritt erklärt"><svg class="fa" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span class="btn-text"> Einführung</span></button>
+      <button type="button" class="btn" id="btn-profile" title="Profile: Planer, Baukasten und Blaupausen-Auswahl unter einem Namen speichern und wieder laden">Profile</button>
       <button type="button" class="btn" id="btn-settings" title="Einstellungen"><svg class="fa" width="14" height="14" viewBox="0 0 512 512" fill="currentColor" aria-hidden="true"><path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/></svg> Einstellungen</button>
       <a class="btn spenden" id="btn-spenden" href="#" target="_blank" rel="noopener" hidden title="Blueprint Studio ist kostenlos. Wer mag, kann die Weiterentwicklung mit einer freiwilligen Spende unterstützen."><svg class="fa" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.6-9.2C.9 8.4 3 4.5 6.8 4.5c2.1 0 3.5 1.1 4.2 2.3.7-1.2 2.1-2.3 4.2-2.3 3.8 0 5.9 3.9 4.4 7.3C19.5 16.4 12 21 12 21z"/></svg> Unterstützen</a>
     </div>
@@ -414,6 +416,7 @@
         <button type="button" class="btn" id="pl-auto" title="Eigene Anordnung verwerfen und Kästen wieder automatisch anordnen">Neu anordnen</button>
         <button type="button" class="btn" id="pl-tafel" title="Ablaufplan dieser Fabrik als Schild-Wand (Blaupause) zum Aufstellen an der Baustelle: Rohstoffe, Stufen, Maschinen, Ein- und Ausgänge">Plan-Tafel …</button>
         <button type="button" class="btn primary" id="pl-bp" title="Eine Fertigungsstufe als Blaupause bauen">Blaupause erstellen …</button>
+        <button type="button" class="btn" id="pl-baukasten" title="Den Plan im Baukasten (Beta) als Reihen auf einer Ebene aufbauen und dort weiter anordnen">Im Baukasten aufbauen</button>
         <span class="grow"></span>
         <span class="muted pl-tipp">Kästen ziehen = verschieben · Klick = Rezept wählen · ▣ = Blaupause dieser Stufe · Hintergrund ziehen / Mausrad = Ansicht</span>
       </div>
@@ -429,6 +432,9 @@
   </div>
 
   <!-- ===================== Hilfe ===================== -->
+  <div class="layout" id="view-baukasten" hidden>
+    <iframe id="baukasten-frame" title="Baukasten" src="about:blank"></iframe>
+  </div>
   <div class="layout" id="view-hilfe" hidden>
     <iframe id="hilfe-frame" title="Hilfe und Handbuch" src="about:blank"></iframe>
   </div>
@@ -597,6 +603,7 @@
     <div class="dlg-actions">
       <button type="button" class="btn" id="set-assistent">Einrichtungs-Assistent …</button>
       <button type="button" class="btn" id="set-pruefen" style="margin-right:auto">Voraussetzungen &amp; Verknüpfung …</button>
+      <button type="button" class="btn" id="set-protokoll" title="Ausgabe des Servers ansehen (früher im eigenen Serverfenster) – hilfreich bei Fehlern">Server-Protokoll …</button>
       <button type="button" class="btn" id="set-modelle" title="Bauteil-Daten, 3D-Modelle, Icons und Spieloptik-Texturen neu aus deiner Satisfactory-Installation holen (z. B. nach einem Spiel- oder App-Update)">Modelle aus dem Spiel holen …</button>
       <button type="button" class="btn" id="set-cancel">Abbrechen</button>
       <button type="button" class="btn primary" id="set-ok">Übernehmen</button>
@@ -606,5 +613,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <script type="module" src="js/main.js"></script>
+<script type="module">import { vorbereitungZeigen, protokollOeffnen } from './js/serverstatus.js'; vorbereitungZeigen(); document.getElementById('set-protokoll')?.addEventListener('click', protokollOeffnen);</script>
+<script type="module">import { profilKnopf, profileOeffnen } from './js/profile.js'; profilKnopf(document.getElementById('btn-profile'), { vonWo: 'app' }); window.bsIdeeSpeichern = () => profileOeffnen({ neueIdee: true }); const h = location.hash.slice(1); if (h) { history.replaceState(null, '', location.pathname); setTimeout(() => { if (h === 'baukasten-planer') window.app?.baukastenOeffnen?.(true); else document.getElementById('mode-' + h)?.click(); }, 600); }</script>
 <script type="module" src="js/industrial-library.js"></script><script type="module" src="js/industrial-map-toolbar.js"></script></body>
 </html>

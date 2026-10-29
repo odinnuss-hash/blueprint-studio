@@ -27,9 +27,11 @@ import { rechne as planRechnen, vorstufen } from './public/js/planer-rechner.js'
 import { rechneOptimal } from './public/js/planer-optimierer.js';
 import { buildLibrary, availability, buildObject, costDelta, makeHead, newInstance, templateFor, makeCfg, i32, replaceObjectProp } from './lib/vorlagen.mjs';
 import { loadKatalog } from './lib/katalog.mjs';
-import { readSavHeader, readSave } from './lib/sav.mjs';
+import { readSavHeader, readSave, inflateBody } from './lib/sav.mjs';
 import { uebertrageBereich, kopplungenVorschau } from './lib/karte-transfer.mjs';
 import { pruefeSpielstand, repariereSpielstand } from './lib/spielstand-pruefen.mjs';
+import { baukastenDaten, baueBaukasten, vorlageAuswerten, farbenLesen } from './lib/baukasten.mjs';
+import { Profile } from './lib/profile.mjs';
 import { vorraeteLesen } from './lib/vorraete.mjs';
 import { punkteLaden, punkteMitZustand } from './lib/kartenpunkte.mjs';
 import { produktionLesen, maschineInfo } from './lib/produktion.mjs';
@@ -54,7 +56,26 @@ const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
 const VERSION = '1.6.0';
 
-const log = (...a) => console.log(new Date().toLocaleTimeString('de-DE'), ...a);
+// Protokoll: Konsole (falls sichtbar), Ringpuffer für die App (Einstellungen → Server-Protokoll) und userdata/server.log
+// (bei jedem Start neu; der vorige Lauf bleibt als server.alt.log). Der Server läuft seit 1.7 ohne eigenes Fenster.
+const PROTOKOLL = [], PROTOKOLL_MAX = 3000;
+let protokollNr = 0, protokollDatei = null;
+try {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  const f = path.join(DATA_DIR, 'server.log');
+  if (fs.existsSync(f)) fs.renameSync(f, path.join(DATA_DIR, 'server.alt.log'));
+  protokollDatei = f;
+} catch { protokollDatei = null; }
+function protokoll(art, a) {
+  const text = a.map((x) => (x instanceof Error ? x.stack || x.message : typeof x === 'string' ? x : (() => { try { return JSON.stringify(x); } catch { return String(x); } })())).join(' ');
+  const z = { n: ++protokollNr, zeit: new Date().toLocaleTimeString('de-DE'), art, text };
+  PROTOKOLL.push(z); if (PROTOKOLL.length > PROTOKOLL_MAX) PROTOKOLL.shift();
+  if (protokollDatei) try { fs.appendFileSync(protokollDatei, `${z.zeit} ${art === 'fehler' ? '[Fehler] ' : ''}${text}\n`); } catch { /* egal */ }
+}
+const konsoleLog = console.log.bind(console), konsoleFehler = console.error.bind(console);
+console.error = (...a) => { protokoll('fehler', a); konsoleFehler(...a); };
+const log = (...a) => { protokoll('info', a); konsoleLog(new Date().toLocaleTimeString('de-DE'), ...a); };
+process.on('uncaughtException', (e) => { protokoll('fehler', ['Unerwarteter Fehler:', e]); konsoleFehler(e); });
 
 // ------------------------------------------------------------------ Einstellungen
 // Satisfactory wird beim ersten Start gesucht (Steam-Bibliotheken, Epic, übliche Ordner) – siehe findeSpielOrdner()
@@ -141,7 +162,7 @@ function getKatalog() {
 }
 
 // ------------------------------------------------------------------ Vorlagen (fuer neue/getauschte Bauteile)
-let lib = null, libPromise = null;
+let lib = null, libPromise = null, libStartTimer = 0;
 function getLib() {
   if (lib) return Promise.resolve(lib);
   if (!libPromise) {
@@ -530,6 +551,8 @@ async function leereOrdnerInPapierkorb(dirs, grenzen) {
 
 // ------------------------------------------------------------------ Ablage + Namensvorschlag
 const ablage = new Ablage({ bpRoot, sessionDir, indexDatei: path.join(DATA_DIR, 'ablage.json') });
+// Profile (globale Arbeitsbereiche mit Ideen: Planer, Baukasten, Blaupausen-Auswahl) – lib/profile.mjs
+const profile = new Profile({ dir: path.join(DATA_DIR, 'profile'), papierkorb: path.join(DATA_DIR, 'papierkorb', 'profile'), ablage, bpRoot, spielSitzungen: () => spielSitzungen() });
 
 /** Ablage-Ordnerstruktur ändern (Einstellungen): vorhandene Ordner werden passend umbenannt, Verweise nachgeführt */
 function strukturSpeichern(liste) {
@@ -1150,11 +1173,69 @@ async function planerSpeichern(body) {
   const text = r.kette
     ? r.bis ? `Blueprint Studio Planer: Teilfabrik bis ${r.bis} (${r.info.reihen} Reihen, ${r.info.maschinen} Maschinen)` : `Blueprint Studio Planer: ganze Kette (${r.info.reihen} Reihen, ${r.info.maschinen} Maschinen) → ${r.ergebnis.ziele.map((x) => `${z(x.menge)}/min ${nm(x.item)}`).join(', ')}. Zulieferung: ${Object.entries({ ...r.ergebnis.rohstoffe, ...r.ergebnis.fehlt, ...r.ergebnis.vorhanden }).map(([it, m]) => `${z(m)}/min ${nm(it)}`).join(', ')}`
     : `Blueprint Studio Planer: ${s.anzahl}× ${s.name}. Eingang ${s.zutaten.map((x) => `${z(x.proMin)}/min ${nm(x.item)}`).join(', ')} → Ausgang ${s.produkte.map((x) => `${z(x.proMin)}/min ${nm(x.item)}`).join(', ')}`;
-  const cfg = makeCfg(r.basis.cfg, `${text} · Plan #${planId}`);
+  const eigene = typeof body.beschreibung === 'string' ? body.beschreibung.replace(/\r/g, '').trim().slice(0, 1500) : '';
+  const cfg = makeCfg(r.basis.cfg, eigene ? `${eigene}\nPlan #${planId}` : `${text} · Plan #${planId}`);
   if (cfg) await fsp.writeFile(dst + 'cfg', cfg);
   bpCache.clear(); letzterPlan = null;
   log(`Planer-Blaupause: ${dst} (${r.info.objekte} Objekte)`);
   return { ok: true, name, session, info: r.info, planId };
+}
+
+// ------------------------------------------------------------------ Baukasten (Test): Reißbrett → Blaupause (lib/baukasten.mjs)
+// Baukasten: Master-Class-Vorlagen (eine Ebene) als Block, Farbplätze aus dem neuesten Spielstand
+const bkVorlagen = new Map(); // id → { name, bp, info, mtime }
+async function baukastenVorlage(id) {
+  const e = (await masterclass()).eintraege.find((x) => x.id === id); if (!e) return null;
+  const f = masterclassDatei(MC_DIR(), id); const st = await fsp.stat(f);
+  const alt = bkVorlagen.get(id); if (alt && alt.mtime === st.mtimeMs) return alt;
+  const bp = readBlueprint(await fsp.readFile(f));
+  const v = { id, name: e.name, bp, info: vorlageAuswerten(bp), mtime: st.mtimeMs, eintrag: e };
+  bkVorlagen.set(id, v);
+  return v;
+}
+async function baukastenVorlagen() {
+  const mc = await masterclass(), out = [];
+  for (const e of mc.eintraege || []) {
+    if (e.art !== 'Fabrik') continue;
+    try { const v = await baukastenVorlage(e.id); out.push({ id: e.id, name: e.name, mc: !!e.mc, ok: v.info.ok, grund: v.info.grund, box: v.info.box, boden: v.info.boden, ursprung: v.info.ursprung, maschinen: v.info.maschinen || e.maschinen, rezepte: v.info.rezepte || e.rezepte, ein: e.ein, aus: e.aus, stufe: e.stufe }); }
+    catch (err) { out.push({ id: e.id, name: e.name, ok: false, grund: 'nicht lesbar: ' + err.message }); }
+  }
+  return out;
+}
+async function baukastenFarben() {
+  const liste = await spielstaende(); if (!liste.length) return { slots: null };
+  const s = liste[0], datei = path.join(settings.saveDir, ...s.id.split('/'));
+  const cacheF = path.join(DATA_DIR, 'baukasten-farben.json');
+  const st = await fsp.stat(datei);
+  try { const c = JSON.parse(await fsp.readFile(cacheF, 'utf8')); if (c.id === s.id && c.mtime === st.mtimeMs) return c; } catch { /* neu */ }
+  const buf = await fsp.readFile(datei), h = readSavHeader(buf);
+  const slots = farbenLesen(inflateBody(buf, h.headerLength));
+  const c = { id: s.id, name: s.name, mtime: st.mtimeMs, slots };
+  await fsp.writeFile(cacheF, JSON.stringify(c));
+  return c;
+}
+
+async function baukastenSpeichern(body) {
+  const { session, name } = body;
+  if (!safeName(name)) throw Object.assign(new Error('Bitte einen gültigen Namen angeben (ohne \\ / : * ? " < > |).'), { status: 400 });
+  const l = await getLib(), k = getKatalog();
+  if (!k) throw Object.assign(new Error(katalogFehler || 'Spieldaten (Katalog) fehlen.'), { status: 422 });
+  if (!l.basis) throw Object.assign(new Error('Keine Basis-Blaupause gefunden (mindestens eine eigene Blaupause nötig).'), { status: 422 });
+  const dst = bpPath(session, name);
+  if (fs.existsSync(dst)) throw Object.assign(new Error(`„${name}“ gibt es in „${session}“ schon. Bitte einen anderen Namen wählen.`), { status: 409 });
+  const vorlagen = new Map();
+  for (const b of body.bloecke || []) if (!vorlagen.has(b.id)) vorlagen.set(b.id, await baukastenVorlage(b.id));
+  const r = baueBaukasten({ kat: k, lib: l, ver: l.basis.saveVersion, hasFlags: l.basis.hasFlags, teile: body.teile, verbindungen: body.verbindungen, strom: body.strom !== false, fundament: body.fundament, bloecke: body.bloecke, ladeVorlage: (id) => vorlagen.get(id) });
+  const datei = createBlueprint(l.basis, r.objs, r.kopf);
+  readBlueprint(datei); // Selbstprüfung
+  await fsp.mkdir(path.dirname(dst), { recursive: true });
+  await fsp.writeFile(dst, datei);
+  const eigene = typeof body.beschreibung === 'string' ? body.beschreibung.replace(/\r/g, '').trim().slice(0, 1500) : '';
+  const cfg = makeCfg(l.basis.cfg, eigene ? `${eigene}\n(Blueprint Studio Baukasten)` : `Blueprint Studio Baukasten: ${r.info.maschinen} Maschinen, ${r.info.baender} Bänder, ${r.info.rohre} Rohre${r.info.vorlagen ? `, ${r.info.vorlagen} Vorlage(n)` : ''}`);
+  if (cfg) await fsp.writeFile(dst + 'cfg', cfg);
+  bpCache.clear();
+  log(`Baukasten-Blaupause: ${dst} (${r.objs.length} Objekte)`);
+  return { ok: true, name, session, info: { ...r.info, objekte: r.objs.length } };
 }
 
 // ------------------------------------------------------------------ Pixel-Art aus einem Bild
@@ -1326,6 +1407,10 @@ const server = http.createServer(async (req, res) => {
       const mutating = req.method !== 'GET';
       if (mutating && req.headers['x-bs'] !== '1') return sendJson(res, 403, { fehler: 'Nicht erlaubt' });
       if (p === '/api/ping') return sendJson(res, 200, { app: 'blueprint-studio', version: VERSION, pid: process.pid });
+      // Startzustand für die Meldung „wird vorbereitet“ und das Server-Protokoll (Einstellungen)
+      if (p === '/api/status') { if (!lib && !libPromise) { clearTimeout(libStartTimer); setTimeout(() => getLib().catch(() => {}), 400); } }
+      if (p === '/api/status') return sendJson(res, 200, { katalog: katalog ? 'bereit' : katalogFehler ? 'fehler' : 'laedt', bibliothek: lib ? 'bereit' : libPromise ? 'baut' : 'offen', letzte: PROTOKOLL[PROTOKOLL.length - 1]?.text || '' });
+      if (p === '/api/protokoll') { const ab = +url.searchParams.get('ab') || 0; return sendJson(res, 200, { zeilen: PROTOKOLL.filter((z) => z.n > ab), datei: protokollDatei }); }
       if (p === '/api/neustart' && req.method === 'POST') {
         // nach einem Update: neuen Server mit dem aktuellen Programmcode starten, dieser beendet sich
         sendJson(res, 200, { ok: true });
@@ -1464,6 +1549,23 @@ const server = http.createServer(async (req, res) => {
       if (p === '/api/masterclass/kopieren' && req.method === 'POST') return sendJson(res, 200, await masterclassKopieren(await readJsonBody(req)));
       if (p === '/api/planer/herkunft') return sendJson(res, 200, await planerHerkunft(url.searchParams.get('id')));
       if (p === '/api/planer/vorschau' && req.method === 'POST') return sendJson(res, 200, await planerVorschau(await readJsonBody(req)));
+      if (p === '/api/profile') return sendJson(res, 200, profile.liste());
+      if (p === '/api/profile/eintrag') return sendJson(res, 200, profile.idee(url.searchParams.get('profil'), url.searchParams.get('idee')));
+      if (p === '/api/profile/blaupausen') return sendJson(res, 200, await profile.kandidaten());
+      if (p === '/api/profile/arbeitsstand' && req.method === 'POST') return sendJson(res, 200, profile.arbeitsstand(await readJsonBody(req)));
+      if (p === '/api/profile/anlegen' && req.method === 'POST') { const b = await readJsonBody(req); return sendJson(res, 200, profile.anlegen(b.name, b.arbeitsstand || null)); }
+      if (p === '/api/profile/aktivieren' && req.method === 'POST') return sendJson(res, 200, profile.aktivieren((await readJsonBody(req)).id));
+      if (p === '/api/profile/umbenennen' && req.method === 'POST') { const b = await readJsonBody(req); return sendJson(res, 200, profile.profilUmbenennen(b.id, b.name)); }
+      if (p === '/api/profile/loeschen' && req.method === 'POST') return sendJson(res, 200, profile.profilLoeschen((await readJsonBody(req)).id));
+      if (p === '/api/profile/idee' && req.method === 'POST') return sendJson(res, 200, profile.ideeSpeichern(await readJsonBody(req)));
+      if (p === '/api/profile/idee/umbenennen' && req.method === 'POST') { const b = await readJsonBody(req); return sendJson(res, 200, profile.ideeUmbenennen(b.profil, b.idee, b.name)); }
+      if (p === '/api/profile/idee/loeschen' && req.method === 'POST') { const b = await readJsonBody(req); return sendJson(res, 200, profile.ideeLoeschen(b.profil, b.idee)); }
+      if (p === '/api/profile/laden' && req.method === 'POST') { const b = await readJsonBody(req); const r = await profile.ideenLaden(b.profil, b.ideen); bpCache.clear(); letzterPlan = null; sitzCache = null; return sendJson(res, 200, r); }
+      if (p === '/api/baukasten/daten') { const k = getKatalog(); if (!k) throw Object.assign(new Error(katalogFehler || 'Spieldaten (Katalog) fehlen.'), { status: 422 }); return sendJson(res, 200, baukastenDaten(k, (f) => fs.existsSync(path.join(ROOT, 'app', 'public', 'icons', f)))); }
+      if (p === '/api/baukasten/vorlagen') return sendJson(res, 200, await baukastenVorlagen());
+      if (p === '/api/baukasten/vorlagen-da') { const l = await getLib(); if (!l.basis) return sendJson(res, 200, { da: null }); return sendJson(res, 200, { ver: l.basis.saveVersion, da: Object.keys(l.baugruppen?.[String(l.basis.saveVersion)] || {}) }); }
+      if (p === '/api/baukasten/farben') return sendJson(res, 200, await baukastenFarben());
+      if (p === '/api/baukasten/blaupause' && req.method === 'POST') return sendJson(res, 200, await baukastenSpeichern(await readJsonBody(req)));
       if (p === '/api/planer/blaupause' && req.method === 'POST') return sendJson(res, 200, await planerSpeichern(await readJsonBody(req)));
       if (p === '/api/pixelbild/vorschau' && req.method === 'POST') return sendJson(res, 200, await pixelVorschau(await readJsonBody(req)));
       if (p === '/api/planer/plantafel' && req.method === 'POST') return sendJson(res, 200, await plantafelSpeichern(await readJsonBody(req)));
@@ -1665,6 +1767,9 @@ await fsp.mkdir(DATA_DIR, { recursive: true });
 server.listen(PORT, HOST, () => {
   log(`Blueprint Studio ${VERSION} läuft auf ${url}`);
   log(`Blaupausen: ${bpRoot()}`);
-  setTimeout(() => { getKatalog(); getLib().catch(() => {}); }, 50);
+  // Katalog sofort; die Vorlagen-Bibliothek (rechnet einige Sekunden am Stück) erst, wenn das App-Fenster geladen ist –
+  // die App zeigt solange „wird vorbereitet“ (js/serverstatus.js)
+  setTimeout(() => getKatalog(), 50);
+  libStartTimer = setTimeout(() => getLib().catch(() => {}), 15000); // sonst beim ersten /api/status der App
   if (OPEN_WINDOW) openWindow(url);
 });

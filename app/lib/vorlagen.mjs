@@ -14,10 +14,10 @@ function lagerBelegt(d) {
   try { const w = wert(d, false, 'mInventoryStacks'); return !!w && w.includes('/Game/'); } catch { return d.includes('/Game/FactoryGame/Resource/'); }
 }
 
-const VERSION = 6; // 6: vom Planer erzeugte Blaupausen sind keine Vorlagen mehr
-const PLANER_AUSGABE = /Plan #[0-9a-f]{8}\b|^Blueprint Studio Planer:/;
+const VERSION = 7; // 6: vom Planer erzeugte Blaupausen sind keine Vorlagen mehr; 7: Baugruppen auch für Lager, Generatoren, intelligente Splitter
+const PLANER_AUSGABE = /Plan #[0-9a-f]{8}\b|^Blueprint Studio Planer:|Blueprint Studio Baukasten/; // auch Baukasten-Ausgaben sind keine Vorlagen
 // Bauteile mit Innenleben (Anschlüsse, Lager), die als ganze Baugruppe (Entität + Komponenten) gespeichert werden – für den Fabrikplaner
-const BAUGRUPPE = /^Build_(SmelterMk1|ConstructorMk1|AssemblerMk1|FoundryMk1|ManufacturerMk1|OilRefinery|Blender|Packager|HadronCollider|QuantumEncoder|Converter|ConveyorBeltMk\d|ConveyorLiftMk\d|ConveyorAttachmentSplitter|ConveyorAttachmentMerger|PowerPoleMk\d|PowerLine|Pipeline(MK2)?(_NoIndicator)?|PipelineJunction_Cross|PipelinePump(Mk2)?|PipeStorageTank|WaterPump|ResourceSink)_C$/;
+const BAUGRUPPE = /^Build_(SmelterMk1|ConstructorMk1|AssemblerMk1|FoundryMk1|ManufacturerMk1|OilRefinery|Blender|Packager|HadronCollider|QuantumEncoder|Converter|ConveyorBeltMk\d|ConveyorLiftMk\d|ConveyorAttachmentSplitter(Smart|Programmable)?|ConveyorAttachmentMerger(Priority)?|StorageContainerMk\d|IndustrialTank|CentralStorage|GeneratorCoal|GeneratorFuel|GeneratorNuclear|PowerStorageMk1|PowerPoleMk\d|PowerLine|Pipeline(MK2)?(_NoIndicator)?|PipelineJunction_Cross|PipelinePump(Mk2)?|PipeStorageTank|WaterPump|ResourceSink)_C$/;
 
 // ------------------------------------------------------------------ Bytes
 export const i32 = (v) => { const b = Buffer.alloc(4); b.writeInt32LE(v); return b; };

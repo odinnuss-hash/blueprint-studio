@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Baukasten – Blueprint Studio</title>
+<link rel="icon" href="favicon.ico">
+<style>
+:root { --bg:#14161a; --panel:#1b1e24; --panel2:#23272e; --line:#2f343c; --line2:#454c56; --text:#e8e5de; --muted:#a3a9b1; --accent:#f59a23; --ein:#4aa3ff; --aus:#f39b3c; --rohr:#36c6b3; --ok:#7fd49a; --err:#ff8a80; --brett:#1e2a36; --raster:#263545; --raster8:#33475c; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, 'Segoe UI', sans-serif; overflow: hidden; }
+.app { display: grid; grid-template-columns: 250px 1fr 320px; grid-template-rows: auto 1fr; height: 100vh; }
+button, select, input { font: inherit; color: var(--text); background: var(--panel2); border: 1px solid var(--line2); border-radius: 7px; padding: 6px 10px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.an { background: var(--accent); color: #1a1206; border-color: var(--accent); font-weight: 600; }
+button.primaer { background: var(--accent); color: #1a1206; border-color: var(--accent); font-weight: 600; }
+button:disabled { opacity: .45; cursor: default; }
+/* Werkzeugleiste in Gruppen wie in der Karten-Ansicht */
+.leiste { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; padding: 8px 14px 9px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.leiste .titel { display: flex; flex-direction: column; justify-content: center; padding-right: 12px; border-right: 1px solid var(--line); }
+.leiste .titel b { font-size: 15px; letter-spacing: .03em; }
+.leiste .titel small { color: var(--accent); font-weight: 700; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+.gruppe { display: flex; flex-direction: column; gap: 5px; padding-right: 12px; border-right: 1px solid var(--line); }
+.gruppe:last-child { border-right: 0; padding-right: 0; margin-left: auto; }
+.gruppe > span { font-size: 10px; font-weight: 700; line-height: 1; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.gruppe > div { display: flex; align-items: center; gap: 5px; min-height: 34px; }
+.gruppe button, .gruppe select, .gruppe .check { height: 34px; padding: 0 10px; font-size: 12px; white-space: nowrap; }
+.gruppe .check { display: inline-flex; align-items: center; gap: 5px; background: var(--panel2); border: 1px solid var(--line2); border-radius: 7px; color: var(--text); cursor: pointer; }
+.gruppe .verbund { display: inline-flex; }
+.gruppe .verbund button { border-radius: 0; margin-left: -1px; }
+.gruppe .verbund button:first-child { border-radius: 7px 0 0 7px; margin-left: 0; }
+.gruppe .verbund button:last-child { border-radius: 0 7px 7px 0; }
+.farbknopf { display: inline-flex; align-items: center; gap: 6px; }
+.farbknopf i, .fm i { display: inline-block; width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(255,255,255,.35); background: linear-gradient(135deg, var(--p, #888) 55%, var(--s, #555) 55%); }
+/* linke Leiste */
+aside { background: var(--panel); overflow: auto; border-right: 1px solid var(--line); }
+aside.rechts { border-right: 0; border-left: 1px solid var(--line); padding: 12px; }
+.reiter { display: flex; gap: 4px; padding: 10px 8px 4px; position: sticky; top: 0; background: var(--panel); z-index: 2; }
+.reiter button { flex: 1; padding: 6px; font-size: 12px; }
+.kopf { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; margin: 12px 12px 6px; }
+.palette { display: grid; gap: 4px; padding: 0 8px 6px; }
+.pal { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel2); cursor: grab; user-select: none; }
+.pal:hover { border-color: var(--accent); }
+.pal.aus { opacity: .5; cursor: not-allowed; }
+.pal img { width: 32px; height: 32px; object-fit: contain; flex: none; }
+.pal small { display: block; color: var(--muted); font-size: 11px; }
+.pal .platz { width: 32px; height: 32px; flex: none; border-radius: 6px; background: #2c323b; display: grid; place-items: center; font-size: 16px; }
+main { position: relative; overflow: hidden; background: var(--brett); }
+canvas { display: block; width: 100%; height: 100%; }
+.hinweis { position: absolute; left: 12px; bottom: 10px; padding: 4px 10px; border-radius: 999px; background: rgba(20,22,26,.85); color: var(--muted); font-size: 12px; pointer-events: none; }
+.tipp { position: absolute; pointer-events: none; padding: 4px 8px; background: rgba(15,17,20,.95); border: 1px solid var(--line2); border-radius: 6px; font-size: 12px; white-space: nowrap; display: none; z-index: 5; }
+/* Einstellungsfeld am Gebäude */
+.feld { position: absolute; z-index: 6; width: 250px; background: rgba(27,30,36,.97); border: 1px solid var(--line2); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.5); padding: 10px; display: none; }
+.feld h3 { margin: 0 0 6px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.feld h3 img { width: 22px; height: 22px; }
+.feld label { display: block; color: var(--muted); font-size: 11px; margin: 7px 0 3px; }
+.feld select, .feld input[type=number] { width: 100%; padding: 5px 7px; }
+.feld .reihe { display: flex; gap: 5px; margin-top: 9px; }
+.feld .reihe button { flex: 1; padding: 5px 4px; font-size: 12px; }
+.feld .takt { display: flex; gap: 5px; align-items: center; }
+.feld .takt input[type=range] { flex: 1; }
+.feld .takt input[type=number] { width: 70px; }
+.feld.breit { width: 290px; }
+.feld .regeln { display: grid; gap: 5px; }
+.feld .regel { display: grid; grid-template-columns: 46px 1fr; gap: 6px; align-items: start; }
+.feld .regel b { font-size: 11px; padding-top: 6px; color: var(--muted); }
+.feld .regel > div { display: grid; gap: 4px; }
+.feld .rz { display: flex; gap: 4px; } .feld .rz select { flex: 1; min-width: 0; }
+.feld .regel button { padding: 3px 7px; font-size: 11px; }
+.zf-extra { margin-top: 4px; font-size: 12px; }
+#d-beschreibung { width: 100%; box-sizing: border-box; font: 12px/1.4 system-ui, sans-serif; resize: vertical; }
+.farben { display: grid; grid-template-columns: repeat(9, 1fr); gap: 3px; }
+.fm { padding: 0; height: 22px; border-radius: 5px; display: grid; place-items: center; border: 1px solid var(--line2); background: var(--panel2); }
+.fm i { width: 100%; height: 100%; border: 0; border-radius: 4px; }
+.fm.an { outline: 2px solid var(--accent); outline-offset: 1px; }
+.fm.ohne { font-size: 11px; color: var(--muted); }
+.pop { position: absolute; z-index: 30; background: var(--panel); border: 1px solid var(--line2); border-radius: 10px; padding: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.5); width: 300px; display: none; }
+/* rechte Seite */
+.rechts h2 { font-size: 15px; margin: 0 0 4px; }
+.rechts .muted, .muted { color: var(--muted); }
+.rechts select { width: 100%; margin: 6px 0 10px; }
+.zeile { display: flex; align-items: center; gap: 6px; padding: 3px 0; border-bottom: 1px solid var(--line); }
+.zeile:last-child { border-bottom: 0; }
+.zeile img { width: 20px; height: 20px; object-fit: contain; }
+.zeile .w { margin-left: auto; font-variant-numeric: tabular-nums; text-align: right; }
+.ok { color: var(--ok); } .err { color: var(--err); }
+.box { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; margin: 10px 0; background: var(--panel2); }
+.box > b { display: block; margin-bottom: 4px; }
+.ziel { display: grid; grid-template-columns: 1fr 78px; gap: 6px; }
+.ziel input { width: 100%; padding: 6px 8px; }
+.todo .zeile { align-items: flex-start; padding: 5px 0; }
+.todo input[type=checkbox] { margin-top: 3px; accent-color: var(--ok); }
+.todo .t { flex: 1; min-width: 0; }
+.todo .t small { display: block; color: var(--muted); font-size: 11px; }
+.todo .t select { margin: 3px 0 0; padding: 2px 4px; font-size: 11px; width: 100%; }
+.todo .fertig .t > span { text-decoration: line-through; color: var(--muted); }
+.todo button { padding: 2px 7px; font-size: 11px; }
+.balken { height: 6px; background: #2c323b; border-radius: 3px; overflow: hidden; margin: 6px 0 2px; }
+.balken > div { height: 100%; background: var(--ok); }
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); max-width: 70vw; padding: 9px 16px; border-radius: 9px; background: #1f2a20; border: 1px solid #3d6b45; z-index: 40; display: none; }
+.toast.err { background: #2c1d1d; border-color: #7a3b3b; }
+dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line2); border-radius: 12px; width: min(420px, 92vw); }
+dialog::backdrop { background: rgba(0,0,0,.55); }
+dialog label { display: block; margin: 10px 0 4px; color: var(--muted); }
+dialog input[type=text], dialog select { width: 100%; }
+dialog .knoepfe { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+kbd { background: var(--panel2); border: 1px solid var(--line2); border-radius: 4px; padding: 0 4px; font-size: 11px; }
+::-webkit-scrollbar { width: 10px; height: 10px; } ::-webkit-scrollbar-thumb { background: #3a414b; border-radius: 6px; } ::-webkit-scrollbar-track { background: transparent; }
+
+/* Kachel-Auswahl wie im Planer (aus app.css) */
+:root { --text2: var(--muted); --btn: var(--panel2); --field: #1d2026; --font-title: system-ui, 'Segoe UI', sans-serif; }
+.tile { width: 34px; height: 34px; flex: none; border-radius: 5px; display: flex; align-items: center; justify-content: center; font: 700 13px var(--font-title); color: #15120d; overflow: hidden; position: relative; }
+.tile img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #1a1c21; }
+dialog.bw-dlg { width: min(1180px, 96vw); height: min(86vh, 900px); max-height: 86vh; }
+.bw { display: flex; flex-direction: column; height: 100%; }
+.bw-kopf { display: flex; align-items: center; gap: 14px; padding: 14px 18px 10px; }
+.bw-kopf h2 { margin: 0; font-size: 18px; white-space: nowrap; }
+.bw-suche { flex: 1; min-width: 120px; max-width: 420px; margin-left: auto; }
+.bw-zu { background: none; border: 0; color: var(--text2); font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+.bw-zu:hover { background: var(--btn); color: var(--text); }
+.bw-hinweis { margin: 0 18px 6px; }
+.bw-gruppen { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 18px 10px; border-bottom: 1px solid var(--line); }
+.bw-chip { background: var(--btn); border: 1px solid var(--line2); color: var(--text2); border-radius: 999px; padding: 4px 11px; font: inherit; font-size: 12.5px; cursor: pointer; }
+.bw-chip small { opacity: .6; margin-left: 3px; }
+.bw-chip.on { background: var(--accent, #f59a23); border-color: var(--accent, #f59a23); color: #15120d; font-weight: 600; }
+.bw-liste { flex: 1; overflow-y: auto; padding: 6px 18px 14px; scrollbar-width: thin; }
+.bw-g { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text2); margin: 14px 0 8px; font-weight: 600; }
+.bw-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.bw-karte { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 6px 8px; background: var(--field, #1d2026); border: 1px solid var(--line2); border-radius: 9px; color: var(--text); font: inherit; cursor: pointer; min-height: 116px; text-align: center; }
+.bw-karte:hover, .bw-karte:focus-visible { border-color: var(--accent, #f59a23); background: #262a31; outline: none; }
+.bw-karte.aktuell { border-color: var(--accent, #f59a23); box-shadow: 0 0 0 2px rgba(245,154,35,.35) inset; }
+.bw-karte.aus { opacity: .4; cursor: not-allowed; }
+.bw-karte .tile { width: 60px; height: 60px; font-size: 18px; }
+.tile.bw-item { background: #2a3a52; color: #cfe3ff; }
+.tile.bw-item.fluessig { background: #1f4a63; }
+.bw-name { font-size: 12.5px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.bw-info { font-size: 11px; color: var(--text2); line-height: 1.2; }
+.bw-marke { position: absolute; top: 5px; right: 5px; font-size: 10px; background: #3a2f1c; color: #f5c46a; border-radius: 4px; padding: 1px 5px; }
+.bw-nichts { padding: 30px; text-align: center; }
+.bw-fuss { display: flex; align-items: center; gap: 8px; padding: 10px 18px; border-top: 1px solid var(--line); }
+.bw-fuss .bw-zahl { margin-right: auto; font-size: 12px; }
+/* Knopf, der eine Bildauswahl öffnet */
+.bw-knopf { display: inline-flex; align-items: center; gap: 8px; background: var(--field, #1d2026); border: 1px solid var(--line2); border-radius: 7px; color: var(--text); font: inherit; padding: 4px 10px 4px 4px; cursor: pointer; min-height: 40px; text-align: left; }
+.bw-knopf:hover { border-color: var(--accent, #f59a23); }
+.bw-knopf .tile { width: 30px; height: 30px; font-size: 11px; }
+.bw-knopf .bw-k-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bw-knopf .bw-k-pfeil { color: var(--text2); font-size: 11px; }
+.pl-tile-knopf { background: none; border: 0; padding: 0; cursor: pointer; border-radius: 6px; }
+.pl-tile-knopf:hover .tile { outline: 2px solid var(--accent, #f59a23); }
+dialog.bw-dlg { padding: 0; }
+.bw { display: flex; flex-direction: column; height: 100%; }
+.bw .hint { color: var(--muted); font-size: 12px; }
+.bw-fuss button { font-size: 12px; }
+.ziel .bw-knopf { flex: 1; min-width: 0; }
+.planer-angebot { border-color: rgba(245,154,35,.5); }
+body.zieht, body.zieht * { cursor: grabbing !important; user-select: none; }
+/* in der App eingebettet: Titel und App-Gruppe übernimmt die Kopfzeile der App */
+body.eingebettet .leiste .titel, body.eingebettet #gruppe-app { display: none; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="leiste">
+    <div class="titel"><b>Baukasten</b><small>Beta</small></div>
+    <div class="gruppe" id="gruppe-app"><span>App</span><div><button id="b-app" title="Zurück zum Planer der App">← Planer</button><button id="b-profile" title="Profile und Ideen">Profile</button></div></div>
+    <div class="gruppe"><span>Werkzeug</span><div class="verbund">
+      <button id="w-waehlen" class="an" title="Auswählen und verschieben (V)">Auswählen</button>
+      <button id="w-verbinden" title="Ausgang anklicken, dann Eingang – Band/Rohr wird selbst verlegt (C)">Verbinden</button>
+      <button id="w-rechteck" title="Rechteck aufziehen: Teile und Bänder darin markieren – dann verschieben, duplizieren oder mit Entf entfernen (M). Umschalt = dazu">▭ Rechteck</button>
+      <button id="w-stift" title="Stift: Umriss frei zeichnen, alles darin wird markiert – dann verschieben, duplizieren oder mit Entf entfernen (L). Umschalt = dazu">✎ Stift</button>
+      <button id="w-faerben" title="Teile, Bänder und Rohre einfärben – anklicken oder Rahmen aufziehen (F)">Einfärben</button>
+    </div></div>
+    <div class="gruppe"><span>Farbe</span><div>
+      <button id="b-farbe" class="farbknopf" title="Farbmuster wählen (wie im Spiel)"><i></i><span>Slot 1</span></button>
+    </div></div>
+    <div class="gruppe"><span>Bearbeiten</span><div>
+      <button id="b-drehen" title="Gewähltes Teil um 90° drehen (R)">Drehen</button>
+      <button id="b-kopie" title="Gewähltes Teil daneben noch einmal setzen (Strg+D)">Duplizieren</button>
+      <button id="b-loeschen" title="Gewähltes Teil oder Verbindung löschen (Entf)">Löschen</button>
+      <button id="b-rueck" title="Rückgängig (Strg+Z)">↶</button>
+    </div></div>
+    <div class="gruppe"><span>Verbindungen</span><div>
+      <button id="b-auto" title="Passende Ausgänge mit freien Eingängen verbinden (gleiches Item)">Automatisch</button>
+      <select id="s-bandmax" title="Höchste Förderband-Stufe"><option value="1">Band Mk.1</option><option value="2">Band Mk.2</option><option value="3">Band Mk.3</option><option value="4">Band Mk.4</option><option value="5">Band Mk.5</option><option value="6" selected>Band Mk.6</option></select>
+      <label class="check" title="Items auf den Bändern laufen lassen"><input type="checkbox" id="c-fluss" checked> Fluss</label>
+    </div></div>
+    <div class="gruppe"><span>Ansicht</span><div>
+      <button id="b-einpassen" title="Alles ins Bild">Einpassen</button>
+      <button id="b-neu" title="Reißbrett leeren">Neu</button>
+    </div></div>
+    <div class="gruppe"><span>Blaupause</span><div>
+      <button id="b-idee" title="Aktuellen Stand (Reißbrett und Planer) als Idee im aktiven Profil speichern">Idee speichern …</button>
+      <button id="b-speichern" class="primaer" title="Reißbrett als Blaupause fürs Spiel speichern">Blaupause speichern …</button>
+    </div></div>
+  </div>
+  <aside>
+    <div class="reiter"><button id="r-gebaeude" class="an">Gebäude</button><button id="r-vorlagen">Vorlagen</button></div>
+    <div id="palette"></div>
+  </aside>
+  <main id="buehne">
+    <canvas id="brett"></canvas>
+    <div class="tipp" id="tipp"></div>
+    <div class="feld" id="feld"></div>
+    <div class="hinweis" id="hinweis">Gebäude links ins Reißbrett ziehen (Mausrad dreht dabei) · Mausrad = Zoom · leere Fläche ziehen = verschieben · Umschalt+Ziehen = mehrere auswählen</div>
+  </main>
+  <aside class="rechts" id="info"></aside>
+</div>
+<div class="pop" id="farbwahl"></div>
+<div class="toast" id="toast"></div>
+<dialog id="d-speichern">
+  <form method="dialog">
+    <h2 style="margin:0 0 6px;font-size:16px">Als Blaupause speichern</h2>
+    <div class="muted">Mit Fundament (8-m-Raster) und je Maschine einem Strommast. Bänder, Rohre, Farben und Vorlagen wie gezeichnet.</div>
+    <label for="d-sitzung">Spielstand (Blaupausen-Ordner)</label><select id="d-sitzung"></select>
+    <label for="d-name">Name</label><input type="text" id="d-name" value="Baukasten_1" spellcheck="false">
+    <label style="color:var(--text)"><input type="checkbox" id="d-strom" checked> Strom verlegen</label>
+    <label for="d-beschreibung">Beschreibung (erscheint im Spiel bei der Blaupause)</label><textarea id="d-beschreibung" rows="7" maxlength="1500" spellcheck="false"></textarea>
+    <div class="knoepfe"><button value="nein" type="button" id="d-abbrechen">Abbrechen</button><button value="ja" class="primaer" id="d-ok">Speichern</button></div>
+  </form>
+</dialog>
+<script type="module" src="js/baukasten.js"></script>
+</body>
+</html>

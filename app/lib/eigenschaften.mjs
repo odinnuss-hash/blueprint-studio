@@ -196,3 +196,50 @@ export function setzeDraehte(data, pfade, level = 'Persistent_Level') {
   const z = zerlege(d, false);
   return Buffer.concat([d.subarray(0, z.propsStart), prop, d.subarray(z.propsStart)]);
 }
+
+/**
+ * Farbmuster setzen (mCustomizationData.SwatchDesc), z. B. „SwatchDesc_Slot3“. Eine eigene Farbe (OverrideColorData) entfällt dabei.
+ * Fehlt die Struktur, wird sie vor „None“ angelegt.
+ */
+export function setzeFarbe(data, swatch) {
+  if (!/^SwatchDesc_[A-Za-z0-9_]+$/.test(swatch || '')) return data;
+  const z = zerlege(data, true);
+  const sw = objectProp('SwatchDesc', '', `/Game/FactoryGame/Buildable/-Shared/Customization/Swatches/${swatch}.${swatch}_C`);
+  const p = z.props.find((x) => x.name === 'mCustomizationData');
+  if (p) {
+    const sub = propListe(data, p.valStart);
+    const teile = [sw];
+    for (const q of sub.props) if (q.name !== 'SwatchDesc' && q.name !== 'OverrideColorData') teile.push(data.subarray(q.start, q.end));
+    teile.push(data.subarray(sub.noneStart, p.end));
+    const inner = Buffer.concat(teile);
+    const kopf = Buffer.from(data.subarray(p.start, p.valStart)); kopf.writeInt32LE(inner.length, p.sizePos - p.start);
+    return Buffer.concat([data.subarray(0, p.start), kopf, inner, data.subarray(p.end)]);
+  }
+  const inner = Buffer.concat([sw, fstr('None')]);
+  const typ = Buffer.concat([fstr('StructProperty'), i32(1), fstr('FactoryCustomizationData'), i32(1), fstr('/Script/FactoryGame'), i32(0)]);
+  const prop = Buffer.concat([fstr('mCustomizationData'), typ, i32(inner.length), Buffer.from([0]), inner]);
+  return Buffer.concat([data.subarray(0, z.noneStart), prop, data.subarray(z.noneStart)]);
+}
+
+/** Sortierregeln eines intelligenten/programmierbaren Splitters setzen: regeln = [{ pfad, index }] (index 0 = Mitte/Output1,
+ *  1 = rechts/Output2, 2 = links/Output3). Ersetzt mSortRules oder fügt sie als erste Eigenschaft ein. */
+export function setzeSortierRegeln(data, regeln) {
+  const intProp = (name, v) => Buffer.concat([fstr(name), fstr('IntProperty'), i32(0), i32(4), Buffer.from([0]), i32(v)]);
+  const elemente = regeln.map((r) => Buffer.concat([objectProp('ItemClass', '', r.pfad), intProp('OutputIndex', r.index), fstr('None')]));
+  const wert = Buffer.concat([i32(elemente.length), ...elemente]);
+  const typ = Buffer.concat([fstr('ArrayProperty'), i32(1), fstr('StructProperty'), i32(1), fstr('SplitterSortRule'), i32(1), fstr('/Script/FactoryGame'), i32(0)]);
+  const prop = Buffer.concat([fstr('mSortRules'), typ, i32(wert.length), Buffer.from([0]), wert]);
+  const z = zerlege(data, true), p = z.props.find((x) => x.name === 'mSortRules');
+  if (p) return Buffer.concat([data.subarray(0, p.start), prop, data.subarray(p.end)]);
+  return Buffer.concat([data.subarray(0, z.propsStart), prop, data.subarray(z.propsStart)]);
+}
+/** Sortierregeln lesen: [{ item (Klassenkürzel), index }] */
+export function sortierRegeln(data) {
+  const z = zerlege(data, true), p = z.props.find((x) => x.name === 'mSortRules'); if (!p) return null;
+  const n = data.readInt32LE(p.valStart); let q = p.valStart + 4; const out = [];
+  for (let k = 0; k < n; k++) {
+    const l = propListe(data, q), t = data.subarray(q, l.noneEnd).toString('latin1'), m = t.match(/\.([A-Za-z0-9_]+)\x00/), ix = l.props.find((x) => x.name === 'OutputIndex');
+    out.push({ item: m?.[1] || null, index: ix ? data.readInt32LE(ix.valStart) : 0 }); q = l.noneEnd;
+  }
+  return out;
+}

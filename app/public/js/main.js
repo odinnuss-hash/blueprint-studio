@@ -845,7 +845,7 @@ class App {
     this.area = m;
     document.body.dataset.bereich = m; // Planer, Welt, Karte: Blaupausen-Knöpfe der Kopfzeile ausgeblendet (app.css)
     this.tour?.bereich(m);
-    for (const v of ['editor', 'katalog', 'ordnen', 'karte', 'welt', 'planer', 'hilfe']) {
+    for (const v of ['editor', 'katalog', 'ordnen', 'karte', 'welt', 'planer', 'baukasten', 'hilfe']) {
       $('view-' + v).hidden = v !== m;
       $('mode-' + v).classList.toggle('on', v === m); $('mode-' + v).setAttribute('aria-selected', v === m);
     }
@@ -855,6 +855,7 @@ class App {
     if (m === 'welt') this.weltZeigen();
     if (m === 'planer') this.planer.show();
     if (m === 'hilfe' && $('hilfe-frame').src === 'about:blank') $('hilfe-frame').src = this.hilfeDatei();
+    if (m === 'baukasten' && $('baukasten-frame').getAttribute('src') === 'about:blank') $('baukasten-frame').src = 'baukasten.html?eingebettet=1';
     if (m === 'editor') requestAnimationFrame(() => this.render());
   }
   // ------------------------------------------------------------ Welt-Ansicht (3D mit Gelände)
@@ -1130,6 +1131,11 @@ class App {
     el.innerHTML = `<span>Position</span><b>${Math.round(w.eye[0] / 100)} / ${Math.round(w.eye[1] / 100)} m</b><span>Höhe</span><b>${z} m (${z - b} m über Grund)</b>`
       + `<span>Gelände-Kacheln</span><b>${w.zahlKacheln || 0}${w.laden.size ? ` (+${w.laden.size} laden)` : ''}</b>${w.objekte ? `<span>Bauteile</span><b>${w.objekte.meta.anzahl.toLocaleString('de-DE')}</b>` : ''}`
       + (w.leistung && w.zellenStatus ? `<span>Leistungsmodus</span><b>${w.zellenStatus.gez} von ${w.zellenStatus.alle} Zellen im Bild, ${w.zellenStatus.nah} nah, ${w.zellenStatus.mittel || 0} vereinfacht</b>` : '');
+  }
+  /** Baukasten-Reiter öffnen; mitPlan: den aktuellen Planer-Plan dort als Reihen aufbauen (Übergabe liegt im Browser-Speicher) */
+  baukastenOeffnen(mitPlan = false) {
+    this.setMode('baukasten');
+    if (mitPlan) $('baukasten-frame').src = 'baukasten.html?eingebettet=1&planer=1&t=' + Date.now();
   }
   showHelp(anker) { this.setMode('hilfe'); $('hilfe-frame').src = this.hilfeDatei() + (anker ? '#' + anker : ''); }
   hilfeDatei() { const l = this.cfg?.sprache; return l && l !== 'de' && this.cfg.hilfeSprachen?.includes(l) ? `hilfe.${l}.html` : 'hilfe.html'; }
@@ -1473,6 +1479,7 @@ class App {
     $('mode-welt').addEventListener('click', () => this.setMode('welt'));
     $('mode-planer').addEventListener('click', () => this.setMode('planer'));
     $('mode-hilfe').addEventListener('click', () => this.setMode('hilfe'));
+    $('mode-baukasten').addEventListener('click', () => this.setMode('baukasten'));
     $('st-version').addEventListener('click', (e) => { e.preventDefault(); this.showHelp('zur-app'); });
     $('o-help').addEventListener('click', (e) => { e.preventDefault(); this.showHelp('schema'); });
     $('v2d').addEventListener('click', () => this.setView('2d'));

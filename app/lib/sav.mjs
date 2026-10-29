@@ -66,7 +66,7 @@ export function readSavHeader(buf) {
   return h;
 }
 
-function inflateBody(buf, start) {
+export function inflateBody(buf, start) {
   const parts = [];
   let p = start;
   while (p < buf.length) {

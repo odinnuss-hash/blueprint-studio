@@ -11,7 +11,7 @@
 // Alles auf 8×1-Fundamenten (Oberkante z = 100), Schilder an Ein- und Ausgängen.
 
 import { i32, fstr, makeHead, templateFor } from './vorlagen.mjs';
-import { setzeVerweis, entferne, baueSpline, setzeSchildTexte, setzeDraehte, zerlege, propListe } from './eigenschaften.mjs';
+import { setzeVerweis, entferne, baueSpline, setzeSchildTexte, setzeDraehte, zerlege, propListe, setzeFarbe, setzeSortierRegeln } from './eigenschaften.mjs';
 
 // Anschlüsse der Fertigungsgebäude, lokal (cm) bei Drehung 0 wie im Spiel; `yaw` = Drehung in der Reihe, damit alle
 // Eingänge auf −Y und alle Ausgänge auf +Y liegen. box = [x0, x1, y0, y1] nach Drehung. art: b = Band, r = Rohr.
@@ -886,6 +886,11 @@ function baueObjekte({ kat, lib, ver, hasFlags, teile }) {
         data = baueSpline(data, [{ loc: [0, 0, 0], arrive: w, leave: T }, { loc: d, arrive: T, leave: w }]);
       } else data = baueSpline(data, [{ loc: [0, 0, 0], arrive: u, leave: h }, { loc: d, arrive: h, leave: u }]);
     }
+    if (t.swatch) data = setzeFarbe(data, t.swatch);
+    if (t.regeln) data = setzeSortierRegeln(data, t.regeln);
+    // Bänder/Förderlifte: Item-Liste hinter den Eigenschaften leeren (die Vorlage kann aus einer Blaupause mit vollen Bändern stammen,
+    // sonst liegen im Spiel z. B. Beeren darauf). Leer = int32 0 + Anzahl 0.
+    if (/^Build_Conveyor(Belt|Lift)/.test(t.tpl.typePath.split('.').pop())) { const z = zerlege(data, true); if (data.length - z.noneEnd !== 8) data = Buffer.concat([data.subarray(0, z.noneEnd), Buffer.alloc(8)]); }
     objs.push({ head: makeHead({ typePath: t.tpl.typePath, instance: t.inst, flags: t.tpl.flags, hasFlags, rot: t.spline ? [0, 0, 0, 1] : rot, pos, placed: t.tpl.placed }), data: Buffer.concat([i32(data.length), data]) });
     for (const k of t.tpl.komp) {
       let kd = ersetzeAlle(Buffer.from(k.data, 'base64'), alt, t.inst);
@@ -905,3 +910,6 @@ function baueObjekte({ kat, lib, ver, hasFlags, teile }) {
   }
   return objs;
 }
+
+// Für den Baukasten (lib/baukasten.mjs): Bausteine des Planers wiederverwenden
+export { umgebung, vorlagenPruefen, abschliessen, ROH, Z_BODEN, Z_BAND, BAND as BAND_KAPAZITAET, ROHR as ROHR_KAPAZITAET, ROHR_BOGEN, ROHR_MAX };

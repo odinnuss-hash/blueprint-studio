@@ -206,6 +206,7 @@ code { font-family: var(--font-mono); font-size: 12px; background: var(--field);
 .prot-row { display: flex; gap: 14px; align-items: center; padding: 6px 8px; background: var(--field); border-radius: 6px; }
 .prot-row .btn { margin-left: auto; min-height: 30px; }
 #hilfe-frame { flex: 1; border: 0; background: var(--bg); width: 100%; }
+#baukasten-frame { flex: 1; border: 0; background: var(--bg); width: 100%; display: block; }
 .banner { padding: 6px 12px; background: var(--accent-bg); color: var(--accent-text); border-bottom: 1px solid var(--accent); font-size: 13px; }
 
 .o-thumbs { display: flex; gap: 4px; }

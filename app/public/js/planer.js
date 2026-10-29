@@ -6,6 +6,7 @@ import { rechneOptimal } from './planer-optimierer.js';
 import { bildwahl, itemBild } from './bildwahl.js';
 import { tileHtml, fmt, ICONS, iconFile } from './katalog.js';
 import { eingabe, frage, auswahl } from './dialog.js';
+import { benoetigt, benoetigtText } from './freischaltung.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -152,6 +153,13 @@ export class PlanerUI {
     $('pl-fit').addEventListener('click', () => this.einpassen());
     document.querySelectorAll('[name=pl-ansicht]').forEach((r) => r.addEventListener('change', () => this.zeichneErgebnis()));
     $('pl-bp').addEventListener('click', () => this.stufeWaehlen());
+    // Baukasten (Test): Plan übergeben (gleicher Browser) und Reißbrett öffnen
+    $('pl-baukasten')?.addEventListener('click', () => {
+      const r = this.ergebnis || this.rechnen?.();
+      if (!this.plan.ziele?.some((z) => z.item && z.menge > 0)) { this.app.toast('Erst ein Ziel eingeben.', 'err'); return; }
+      try { localStorage.setItem('bs-baukasten-uebergabe', JSON.stringify({ zeit: Date.now(), name: this.welt?.fabriken?.[this.welt.aktiv]?.name || 'Planer', plan: { ziele: this.plan.ziele, vorhanden: this.plan.vorhanden, wahl: r?.wahl || this.plan.wahl, modus: this.plan.modus, alternativen: this.plan.alternativen, takt: this.plan.takt } })); } catch { /* egal */ }
+      if (this.app.baukastenOeffnen) this.app.baukastenOeffnen(true); else window.open('baukasten.html?planer=1', 'bs-baukasten');
+    });
     $('pl-tafel').addEventListener('click', () => this.plantafelDialog());
     $('pl-mc').addEventListener('click', () => this.masterclassWahl());
     // Master Class ist privat (eigene Sammlung): Knopf nur zeigen, wenn Vorlagen vorhanden sind
@@ -369,6 +377,7 @@ export class PlanerUI {
       ${Object.keys(r.ueberschuss).length ? `<div class="label">Nebenprodukte / Überschuss</div><ul class="pl-liste">${liste(r.ueberschuss)}</ul>` : ''}
       <div class="label">Maschinen</div><ul class="pl-liste">${Object.entries(maschinen).map(([g, n]) => `<li>${tileHtml(this.kat.gebaeude[g], g)}<span data-no-i18n>${esc(this.kat.gebaeude[g]?.name || g)}</span><b>${n}×</b></li>`).join('')}</ul>
       <p class="muted">Strombedarf ca. <b>${fmt(r.strom, 0)} MW</b></p>
+      ${(() => { const b = benoetigt(this.kat, r.schritte); return b.stufe || b.extra.length ? `<div class="label">Freischaltung</div><p class="pl-frei">${b.stufe ? `Braucht <b>Stufe ${b.stufe.stufe}</b>${b.stufe.name ? ` <span data-no-i18n>(${esc(b.stufe.name)})</span>` : ''}` : ''}${b.extra.length ? `<br><span class="muted">außerdem:</span> <span data-no-i18n>${b.extra.map((x) => esc(x.name)).join(', ')}</span>` : ''}</p>` : ''; })()}
       ${r.warnungen.map((w) => `<p class="err">${esc(w)}</p>`).join('')}`;
     $('pl-status').textContent = `${r.schritte.length} Fertigungsschritte · ${r.schritte.reduce((a, s) => a + s.anzahl, 0)} Maschinen · ${fmt(r.strom, 0)} MW${r.shards ? ` · ${r.shards} Power-Shards` : ''}`;
     const tabelle = document.querySelector('[name=pl-ansicht]:checked')?.value === 'liste';
@@ -558,6 +567,27 @@ export class PlanerUI {
     if (n(s.zutaten, false) > a[0] || n(s.zutaten, true) > a[1] || n(s.produkte, false) > a[2] || n(s.produkte, true) > a[3]) return 'Die Zutaten/Produkte passen nicht auf die Anschlüsse dieses Gebäudes.';
     return '';
   }
+  /** Zusammenfassung als Blaupausen-Beschreibung: Ziel, Freischaltung, Zulieferung, Überschuss, Maschinen, Strom */
+  bpZusammenfassung(r, schritte, einzel) {
+    const z = (v) => fmt(v, v < 10 ? 1 : 0), nm = (it) => this.itemName(it), e = (it) => (this.einheit(it) === '/min' ? '/min' : ' m³/min');
+    const liste = (l, n = 6) => l.slice(0, n).map(([it, m]) => `${z(m)}${e(it)} ${nm(it)}`).join(', ') + (l.length > n ? ` (+${l.length - n})` : '');
+    const zeilen = [];
+    // Bilanz der gewählten Stufen: was hinein muss, was herauskommt
+    const ein = {}, aus = {};
+    for (const s of schritte) { for (const q of s.zutaten) ein[q.item] = (ein[q.item] || 0) + q.proMin; for (const q of s.produkte) aus[q.item] = (aus[q.item] || 0) + q.proMin; }
+    for (const it of Object.keys(ein)) { const k = Math.min(ein[it], aus[it] || 0); ein[it] -= k; if (aus[it] != null) aus[it] -= k; }
+    const sortiert = (o) => Object.entries(o).filter(([, m]) => m > 1e-6).sort((a, b) => b[1] - a[1]);
+    if (einzel) zeilen.push(`${schritte.length === 1 ? `${einzel.anzahl}× ${this.kat.gebaeude[einzel.gebaeude]?.name || einzel.gebaeude}: ` : 'Bis '}${einzel.name}`);
+    else zeilen.push(`Ziel: ${r.ziele.map((x) => `${z(x.menge)}${e(x.item)} ${nm(x.item)}`).join(', ')}`);
+    const fr = benoetigtText(benoetigt(this.kat, schritte)); if (fr) zeilen.push(`Braucht: ${fr}`);
+    const zu = sortiert(ein); if (zu.length) zeilen.push(`Zulieferung: ${liste(zu)}`);
+    const ab = sortiert(aus); if (ab.length) zeilen.push(`${einzel ? 'Ausgang' : 'Ergebnis/Überschuss'}: ${liste(ab)}`);
+    const masch = {}; for (const s of schritte) { const n = this.kat.gebaeude[s.gebaeude]?.name || s.gebaeude; masch[n] = (masch[n] || 0) + s.anzahl; }
+    zeilen.push(`Maschinen: ${Object.entries(masch).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([n, k]) => `${k}× ${n}`).join(', ')}`);
+    const mw = schritte.reduce((a, s) => a + (this.kat.gebaeude[s.gebaeude]?.werte?.strom || 0) * s.anzahl * Math.pow((s.takt || 100) / 100, 1.321928), 0);
+    if (mw) zeilen.push(`Strom: ca. ${fmt(mw, 0)} MW`);
+    return zeilen.join('\n').slice(0, 1500);
+  }
   blaupauseDialog(i, art = 'einzeln') {
     if (!this.mcListe) { // Master-Class-Vorlagen einmal laden (für den Stil „Optimiert“)
       this.mcListe = [];
@@ -600,6 +630,7 @@ export class PlanerUI {
       vorschlag = `Planer_${this.itemName(s.produkte[0].item)}_${fmt(s.produkte[0].proMin, 0)}`;
     }
     vorschlag = vorschlag.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_').slice(0, 80);
+    const zusammenfassung = this.bpZusammenfassung(r, kette ? (bis ? [...umfang].map((k) => r.schritte[k]) : r.schritte) : [s], kette && !bis ? null : (bis || s));
     // Stil „Optimiert“: fertige Master-Class-Vorlage, die das Ergebnis herstellt (nur wenn eigene Master-Class-Vorlagen da sind)
     const hauptMc = (e) => (e.end?.length ? e.end : Object.keys(e.aus || {}));
     const mcItems = new Set(kette ? (bis ? [bis.produkte[0].item] : r.ziele.map((z) => z.item)) : []);
@@ -623,6 +654,7 @@ export class PlanerUI {
         ${wasserZeile}
         <label for="pl-bp-name">Name</label><input id="pl-bp-name" type="text" value="${esc((kette ? this.bpNameKette : this.bpName) || vorschlag)}" spellcheck="false">
         <label for="pl-bp-ziel">Speichern in</label><select id="pl-bp-ziel">${sessions.map((x) => `<option${x === ziel ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>
+        <label for="pl-bp-beschr" class="pl-bp-einfach">Beschreibung</label><textarea id="pl-bp-beschr" class="pl-bp-einfach" rows="6" style="font:inherit;font-size:13px;line-height:1.4;resize:vertical" maxlength="1500" spellcheck="false" data-no-i18n title="Erscheint im Spiel bei der Blaupause">${esc(zusammenfassung)}</textarea>
       </div>
       <p class="muted" id="pl-bp-info"></p>`}
       <div class="dlg-actions"><button type="button" class="btn" value="nein">Schließen</button>${grund && !mcPassend.length ? '' : '<button type="button" class="btn" id="pl-bp-3d">In 3D ansehen</button><button type="button" class="btn primary" id="pl-bp-ok">Als Blaupause speichern</button>'}</div></form>`;
@@ -681,7 +713,7 @@ export class PlanerUI {
         return;
       }
       try {
-        const j = await post('/api/planer/blaupause', { ...daten(), session, name, plan: planDaten() });
+        const j = await post('/api/planer/blaupause', { ...daten(), session, name, plan: planDaten(), beschreibung: $('pl-bp-beschr')?.value.trim() || '' });
         $('pl-bp-info').innerHTML = `Gespeichert: ${esc(infoText(j.info))} · <a href="#" id="pl-bp-open">in „Blaupause“ öffnen</a>${(j.info.warnungen || []).map((w) => `<br><span class="err">${esc(w)}</span>`).join('')}`;
         $('pl-bp-open').addEventListener('click', async (ev) => { ev.preventDefault(); d.close(); this.app.setMode('editor'); $('session').value = session; await this.app.loadList(); this.app.openBlueprint(name); });
         this.app.zaehlerAktualisieren?.(); if ($('session').value === session) this.app.loadList();
