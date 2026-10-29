@@ -58,6 +58,18 @@ const TOUREN = {
     ['#w-punkte', 'Kartenpunkte', 'Rohstoff-Knoten, Absturzstellen und Sammelobjekte in 3D.'],
     ['#w-neu-name', 'Speichern', 'Gesetztes und Geändertes kommt in eine neue Spielstand-Datei – das Original bleibt unverändert.'],
   ]],
+  // Baukasten liegt in einem eingebetteten Fenster: Selektoren mit „bk:“ suchen dort
+  baukasten: ['Baukasten', [
+    ['bk:.verbund', 'Werkzeuge', 'Auswählen (V) verschiebt und öffnet das Feld eines Teils, Verbinden (C) legt Bänder und Rohre, Rechteck (M) und Stift (L) markieren mehrere Teile, Einfärben (F) färbt Teile und Bänder.'],
+    ['bk:#palette', 'Gebäude und Vorlagen', 'Gebäude von hier aufs Reißbrett ziehen – das Mausrad dreht dabei. Unter „Vorlagen“ liegen Master-Class-Fabriken mit einer Ebene als Block.'],
+    ['bk:#brett', 'Reißbrett', 'Klick auf ein Teil öffnet daneben ein Feld: Rezept, Takt, Farbe, bei Splittern Art und Sortierregeln. Mausrad = Zoom, leere Fläche ziehen = verschieben, Umschalt + Ziehen = mehrere wählen. Rote Anschlüsse oder Bänder zeigen Probleme.'],
+    ['bk:#w-verbinden', 'Verbinden', 'Erst einen Ausgang (orange), dann einen Eingang (blau, türkis = Rohr) anklicken – der Weg wird selbst verlegt. Klicks ins Leere dazwischen setzen eigene Wegpunkte, Rücktaste nimmt den letzten zurück.'],
+    ['bk:#b-auto', 'Automatisch verbinden', 'Verbindet passende freie Ausgänge mit freien Eingängen (gleiches Item). Daneben wählst du die höchste Förderband-Stufe; „Fluss“ lässt die Items auf den Bändern laufen.'],
+    ['bk:#b-farbe', 'Farbe', 'Farbmuster wie im Spiel, mit den Farbplätzen aus deinem neuesten Spielstand – dann mit „Einfärben“ anklicken oder einen Rahmen aufziehen.'],
+    ['bk:#info', 'Ziel, To-do und Zusammenfassung', 'Endprodukt und Menge wählen: Die Liste zeigt die nötigen Maschinen je Stufe und hakt ab, was steht. „Als Reihen aufbauen“ baut alles auf. Darunter Übersicht und Zusammenfassung mit nötiger Stufe und Baukosten.'],
+    ['bk:#b-idee', 'Idee speichern', 'Hält Reißbrett und Planer als benannte Idee im aktiven Profil fest – später einzeln oder zusammen wieder ladbar.'],
+    ['bk:#b-speichern', 'Blaupause speichern', 'Baut die Blaupause mit Fundament und Strom. Die Zusammenfassung wird zur Beschreibung im Spiel und lässt sich vorher ändern.'],
+  ]],
   planer: ['Planer', [
     ['#pl-ziele', 'Ziel', 'Was die Fabrik pro Minute herstellen soll.'],
     ['#pl-vorhanden', 'Vorhanden', 'Was schon angeliefert wird – das stellt die Fabrik nicht mehr selbst her.'],
@@ -70,6 +82,18 @@ const TOUREN = {
     ['#pl-fabrik', 'Fabriken', 'Mehrere Fabriken planen; der Welt-Plan rechnet sie zusammen.'],
   ]],
 };
+
+// Element zu einem Selektor finden – „bk:…“ im eingebetteten Baukasten, Lage dann in Fensterkoordinaten
+function finde(sel) {
+  if (sel.startsWith('bk:')) {
+    const f = document.getElementById('baukasten-frame'); let el = null;
+    try { el = f?.contentDocument?.querySelector(sel.slice(3)); } catch { /* nicht geladen */ }
+    if (!el) return null;
+    const fr = f.getBoundingClientRect(), r = el.getBoundingClientRect();
+    return { el, r: new DOMRect(fr.left + Math.max(0, r.left), fr.top + Math.max(0, r.top), Math.min(r.width, fr.width), Math.min(r.height, fr.height)) };
+  }
+  const el = document.querySelector(sel); return el ? { el, r: el.getBoundingClientRect() } : null;
+}
 
 export class Tour {
   constructor(app) {
@@ -103,7 +127,8 @@ export class Tour {
   starten(b) {
     const t = TOUREN[b]; if (!t) return;
     $('tour-angebot')?.remove();
-    const schritte = t[1].filter(([sel]) => { const el = document.querySelector(sel); if (!el) return false; const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+    const schritte = t[1].filter(([sel]) => { const x = finde(sel); return !!x && x.r.width > 0 && x.r.height > 0; });
+    if (!schritte.length && b === 'baukasten' && !this.wartet) { this.wartet = true; setTimeout(() => { this.wartet = false; this.starten(b); }, 1500); return; } // Baukasten lädt noch
     if (!schritte.length) return;
     this.aktiv = { b, schritte, i: 0 };
     if (!this.ebene) {
@@ -118,10 +143,10 @@ export class Tour {
   ende() { if (!this.aktiv) return; this.merken(this.aktiv.b); this.aktiv = null; if (this.ebene) this.ebene.hidden = true; }
   zeigen() {
     const a = this.aktiv; if (!a || !this.ebene) return;
-    const [sel, titel, text] = a.schritte[a.i], el = document.querySelector(sel);
-    if (!el) { this.weiter(1); return; }
-    el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    const r = el.getBoundingClientRect(), W = innerWidth, H = innerHeight, p = 6;
+    const [sel, titel, text] = a.schritte[a.i], x = finde(sel);
+    if (!x) { this.weiter(1); return; }
+    x.el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    const r = finde(sel).r, W = innerWidth, H = innerHeight, p = 6;
     const x0 = Math.max(0, r.left - p), y0 = Math.max(0, r.top - p), x1 = Math.min(W, r.right + p), y1 = Math.min(H, r.bottom + p);
     const setz = (s, l, t, w, h) => Object.assign(this.ebene.querySelector(`[data-s="${s}"]`).style, { left: l + 'px', top: t + 'px', width: Math.max(0, w) + 'px', height: Math.max(0, h) + 'px' });
     setz('o', 0, 0, W, y0); setz('u', 0, y1, W, H - y1); setz('l', 0, y0, x0, y1 - y0); setz('r', x1, y0, W - x1, y1 - y0);

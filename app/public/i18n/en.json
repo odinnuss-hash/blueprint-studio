@@ -2818,5 +2818,18 @@
  "Lädt die angehakten Ideen. Ihre Blaupausen werden ins Spiel geholt; andere aktive Blaupausen bleiben.": "Loads the ticked ideas. Their blueprints are brought into the game; other active blueprints stay.",
  "außerdem:": "also:",
  "Beschreibung": "Description",
- "Erscheint im Spiel bei der Blaupause": "Shown with the blueprint in the game"
+ "Erscheint im Spiel bei der Blaupause": "Shown with the blueprint in the game",
+ "Auswählen (V) verschiebt und öffnet das Feld eines Teils, Verbinden (C) legt Bänder und Rohre, Rechteck (M) und Stift (L) markieren mehrere Teile, Einfärben (F) färbt Teile und Bänder.": "Select (V) moves parts and opens a part's panel, Connect (C) lays belts and pipes, Rectangle (M) and Pen (L) mark several parts, Paint (F) colours parts and belts.",
+ "Gebäude und Vorlagen": "Buildings and templates",
+ "Gebäude von hier aufs Reißbrett ziehen – das Mausrad dreht dabei. Unter „Vorlagen“ liegen Master-Class-Fabriken mit einer Ebene als Block.": "Drag buildings from here onto the drawing board – the mouse wheel rotates them meanwhile. “Templates” holds one-level Master Class factories as blocks.",
+ "Reißbrett": "Drawing board",
+ "Klick auf ein Teil öffnet daneben ein Feld: Rezept, Takt, Farbe, bei Splittern Art und Sortierregeln. Mausrad = Zoom, leere Fläche ziehen = verschieben, Umschalt + Ziehen = mehrere wählen. Rote Anschlüsse oder Bänder zeigen Probleme.": "Clicking a part opens a panel next to it: recipe, clock speed, colour, and for splitters type and sort rules. Mouse wheel = zoom, drag empty space = pan, Shift + drag = select several. Red ports or belts show problems.",
+ "Erst einen Ausgang (orange), dann einen Eingang (blau, türkis = Rohr) anklicken – der Weg wird selbst verlegt. Klicks ins Leere dazwischen setzen eigene Wegpunkte, Rücktaste nimmt den letzten zurück.": "Click an output (orange) first, then an input (blue, turquoise = pipe) – the route is laid automatically. Clicks into empty space in between set your own waypoints; Backspace removes the last one.",
+ "Automatisch verbinden": "Connect automatically",
+ "Verbindet passende freie Ausgänge mit freien Eingängen (gleiches Item). Daneben wählst du die höchste Förderband-Stufe; „Fluss“ lässt die Items auf den Bändern laufen.": "Connects matching free outputs to free inputs (same item). Next to it you choose the highest conveyor belt tier; “Flow” lets the items run on the belts.",
+ "Farbmuster wie im Spiel, mit den Farbplätzen aus deinem neuesten Spielstand – dann mit „Einfärben“ anklicken oder einen Rahmen aufziehen.": "Swatches as in the game, with the colour slots from your latest save – then click with “Paint” or drag a frame.",
+ "Ziel, To-do und Zusammenfassung": "Goal, to-do and summary",
+ "Endprodukt und Menge wählen: Die Liste zeigt die nötigen Maschinen je Stufe und hakt ab, was steht. „Als Reihen aufbauen“ baut alles auf. Darunter Übersicht und Zusammenfassung mit nötiger Stufe und Baukosten.": "Choose an end product and amount: the list shows the machines needed per stage and ticks off what is placed. “Build as rows” builds everything. Below: overview and summary with the tier needed and building costs.",
+ "Hält Reißbrett und Planer als benannte Idee im aktiven Profil fest – später einzeln oder zusammen wieder ladbar.": "Keeps drawing board and planner as a named idea in the active profile – load it again later, alone or together with others.",
+ "Baut die Blaupause mit Fundament und Strom. Die Zusammenfassung wird zur Beschreibung im Spiel und lässt sich vorher ändern.": "Builds the blueprint with foundations and power. The summary becomes its in-game description and can be edited beforehand."
 }

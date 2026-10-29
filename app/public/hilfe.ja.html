@@ -93,7 +93,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
 <h2 class="sec" id="zur-app">アプリについて</h2>
 <table>
   <tr><th style="width:200px">プログラム</th><td><b>Blueprint Studio</b> – Satisfactory 用の設計図ツール</td></tr>
-  <tr><th>バージョン</th><td id="za-version" data-version>1.7.0</td></tr>
+  <tr><th>バージョン</th><td id="za-version" data-version>1.7.1</td></tr>
   <tr><th>作者</th><td><b>ODINnuss</b>– アイデア、コンセプト、デザイン</td></tr>
   <tr><th>著作権</th><td>© 2026 ODINnuss. 無断複製・転載を禁じます。</td></tr>
   <tr><th>実装</th><td>作者の依頼により AI の支援(Claude、Anthropic)を受けてプログラミングされました。</td></tr>
@@ -320,7 +320,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <li><b>パッケージを保存／パッケージを読み込む</b>：すべてのテンプレートを1つのファイル（<code>.bsmc</code>）に保存し、別のPCで読み込めます。</li>
 </ul>
 <h2 class="sec" id="baukasten">サンドボックス（ベータ）– 工場を上から計画</h2>
-<p><b>サンドボックス</b>タブでは、<b>製図板</b>の上で工場を真上から組み立てます – ゲームモデルを上から見た表示です（「ゲームからモデルを取得」の後）。すべて1階層で、ベルトは交差しても構いません。結果はゲーム用の設計図として保存します。</p>
+<p><b>サンドボックス</b>タブでは、<b>製図板</b>の上で工場を真上から組み立てます – ゲームモデルを上から見た表示です（「ゲームからモデルを取得」の後）。すべて1階層で、ベルトは交差しても構いません。結果はゲーム用の設計図として保存します。右上の<b>ガイド</b>で操作を順に説明します。</p>
 <ul>
   <li><b>建物の配置:</b> 左から建物を、または（<b>テンプレート</b>タブ）1階層のマスタークラス工場を製図板にドラッグ。ドラッグ中はホイールで回転します。部品は他の部品の接続口に正確に吸着します。部品をクリックすると、隣にレシピ、クロック、色、回転、複製、削除のパネルが開きます。</li>
   <li><b>接続:</b> <b>接続</b>ツールで出力（オレンジ）と入力（青、ターコイズ = パイプ）をクリック – 経路は自動で敷設されます。間の空白をクリックすると独自の経由点を設定できます（<kbd>Backspace</kbd>で最後の点を削除）。<b>自動</b>は対応する空き接続口をつなぎます。ベルトをクリックすると量とレベルを表示。Mkレベルはアプリが量に応じて選びます（最大はツールバーのレベル）。手動でも設定できます。</li>
@@ -679,7 +679,7 @@ ol.steps > li::before { content: counter(s); position: absolute; left: 0; top: 6
   <tr><td>アプリ内でモデルが回転/ずれている</td><td>FModel の Mesh Format は <code>glTF 2.0 (binary)</code> である必要があります。ツールを再度実行してください。</td></tr>
   <tr><td>モデルの代わりに灰色の箱が表示される</td><td>このパーツのモデルがありません(ツールのメッセージ参照)– またはベルト/パイプ/線路/リフトです(意図的にモデルなし)。</td></tr>
 </table>
-<p class="muted">Blueprint Studio <span data-version>1.7.0</span> · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
+<p class="muted">Blueprint Studio <span data-version>1.7.1</span> · © 2026 ODINnuss · <a href="#zur-app">利用規約</a></p>
 </main>
 <script>
 // Anker aus der App (#schema usw.) anspringen

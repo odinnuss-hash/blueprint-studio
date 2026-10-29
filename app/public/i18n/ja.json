@@ -2817,5 +2817,18 @@
  "Lädt die angehakten Ideen. Ihre Blaupausen werden ins Spiel geholt; andere aktive Blaupausen bleiben.": "チェックしたアイデアを読み込みます。設計図はゲームに取り込まれ、他のアクティブな設計図はそのまま残ります。",
  "außerdem:": "その他:",
  "Beschreibung": "説明",
- "Erscheint im Spiel bei der Blaupause": "ゲーム内で設計図と一緒に表示"
+ "Erscheint im Spiel bei der Blaupause": "ゲーム内で設計図と一緒に表示",
+ "Auswählen (V) verschiebt und öffnet das Feld eines Teils, Verbinden (C) legt Bänder und Rohre, Rechteck (M) und Stift (L) markieren mehrere Teile, Einfärben (F) färbt Teile und Bänder.": "選択 (V) で部品を移動し部品のパネルを開き、接続 (C) でベルトとパイプを敷設、矩形 (M) とペン (L) で複数の部品を選択、塗装 (F) で部品とベルトを塗ります。",
+ "Gebäude und Vorlagen": "建物とテンプレート",
+ "Gebäude von hier aufs Reißbrett ziehen – das Mausrad dreht dabei. Unter „Vorlagen“ liegen Master-Class-Fabriken mit einer Ebene als Block.": "ここから建物を製図板にドラッグ – ドラッグ中はホイールで回転。「テンプレート」には1階層のマスタークラス工場がブロックとして入っています。",
+ "Reißbrett": "製図板",
+ "Klick auf ein Teil öffnet daneben ein Feld: Rezept, Takt, Farbe, bei Splittern Art und Sortierregeln. Mausrad = Zoom, leere Fläche ziehen = verschieben, Umschalt + Ziehen = mehrere wählen. Rote Anschlüsse oder Bänder zeigen Probleme.": "部品をクリックすると隣にパネルが開きます：レシピ、クロック、色、スプリッターでは種類と仕分けルール。ホイール = ズーム、空白をドラッグ = 移動、Shift + ドラッグ = 複数選択。赤い接続口やベルトは問題を示します。",
+ "Erst einen Ausgang (orange), dann einen Eingang (blau, türkis = Rohr) anklicken – der Weg wird selbst verlegt. Klicks ins Leere dazwischen setzen eigene Wegpunkte, Rücktaste nimmt den letzten zurück.": "まず出力（オレンジ）、次に入力（青、ターコイズ = パイプ）をクリック – 経路は自動で敷設されます。間の空白をクリックすると独自の経由点を設定、Backspaceで最後の点を削除します。",
+ "Automatisch verbinden": "自動接続",
+ "Verbindet passende freie Ausgänge mit freien Eingängen (gleiches Item). Daneben wählst du die höchste Förderband-Stufe; „Fluss“ lässt die Items auf den Bändern laufen.": "対応する空き出力を空き入力に接続します（同じアイテム）。隣で最大コンベアベルトレベルを選択、「流れ」でベルト上のアイテムが流れます。",
+ "Farbmuster wie im Spiel, mit den Farbplätzen aus deinem neuesten Spielstand – dann mit „Einfärben“ anklicken oder einen Rahmen aufziehen.": "ゲームと同じカラースウォッチ（最新のセーブデータのスロット）– 「塗装」でクリックするか枠をドラッグします。",
+ "Ziel, To-do und Zusammenfassung": "目標・To-do・まとめ",
+ "Endprodukt und Menge wählen: Die Liste zeigt die nötigen Maschinen je Stufe und hakt ab, was steht. „Als Reihen aufbauen“ baut alles auf. Darunter Übersicht und Zusammenfassung mit nötiger Stufe und Baukosten.": "最終製品と量を選択：段階ごとに必要な機械が表示され、配置済みのものはチェックされます。「列として組み立て」ですべて組み立て。下に概要と、必要なティアと建設コストを含むまとめ。",
+ "Hält Reißbrett und Planer als benannte Idee im aktiven Profil fest – später einzeln oder zusammen wieder ladbar.": "製図板とプランナーを名前付きアイデアとしてアクティブなプロファイルに保存 – 後で単独または他と一緒に読み込めます。",
+ "Baut die Blaupause mit Fundament und Strom. Die Zusammenfassung wird zur Beschreibung im Spiel und lässt sich vorher ändern.": "基礎と電力付きで設計図を作成します。まとめはゲーム内の説明になり、事前に編集できます。"
 }

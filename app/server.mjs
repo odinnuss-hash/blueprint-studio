@@ -54,7 +54,7 @@ const PORT = parseInt(process.env.BS_PORT || '37474', 10);
 const OPEN_WINDOW = process.argv.includes('--open') && !process.env.BS_NO_OPEN;
 // --weiter: nach einem Neustart (Update) kein neues Fenster, aber beenden, wenn das Fenster geschlossen wird
 const FENSTER_ENDE = OPEN_WINDOW || process.argv.includes('--weiter');
-const VERSION = '1.7.0';
+const VERSION = '1.7.1';
 
 // Protokoll: Konsole (falls sichtbar), Ringpuffer für die App (Einstellungen → Server-Protokoll) und userdata/server.log
 // (bei jedem Start neu; der vorige Lauf bleibt als server.alt.log). Der Server läuft seit 1.7 ohne eigenes Fenster.

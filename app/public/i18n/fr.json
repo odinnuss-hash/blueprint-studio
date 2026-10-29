@@ -2818,5 +2818,18 @@
  "Lädt die angehakten Ideen. Ihre Blaupausen werden ins Spiel geholt; andere aktive Blaupausen bleiben.": "Charge les idées cochées. Leurs plans sont placés dans le jeu ; les autres plans actifs restent.",
  "außerdem:": "en plus :",
  "Beschreibung": "Description",
- "Erscheint im Spiel bei der Blaupause": "Affichée avec le plan dans le jeu"
+ "Erscheint im Spiel bei der Blaupause": "Affichée avec le plan dans le jeu",
+ "Auswählen (V) verschiebt und öffnet das Feld eines Teils, Verbinden (C) legt Bänder und Rohre, Rechteck (M) und Stift (L) markieren mehrere Teile, Einfärben (F) färbt Teile und Bänder.": "Sélectionner (V) déplace et ouvre le panneau d'une pièce, Relier (C) pose convoyeurs et tuyaux, Rectangle (M) et Crayon (L) marquent plusieurs pièces, Peindre (F) colore pièces et convoyeurs.",
+ "Gebäude und Vorlagen": "Bâtiments et modèles",
+ "Gebäude von hier aufs Reißbrett ziehen – das Mausrad dreht dabei. Unter „Vorlagen“ liegen Master-Class-Fabriken mit einer Ebene als Block.": "Fais glisser les bâtiments d'ici sur la planche – la molette les tourne. Sous « Modèles » se trouvent les usines Master Class à un niveau, en bloc.",
+ "Reißbrett": "Planche",
+ "Klick auf ein Teil öffnet daneben ein Feld: Rezept, Takt, Farbe, bei Splittern Art und Sortierregeln. Mausrad = Zoom, leere Fläche ziehen = verschieben, Umschalt + Ziehen = mehrere wählen. Rote Anschlüsse oder Bänder zeigen Probleme.": "Un clic sur une pièce ouvre un panneau à côté : recette, cadence, couleur et, pour les répartiteurs, type et règles de tri. Molette = zoom, glisser une zone vide = déplacer la vue, Maj + glisser = sélection multiple. Les raccords ou convoyeurs rouges signalent un problème.",
+ "Erst einen Ausgang (orange), dann einen Eingang (blau, türkis = Rohr) anklicken – der Weg wird selbst verlegt. Klicks ins Leere dazwischen setzen eigene Wegpunkte, Rücktaste nimmt den letzten zurück.": "Clique d'abord une sortie (orange), puis une entrée (bleue, turquoise = tuyau) – le chemin est posé automatiquement. Des clics dans le vide entre les deux posent tes propres points de passage ; Retour arrière retire le dernier.",
+ "Automatisch verbinden": "Relier automatiquement",
+ "Verbindet passende freie Ausgänge mit freien Eingängen (gleiches Item). Daneben wählst du die höchste Förderband-Stufe; „Fluss“ lässt die Items auf den Bändern laufen.": "Relie les sorties libres correspondantes aux entrées libres (même objet). À côté, tu choisis le niveau de convoyeur maximal ; « Flux » fait défiler les objets.",
+ "Farbmuster wie im Spiel, mit den Farbplätzen aus deinem neuesten Spielstand – dann mit „Einfärben“ anklicken oder einen Rahmen aufziehen.": "Nuanciers comme dans le jeu, avec les emplacements de couleur de ta dernière sauvegarde – puis cliquer avec « Peindre » ou tracer un cadre.",
+ "Ziel, To-do und Zusammenfassung": "Objectif, liste et résumé",
+ "Endprodukt und Menge wählen: Die Liste zeigt die nötigen Maschinen je Stufe und hakt ab, was steht. „Als Reihen aufbauen“ baut alles auf. Darunter Übersicht und Zusammenfassung mit nötiger Stufe und Baukosten.": "Choisis un produit final et une quantité : la liste montre les machines nécessaires par étape et coche ce qui est posé. « Construire en rangées » construit tout. En dessous : vue d'ensemble et résumé avec palier nécessaire et coûts.",
+ "Hält Reißbrett und Planer als benannte Idee im aktiven Profil fest – später einzeln oder zusammen wieder ladbar.": "Conserve la planche et le planificateur comme idée nommée dans le profil actif – rechargeable plus tard, seule ou avec d'autres.",
+ "Baut die Blaupause mit Fundament und Strom. Die Zusammenfassung wird zur Beschreibung im Spiel und lässt sich vorher ändern.": "Construit le plan avec fondations et électricité. Le résumé devient sa description dans le jeu et peut être modifié avant."
 }
